@@ -1,0 +1,475 @@
+{
+ "cleanUrls": true,
+ "redirects": [
+  {
+   "source": "/99-percent-purity-research-peptides",
+   "destination": "/research/99-percent-purity-research-peptides.html",
+   "permanent": true
+  },
+  {
+   "source": "/about-us",
+   "destination": "/about.html",
+   "permanent": true
+  },
+  {
+   "source": "/analytical-transparency-peptide-research",
+   "destination": "/research/analytical-transparency-peptide-research.html",
+   "permanent": true
+  },
+  {
+   "source": "/are-peptide-coas-batch-specific",
+   "destination": "/research/are-peptide-coas-batch-specific.html",
+   "permanent": true
+  },
+  {
+   "source": "/author/inkfreak1980",
+   "destination": "/index.html",
+   "permanent": true
+  },
+  {
+   "source": "/best-peptide-documentation-practices",
+   "destination": "/research/best-peptide-documentation-practices.html",
+   "permanent": true
+  },
+  {
+   "source": "/build-a-kit",
+   "destination": "/catalog.html",
+   "permanent": true
+  },
+  {
+   "source": "/buy-mk-677-research-compound",
+   "destination": "/research/buy-mk-677-research-compound.html",
+   "permanent": true
+  },
+  {
+   "source": "/cart",
+   "destination": "/index.html",
+   "permanent": true
+  },
+  {
+   "source": "/catalog",
+   "destination": "/catalog.html",
+   "permanent": true
+  },
+  {
+   "source": "/category/research-education",
+   "destination": "/research-library.html",
+   "permanent": true
+  },
+  {
+   "source": "/category/uncategorized",
+   "destination": "/research-library.html",
+   "permanent": true
+  },
+  {
+   "source": "/checkout",
+   "destination": "/index.html",
+   "permanent": true
+  },
+  {
+   "source": "/checkouts/checkout-page",
+   "destination": "/index.html",
+   "permanent": true
+  },
+  {
+   "source": "/cjc-1295-ipamorelin-research-blend-standards",
+   "destination": "/research/cjc-1295-ipamorelin-research-blend-standards.html",
+   "permanent": true
+  },
+  {
+   "source": "/coa-testing-versus-supplier-claims",
+   "destination": "/research/coa-testing-versus-supplier-claims.html",
+   "permanent": true
+  },
+  {
+   "source": "/coa",
+   "destination": "/testing.html",
+   "permanent": true
+  },
+  {
+   "source": "/coming-soon",
+   "destination": "/index.html",
+   "permanent": true
+  },
+  {
+   "source": "/compare-peptide-lots-research-quality",
+   "destination": "/research/compare-peptide-lots-research-quality.html",
+   "permanent": true
+  },
+  {
+   "source": "/contact",
+   "destination": "/contact.html",
+   "permanent": true
+  },
+  {
+   "source": "/customer-login",
+   "destination": "/account.html",
+   "permanent": true
+  },
+  {
+   "source": "/epithalon-peptide-research-supplier",
+   "destination": "/research/epithalon-peptide-research-supplier.html",
+   "permanent": true
+  },
+  {
+   "source": "/faq",
+   "destination": "/faq.html",
+   "permanent": true
+  },
+  {
+   "source": "/how-to-document-ruo-materials",
+   "destination": "/research/how-to-document-ruo-materials.html",
+   "permanent": true
+  },
+  {
+   "source": "/how-to-evaluate-peptide-vendors",
+   "destination": "/research/how-to-evaluate-peptide-vendors.html",
+   "permanent": true
+  },
+  {
+   "source": "/how-to-evaluate-sample-integrity",
+   "destination": "/research/how-to-evaluate-sample-integrity.html",
+   "permanent": true
+  },
+  {
+   "source": "/how-to-read-peptide-coa",
+   "destination": "/research/how-to-read-peptide-coa.html",
+   "permanent": true
+  },
+  {
+   "source": "/how-to-store-lyophilized-peptides",
+   "destination": "/research/how-to-store-lyophilized-peptides.html",
+   "permanent": true
+  },
+  {
+   "source": "/how-to-verify-peptide-identity",
+   "destination": "/research/how-to-verify-peptide-identity.html",
+   "permanent": true
+  },
+  {
+   "source": "/igf-1-lr3-research-material-quality-checks",
+   "destination": "/research/igf-1-lr3-research-material-quality-checks.html",
+   "permanent": true
+  },
+  {
+   "source": "/independent-laboratory-testing-trends",
+   "destination": "/research/independent-laboratory-testing-trends.html",
+   "permanent": true
+  },
+  {
+   "source": "/lets-keep-in-touch",
+   "destination": "/contact.html",
+   "permanent": true
+  },
+  {
+   "source": "/manage-profile",
+   "destination": "/account.html",
+   "permanent": true
+  },
+  {
+   "source": "/melanotan-i-research-peptide-quality-review",
+   "destination": "/research/melanotan-i-research-peptide-quality-review.html",
+   "permanent": true
+  },
+  {
+   "source": "/my-account",
+   "destination": "/account.html",
+   "permanent": true
+  },
+  {
+   "source": "/order-confirmed/thank-you-page",
+   "destination": "/index.html",
+   "permanent": true
+  },
+  {
+   "source": "/peptide-chain-custody-guide-research-labs",
+   "destination": "/research/peptide-chain-custody-guide-research-labs.html",
+   "permanent": true
+  },
+  {
+   "source": "/peptide-coa-requirements",
+   "destination": "/research/peptide-coa-requirements.html",
+   "permanent": true
+  },
+  {
+   "source": "/peptide-hplc-versus-mass-spectrometry",
+   "destination": "/research/peptide-hplc-versus-mass-spectrometry.html",
+   "permanent": true
+  },
+  {
+   "source": "/peptide-identity-versus-purity",
+   "destination": "/research/peptide-identity-versus-purity.html",
+   "permanent": true
+  },
+  {
+   "source": "/peptide-sample-storage-checklist",
+   "destination": "/research/peptide-sample-storage-checklist.html",
+   "permanent": true
+  },
+  {
+   "source": "/peptide-supplier-verification-checklist",
+   "destination": "/research/peptide-supplier-verification-checklist.html",
+   "permanent": true
+  },
+  {
+   "source": "/privacy",
+   "destination": "/privacy.html",
+   "permanent": true
+  },
+  {
+   "source": "/product-category/regular",
+   "destination": "/catalog.html",
+   "permanent": true
+  },
+  {
+   "source": "/product-category/wholesale",
+   "destination": "/bulk-request.html",
+   "permanent": true
+  },
+  {
+   "source": "/product/5-amino-1mq",
+   "destination": "/product.html?key=PP-5AMINO-1MQ-10MG",
+   "permanent": true
+  },
+  {
+   "source": "/product/bacteriostatic-water",
+   "destination": "/product.html?key=BAC-W-10ML",
+   "permanent": true
+  },
+  {
+   "source": "/product/bpc-157",
+   "destination": "/product.html?key=PP-BPC-157-10MG",
+   "permanent": true
+  },
+  {
+   "source": "/product/cjc-1295-no-dac-ipamorelin",
+   "destination": "/product.html?key=PP-CJC-IPA-10MG",
+   "permanent": true
+  },
+  {
+   "source": "/product/cjc-1295-no-dac",
+   "destination": "/product.html?key=PP-CJC-NO-DAC-20MG",
+   "permanent": true
+  },
+  {
+   "source": "/product/epithalon",
+   "destination": "/product.html?key=PP-EPN-10MG",
+   "permanent": true
+  },
+  {
+   "source": "/product/ghk-cu",
+   "destination": "/product.html?key=PP-GHK-CU-100MG",
+   "permanent": true
+  },
+  {
+   "source": "/product/glow",
+   "destination": "/product.html?key=PP-GLW-70MG",
+   "permanent": true
+  },
+  {
+   "source": "/product/igf-lr3",
+   "destination": "/product.html?key=PP-IGF1-LR3-1-0-MG",
+   "permanent": true
+  },
+  {
+   "source": "/product/kisspeptin",
+   "destination": "/product.html?key=PP-KISS-10MG",
+   "permanent": true
+  },
+  {
+   "source": "/product/klow",
+   "destination": "/product.html?key=PP-KLW-80MG",
+   "permanent": true
+  },
+  {
+   "source": "/product/kpv",
+   "destination": "/product.html?key=PP-KPV-5MG",
+   "permanent": true
+  },
+  {
+   "source": "/product/melanotan-i",
+   "destination": "/product.html?key=PP-MLTN-I-10MG",
+   "permanent": true
+  },
+  {
+   "source": "/product/mk-677",
+   "destination": "/product.html?key=PP-MK-677-5MG",
+   "permanent": true
+  },
+  {
+   "source": "/product/mots-c",
+   "destination": "/product.html?key=PP-MTS-C-10MG",
+   "permanent": true
+  },
+  {
+   "source": "/product/nad",
+   "destination": "/product.html?key=PP-NAD-1000MG",
+   "permanent": true
+  },
+  {
+   "source": "/product/pp-aod",
+   "destination": "/product.html?key=PP-AOD-5MG",
+   "permanent": true
+  },
+  {
+   "source": "/product/pp-bpc-157-10-mg-10-vial-kit",
+   "destination": "/product.html?key=PP-BPC-157-10-MG-10VIAL",
+   "permanent": true
+  },
+  {
+   "source": "/product/pp-glw-10-vial-kit",
+   "destination": "/product.html?key=PP-GLW-10VIAL",
+   "permanent": true
+  },
+  {
+   "source": "/product/pp-ipa",
+   "destination": "/product.html?key=PP-IPA-5MG",
+   "permanent": true
+  },
+  {
+   "source": "/product/pp-mts-c-20mg-10-vial-kit",
+   "destination": "/product.html?key=PP-MTS-C-20MG-10VIAL",
+   "permanent": true
+  },
+  {
+   "source": "/product/pp-smx-10-mg-10-vial-kit",
+   "destination": "/product.html?key=PP-SMX-10VIAL",
+   "permanent": true
+  },
+  {
+   "source": "/product/pp-tesa-10-mg-10-vial-kit",
+   "destination": "/product.html?key=PP-TESA-10-MG-10VIAL",
+   "permanent": true
+  },
+  {
+   "source": "/product/pp-tesa",
+   "destination": "/product.html?key=PP-TESA-10MG",
+   "permanent": true
+  },
+  {
+   "source": "/product/pt-141",
+   "destination": "/product.html?key=PP-PT-141-10MG",
+   "permanent": true
+  },
+  {
+   "source": "/product/retatrutide",
+   "destination": "/product.html?key=PP-3-RT-50MG",
+   "permanent": true
+  },
+  {
+   "source": "/product/semax",
+   "destination": "/product.html?key=PP-SMX-10MG",
+   "permanent": true
+  },
+  {
+   "source": "/product/sermorelin",
+   "destination": "/product.html?key=PP-SERM-20MG",
+   "permanent": true
+  },
+  {
+   "source": "/product/slu-pp-332",
+   "destination": "/product.html?key=PP-SLU-332-10MG",
+   "permanent": true
+  },
+  {
+   "source": "/product/ss-31",
+   "destination": "/product.html?key=PP-SS-31-10MG",
+   "permanent": true
+  },
+  {
+   "source": "/product/tirzepatide",
+   "destination": "/product.html?key=PP-2-TZ-40MG",
+   "permanent": true
+  },
+  {
+   "source": "/product/wolverine-stack-bpc-157-tb-500",
+   "destination": "/product.html?key=PP-WLV-10MG",
+   "permanent": true
+  },
+  {
+   "source": "/refund_returns",
+   "destination": "/shipping.html",
+   "permanent": true
+  },
+  {
+   "source": "/research-compound-quality-assurance",
+   "destination": "/research/research-compound-quality-assurance.html",
+   "permanent": true
+  },
+  {
+   "source": "/research-material-acceptance-guide",
+   "destination": "/research/research-material-acceptance-guide.html",
+   "permanent": true
+  },
+  {
+   "source": "/research-material-traceability-guide",
+   "destination": "/research/research-material-traceability-guide.html",
+   "permanent": true
+  },
+  {
+   "source": "/research-peptide-bulk-ordering",
+   "destination": "/research/research-peptide-bulk-ordering.html",
+   "permanent": true
+  },
+  {
+   "source": "/research-peptide-certificate-of-analysis-guide",
+   "destination": "/research/research-peptide-certificate-of-analysis-guide.html",
+   "permanent": true
+  },
+  {
+   "source": "/research-peptide-purity-testing",
+   "destination": "/research/research-peptide-purity-testing.html",
+   "permanent": true
+  },
+  {
+   "source": "/research-use-only-peptides-documents",
+   "destination": "/research/research-use-only-peptides-documents.html",
+   "permanent": true
+  },
+  {
+   "source": "/ruo-compliance-traceable-peptide-research",
+   "destination": "/research/ruo-compliance-traceable-peptide-research.html",
+   "permanent": true
+  },
+  {
+   "source": "/shop",
+   "destination": "/catalog.html",
+   "permanent": true
+  },
+  {
+   "source": "/single-vials-versus-peptide-kits",
+   "destination": "/research/single-vials-versus-peptide-kits.html",
+   "permanent": true
+  },
+  {
+   "source": "/terms-2",
+   "destination": "/terms.html",
+   "permanent": true
+  },
+  {
+   "source": "/track-your-order",
+   "destination": "/account.html#orders",
+   "permanent": true
+  },
+  {
+   "source": "/usa-research-peptide-supplier-standards",
+   "destination": "/research/usa-research-peptide-supplier-standards.html",
+   "permanent": true
+  },
+  {
+   "source": "/what-does-ruo-mean",
+   "destination": "/research/what-does-ruo-mean.html",
+   "permanent": true
+  },
+  {
+   "source": "/wholesale-research-peptides-usa-buying-standards",
+   "destination": "/research/wholesale-research-peptides-usa-buying-standards.html",
+   "permanent": true
+  },
+  {
+   "source": "/why-are-peptides-lyophilized",
+   "destination": "/research/why-are-peptides-lyophilized.html",
+   "permanent": true
+  }
+ ]
+}

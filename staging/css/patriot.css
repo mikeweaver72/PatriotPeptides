@@ -1,0 +1,46 @@
+/* Patriot Peptides USA · Old Glory Realism theme (v1). Loads after pst-bl.css and re-points its tokens.
+   Palette from the brand standard: Night #0A1020, Shield Navy #0E1838, Patriot Navy #12266E, Old Glory Red #B22234,
+   Signal Red #C8102E, Chrome #C7CCD4, Cloud #F3F1EC. Headlines Archivo Black, body Inter. */
+:root{
+  --bg:#0A1020;--bg2:#0D1527;--card:#111A30;--card2:#141F38;--line:#243050;--line2:#2E3A58;
+  --ink:#F3F1EC;--muted:#C9CFDC;--dim:#98A2B8;
+  --gold:#E8475F;--gold2:#F3F1EC;--goldg:linear-gradient(180deg,#E0203E,#A80C26);
+  --navy:#12266E;--red:#C8102E;--chrome:#C7CCD4;--chromeg:linear-gradient(180deg,#F6F6F4,#C9CFDC);
+  --ok:#7FCF9F;--warn:#E3C766;--bad:#F08A8A;
+  --fh:"Archivo Black","Arial Black",Impact,sans-serif;--fb:Inter,system-ui,-apple-system,sans-serif;--r:6px;
+  --flagbar:linear-gradient(90deg,#C8102E 0 33.3%,#F3F1EC 33.3% 66.6%,#12266E 66.6%);
+}
+/* headline face is heavy: pull sizes in a notch and drop the serif tracking */
+.serif,h1.serif,h2.serif,.wm,.brand{font-weight:400;letter-spacing:0}
+h1.serif{font-size:clamp(1.9rem,6vw,3.2rem);line-height:1.05}h2.serif{font-size:clamp(1.5rem,4.2vw,2.3rem)}
+.brand{font-family:var(--fb);font-weight:800;letter-spacing:.06em;font-size:17px}.brand em{color:var(--ink)}
+.brand img{border-radius:0!important;object-fit:contain}
+.wm{font-family:var(--fh);font-size:22px;letter-spacing:.04em}.wm small{font-family:var(--fb);font-weight:700;letter-spacing:.3em;color:var(--gold)}
+.fmark img{border-radius:0!important}
+/* flag bar under the header, above the footer */
+.hd::after{content:"";display:block;height:5px;background:var(--flagbar)}
+.ft{border-top:0;position:relative}.ft::before{content:"";position:absolute;left:0;right:0;top:0;height:5px;background:var(--flagbar)}
+/* kickers get a star; buttons go red gradient; ghost buttons chrome */
+.kick::before{content:"★ ";letter-spacing:0}.kick{color:var(--gold)}
+.btn.primary{background:var(--goldg);color:#fff;border-color:#8A0A1F;box-shadow:inset 0 1px 0 rgba(255,255,255,.22)}
+.btn.ghost{border-color:var(--chrome);color:var(--ink)}.btn.ghost:hover{border-color:#fff;background:rgba(255,255,255,.04)}
+.btn.venmo{background:#008CFF}
+.skip{background:var(--red);color:#fff}
+.lnk,.linkish{color:var(--gold)}
+.tabbar{background:rgba(10,16,32,.97);border-top:1px solid var(--line)}.tabbar a.on{color:#fff}.tabbar i{background:var(--red);color:#fff}
+.rule{background:var(--chrome)}
+.annc{background:var(--red);color:#fff;border-bottom:0}.annc i,.annc b,.annc a{color:#FFE2B0}
+/* hero on the home page: flag texture behind, product shot */
+.hero,.home-hero,#hero{background:var(--bg) url("../img/flag-texture.jpg") center/cover no-repeat;position:relative}
+.hero::before,.home-hero::before,#hero::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(10,16,32,.94) 0 36%,rgba(10,16,32,.35) 72%,rgba(10,16,32,.7));pointer-events:none}
+.hero>*,.home-hero>*,#hero>*{position:relative}
+/* faint shield/star silhouettes behind sections */
+.band,.sec,section.blk{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='360' viewBox='0 0 360 360'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.05' stroke-width='2'%3E%3Cpath transform='translate(20 30) scale(1.1)' d='M60 4 C75 11 90 13 106 12 L106 54 C106 85 86 105 60 117 C34 105 14 85 14 54 L14 12 C30 13 45 11 60 4 Z'/%3E%3Cpath transform='translate(210 200) scale(0.8)' d='M60 4 C75 11 90 13 106 12 L106 54 C106 85 86 105 60 117 C34 105 14 85 14 54 L14 12 C30 13 45 11 60 4 Z'/%3E%3C/g%3E%3Cg fill='%23ffffff' fill-opacity='0.045'%3E%3Cpolygon transform='translate(230 20) scale(0.6)' points='60,38 65.2,52.9 80.9,53.2 68.4,62.7 72.9,77.8 60,68.8 47.1,77.8 51.6,62.7 39.1,53.2 54.8,52.9'/%3E%3Cpolygon transform='translate(40 230) scale(0.45)' points='60,38 65.2,52.9 80.9,53.2 68.4,62.7 72.9,77.8 60,68.8 47.1,77.8 51.6,62.7 39.1,53.2 54.8,52.9'/%3E%3C/g%3E%3C/svg%3E")}
+/* owner app accents */
+.owner .tab.on,.otabs a.on{color:#fff;border-color:var(--red)}
+.pill.on,.chip.on{background:var(--navy);border-color:var(--navy);color:#fff}
+/* vial label defaults: navy label, white type (used by the drawn bottle when no photo) */
+:root{--label:#12266E;--label-ink:#fff}
+
+.vial.photo{object-fit:cover;border-radius:10px;background:#0D1527}
+.fimg .vial.photo,.edimg .vial.photo{width:100%;height:auto;aspect-ratio:1/1}
