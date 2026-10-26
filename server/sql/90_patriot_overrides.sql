@@ -45,8 +45,8 @@ select setval('public.customer_number_seq', greatest(100100, (select coalesce(ma
 -- 2. Payment options shown at checkout ------------------------------------------------------------
 insert into public.site_payment_options (id, payment_methods, venmo_enabled, venmo_handle, venmo_note, updated_at)
 values (1,
-  '[{"key":"venmo","label":"Venmo","handle":"@Patriot-peptides-USA","enabled":true,"sort":1,"note":"Put your order number in the Venmo note."},
-    {"key":"cashapp","label":"Cash App","handle":"$inkfreak69","enabled":true,"sort":2,"note":"Put your order number in the Cash App note."}]'::jsonb,
+  '[{"id":"venmo","label":"Venmo","enabled":true,"sort":1,"account":"@Patriot-peptides-USA","accountLabel":"Send to","instructions":"Put your order number (PP-O…) in the Venmo note so we can match it fast.","discountPercent":0},
+    {"id":"cashapp","label":"Cash App","enabled":true,"sort":2,"account":"$inkfreak69","accountLabel":"Send to","instructions":"Put your order number (PP-O…) in the Cash App note.","discountPercent":0}]'::jsonb,
   true, 'Patriot-peptides-USA', 'Put your order number (PP-O…) in the Venmo note so we can match it fast.', now())
 on conflict (id) do update set
   payment_methods = excluded.payment_methods, venmo_enabled = excluded.venmo_enabled,

@@ -128,6 +128,7 @@ ${smsOn ? (has && !smsCustom ? `<p class="muted small">Texts go to ${esc(P.fmtPh
         stat.className = "status"; stat.innerHTML = `<span class="addrneed">${P.icon("pin", 20)}<span><b>One more step before we can ship.</b> Please add your shipping address to your account, then come back to place the order.</span><a class="btn primary sm" href="account.html?return=cart#profile">Add shipping address</a></span>`;
         btn.disabled = false; btn.textContent = `Place order · ${money(totals().due)}`; busy = false; return;
       }
+      if (!pay) throw new Error("Choose how you'd like to pay (Venmo or Cash App) before placing your order.");
       const smsTo = smsOn ? (P.usPhone(profile?.phone) && !smsCustom ? P.usPhone(profile.phone) : P.usPhone(smsPhone)) : "";
       if (smsOn && !smsTo) throw new Error("Enter a 10-digit mobile number for texts, or uncheck the text box.");
       const rewardChoices = [...document.querySelectorAll("[data-choice]")].map(s => ({ promotionId: s.dataset.choice, productKey: s.value }));

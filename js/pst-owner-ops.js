@@ -349,7 +349,7 @@ ${st.k !== "dead" && nm(pStatus(o)) === "paid" ? btn("refund", "Mark refunded", 
 <div class="pm2"><label>First name<input name="first_name" required autocomplete="off"></label><label>Last name<input name="last_name" required autocomplete="off"></label></div>
 <div class="pm2"><label>Phone<input name="phone" type="tel" inputmode="tel" autocomplete="off"></label><label>Email<input name="email" type="email" inputmode="email" autocomplete="off"></label></div>
 <label>Researcher type<select name="research_role" required><option>Independent Researcher</option><option>Academic Researcher</option><option>Laboratory</option><option>Clinic / Practice</option><option>Other</option></select></label>
-<label>Street address<input name="shipping_address" autocomplete="off"></label><div class="pm2"><label>City<input name="shipping_city"></label><label>State<input name="shipping_state" maxlength="20" value="TX"></label></div><label>ZIP<input name="shipping_zip" inputmode="numeric" maxlength="10"></label>
+<label>Street address<input name="shipping_address" autocomplete="off"></label><div class="pm2"><label>City<input name="shipping_city"></label><label>State${P.stateSelect("shipping_state", "")}</label></div><label>ZIP<input name="shipping_zip" inputmode="numeric" maxlength="10"></label>
 <label class="toggle"><input type="checkbox" name="marketing_opt_in"> They said yes to deals and restock emails</label>
 <label>Notes (only you see these)<input name="admin_notes" maxlength="500"></label>
 <p class="status" data-acs role="status"></p><button class="btn primary wide" type="submit">Save customer</button></form>`, { label: "Add customer" });
