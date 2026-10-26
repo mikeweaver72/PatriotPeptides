@@ -82,3 +82,9 @@ body.has-appbar .ownerchip{bottom:calc(150px + env(safe-area-inset-bottom))}
 .vialshot::before,.vialshot::after{content:"";position:absolute;left:0;right:0;height:22%;pointer-events:none}
 .vialshot::before{top:0;background:linear-gradient(180deg,var(--bg),rgba(10,16,32,0))}.vialshot::after{bottom:0;background:linear-gradient(0deg,var(--bg) 30%,rgba(10,16,32,0))}
 .vialshot .kick{position:absolute;left:0;right:0;bottom:14px;text-align:center;margin:0;z-index:1}.vialshot .kick::before{content:""}
+/* faint "USA" watermark behind the benefits band and the catalog/pages body: huge, cropped at the edge, barely there */
+.band{position:relative;overflow:hidden}
+.band::before{content:"USA";position:absolute;right:-6vw;top:50%;transform:translateY(-50%);font:400 clamp(220px,62vw,520px)/1 "Archivo Black","Arial Black",Impact,sans-serif;letter-spacing:-.02em;color:#fff;opacity:.035;pointer-events:none;user-select:none;z-index:0}
+.band>*{position:relative;z-index:1}
+body[data-page=catalog] main,body[data-page=product] main,body[data-page=account] main,body[data-page=cart] main{position:relative;isolation:isolate}
+body[data-page=catalog] main::before,body[data-page=product] main::before,body[data-page=cart] main::before,body[data-page=account] main::before{content:"USA";position:absolute;left:-8vw;top:38vh;font:400 clamp(260px,80vw,700px)/1 "Archivo Black","Arial Black",Impact,sans-serif;letter-spacing:-.02em;color:#fff;opacity:.028;pointer-events:none;user-select:none;z-index:-1;writing-mode:vertical-rl;transform:rotate(180deg)}
