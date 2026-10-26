@@ -105,7 +105,7 @@ ${due.length ? due.map(d => `<div class="dueitem"><div><b>${esc(d.x.product_name
     const pref = String(profile?.communication_preference || "email").toLowerCase();
     const mk = profile?.marketing_opt_in === true || String(profile?.marketing_opt_in) === "true";
     el.innerHTML = `<h2 class="serif" style="font-size:2rem">Profile</h2>
-<form class="form" data-form="profile"><div class="g2"><label>First name<input name="first_name" value="${v("first_name")}" autocomplete="given-name"></label><label>Last name<input name="last_name" value="${v("last_name")}" autocomplete="family-name"></label></div>
+<form class="form" data-form="profile">${P.params.get("return") === "cart" ? `<p class="status ok" style="margin:0 0 12px">Please fill in your shipping address below and tap <b>Save profile</b>. We'll bring you straight back to your bag.</p>` : ""}<div class="g2"><label>First name<input name="first_name" value="${v("first_name")}" autocomplete="given-name"></label><label>Last name<input name="last_name" value="${v("last_name")}" autocomplete="family-name"></label></div>
 <div class="g2"><label>Email<input name="email" type="email" value="${esc(profile?.email || user.email || "")}" autocomplete="email"></label><label>Mobile<input name="phone" value="${v("phone")}" inputmode="tel" autocomplete="tel"></label></div>
 
 <fieldset><legend>Shipping address</legend><label>Street<input name="shipping_address" value="${esc(profile?.shipping_address || profile?.address_line1 || profile?.billing_address || "")}" autocomplete="shipping street-address"></label>
@@ -138,6 +138,7 @@ ${due.length ? due.map(d => `<div class="dueitem"><div><b>${esc(d.x.product_name
       const smsOn = !!f.elements.sms_opt_in?.checked, smsWas = profile?.sms_opt_in === true, ph = P.usPhone(g("phone"));
       if (smsOn !== smsWas || (smsOn && ph && P.usPhone(profile?.sms_phone) !== ph)) { const r4 = await P.client().rpc("pst_sms_consent", { p_on: smsOn, p_phone: ph || null, p_source: "account", p_text: smsOn ? P.SMS_CONSENT : null }); if (r4.error) throw r4.error; profile = { ...profile, sms_opt_in: smsOn, sms_phone: smsOn ? "+1" + ph : profile?.sms_phone }; }
       const cp = g("communication_preference"); if (cp && cp !== profile?.communication_preference) { const r3 = await P.client().from("customer_profiles").update({ communication_preference: cp }).eq("user_id", user.id).select("*").maybeSingle(); if (!r3.error && r3.data) profile = r3.data; }
+      if (P.params.get("return") === "cart" && g("shipping_address")) { notice(st, "Shipping address saved. Taking you back to your bag…", "ok"); setTimeout(() => { location.href = "cart.html"; }, 900); return; }
       notice(st, "Profile saved.", "ok");
     } catch (err) { notice(st, "Couldn't save: " + (err.message || err), "err"); }
     finally { b.disabled = false; b.textContent = "Save profile"; }

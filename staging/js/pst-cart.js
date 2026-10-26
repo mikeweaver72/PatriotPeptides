@@ -124,7 +124,10 @@ ${smsOn ? (has && !smsCustom ? `<p class="muted small">Texts go to ${esc(P.fmtPh
     if (busy) return; busy = true; P.track("checkout_start", { value: totals().due });
     const stat = $("[data-placestat]"); btn.disabled = true; btn.textContent = "Placing order…"; stat.textContent = ""; stat.className = "status";
     try {
-      if (delivery === "ship" && !(profile?.shipping_address || profile?.address1 || profile?.address)) throw new Error("Add a shipping address in your account first.");
+      if (delivery === "ship" && !(profile?.shipping_address || profile?.address1 || profile?.address)) {
+        stat.className = "status"; stat.innerHTML = `<span class="addrneed">${P.icon("pin", 20)}<span><b>One more step before we can ship.</b> Please add your shipping address to your account, then come back to place the order.</span><a class="btn primary sm" href="account.html?return=cart#profile">Add shipping address</a></span>`;
+        btn.disabled = false; btn.textContent = `Place order · ${money(totals().due)}`; busy = false; return;
+      }
       const smsTo = smsOn ? (P.usPhone(profile?.phone) && !smsCustom ? P.usPhone(profile.phone) : P.usPhone(smsPhone)) : "";
       if (smsOn && !smsTo) throw new Error("Enter a 10-digit mobile number for texts, or uncheck the text box.");
       const rewardChoices = [...document.querySelectorAll("[data-choice]")].map(s => ({ promotionId: s.dataset.choice, productKey: s.value }));

@@ -52,3 +52,7 @@ h1.serif{font-size:clamp(1.9rem,6vw,3.2rem);line-height:1.05}h2.serif{font-size:
 .pmform .toggle,.osheet .toggle{align-items:center}.pmform .toggle small,.osheet .toggle small{display:block;color:var(--dim);font-size:12px;margin-top:2px}
 /* bigger selects and number fields in owner forms too */
 .pmform select,.osheet select,.pmform input,.osheet input{min-height:48px;font-size:16px}
+
+/* checkout: friendly "add your address" prompt */
+.addrneed{display:grid;grid-template-columns:auto 1fr;gap:10px 12px;align-items:start;text-align:left;background:var(--card);border:1px solid var(--line2);border-left:3px solid var(--gold);padding:12px 14px;border-radius:8px;color:var(--ink);font-size:14px;line-height:1.45}
+.addrneed .btn{grid-column:2;justify-self:start;margin-top:4px}
