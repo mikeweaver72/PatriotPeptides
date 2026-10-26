@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /owner.html
+Sitemap: https://www.patriotpeptides-usa.com/sitemap.xml
