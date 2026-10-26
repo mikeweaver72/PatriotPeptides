@@ -61,6 +61,7 @@ delete from public.product_key_aliases where migration_label = 'pstp_item_number
 create table if not exists public.ppu_admin_allowlist (email text primary key, note text, created_at timestamptz not null default now());
 insert into public.ppu_admin_allowlist (email, note) values
   ('owner@patriotpeptides-usa.com', 'Jeff · owner'),
+  ('patriotpepps@gmail.com', 'Jeff · owner (day-to-day email)'),
   ('mike.weaver2013@gmail.com', 'Mike · build/support')
 on conflict (email) do nothing;
 alter table public.ppu_admin_allowlist enable row level security;
