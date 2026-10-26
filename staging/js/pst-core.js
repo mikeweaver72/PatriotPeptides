@@ -898,6 +898,7 @@ ${prefs ? `<p class="kick" style="margin:22px 0 6px">What you'll hear about</p><
   /* app bar: a slim "get the app" card for phone browsers (dismiss = 3 weeks) */
   function appBar() {
     if (isStandalone() || !/iphone|ipad|ipod|android/i.test(navigator.userAgent) || /install\.html$/.test(location.pathname)) return;
+    try { if (params.get("from") === "owner" || sessionStorage.getItem("ppu_from_owner") === "1") return; } catch {} // the owner peeking at the shop doesn't need the install card
     if (!["home", "catalog", "product", "account"].includes(document.body.dataset.page || "")) return;
     if (Date.now() - store.get("pst_appbar_x", 0) < 21 * 864e5 || store.get("pst_app_installed", 0)) return;
     document.body.insertAdjacentHTML("beforeend", `<div class="appbar" data-appbar role="region" aria-label="Get the app"><img src="icons/icon-192.png" alt="" width="40" height="40"><span><b>Patriot Peptides USA app</b><small>Signed in, order alerts, reorder in two taps</small></span><a class="btn primary sm" href="install.html">Get it</a><button type="button" class="ax" data-act="appbar-x" aria-label="Not now">${icon("x", 16)}</button></div>`);
