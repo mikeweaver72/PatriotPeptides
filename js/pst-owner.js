@@ -501,33 +501,34 @@ ${stale.length ? `<div class="notice">${stale.length} protocol${stale.length ===
     if (o.dataset.o === "refresh") { o.disabled = true; await load(); o.disabled = false; P.toast("Up to date"); }
     if (o.dataset.o === "push") { try { if (await P.enablePush("owner")) { P.toast("Alerts are on"); alertsCard(); if (view === "more") P.notifyPanel($("[data-nal]"), "owner"); } } catch (err) { P.toast(err.message); } }
   }
+  /* v1.1: pull down to refresh. Re-reads the current pane and checks for an app update. */
+  window.PSTRefresh = async () => {
+    const jobs = [load().catch(() => {}), P.refreshBell?.()];
+    if (view === "products") { pmLoaded = true; jobs.push(pmList()); }
+    if (view === "customers") jobs.push(PSTOps.customersPane($("[data-custs]")));
+    if (view === "more") moreHome();
+    try { const reg = await navigator.serviceWorker?.getRegistration?.(); reg?.update?.().catch(() => {}); } catch { /* no sw */ }
+    await Promise.all(jobs.filter(Boolean));
+  };
   document.addEventListener("DOMContentLoaded", boot);
 })();
-/* v5.11: tab bar stays on the bottom edge on iPhone (report #6).
-   iOS can leave a fixed bar where the keyboard pushed it, so it floats mid-screen while scrolling.
-   While typing on a phone the bar steps aside; after the keyboard closes it is snapped back to the bottom
-   of what's actually on screen. Nothing else in the app changes. */
+/* v1.1: pull-to-refresh, iOS style: the page itself follows your finger with rubber-band resistance and a small
+   activity spinner sits in the gap; let go past the line and it refreshes. Home Screen apps have no browser refresh. */
 (() => {
-  const vv = window.visualViewport, root = document.documentElement;
-  const coarse = window.matchMedia ? matchMedia("(pointer:coarse)") : { matches: false };
-  const isField = el => !!el && el.matches?.('textarea,select,[contenteditable="true"],input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]):not([type=reset]):not([type=file]):not([type=range]):not([type=color])');
-  let raf = 0;
-  const pin = () => {
-    raf = 0;
-    const bar = document.querySelector(".otabbar"); if (!bar) return;
-    const typing = coarse.matches && isField(document.activeElement);
-    root.classList.toggle("okb", typing);
-    let gap = 0;
-    if (vv && !typing && Math.abs(vv.scale - 1) < 0.01) gap = Math.max(0, Math.round(vv.offsetTop + vv.height - window.innerHeight)); // only ever push it down to the real bottom, never up
-    bar.style.transform = gap ? `translate3d(0,${gap}px,0)` : "";
-  };
-  const soon = () => { if (!raf) raf = requestAnimationFrame(pin); };
-  const settle = () => { soon(); [80, 300, 650].forEach(ms => setTimeout(() => { if (!isField(document.activeElement)) window.scrollTo(window.scrollX, window.scrollY); soon(); }, ms)); };
-  document.addEventListener("focusin", e => { if (isField(e.target)) soon(); });
-  document.addEventListener("focusout", e => { if (isField(e.target)) settle(); });
-  if (vv) { vv.addEventListener("resize", soon); vv.addEventListener("scroll", soon); }
-  window.addEventListener("scroll", soon, { passive: true });
-  window.addEventListener("orientationchange", settle);
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) settle(); });
-  window.PSTTabPin = pin;
+  const THRESH = 70, MAX = 110; let y0 = 0, d = 0, pulling = false, busy = false, spin, main;
+  const el = () => (main ||= document.getElementById("main"));
+  const ui = () => { if (spin) return spin; spin = document.createElement("div"); spin.className = "iosptr"; spin.innerHTML = `<svg viewBox="0 0 24 24" width="24" height="24">${[...Array(12)].map((_, i) => `<rect x="11" y="2" width="2" height="6" rx="1" transform="rotate(${i * 30} 12 12)" style="--i:${i}"/>`).join("")}</svg>`; document.body.prepend(spin); return spin; };
+  const can = e => !busy && window.scrollY <= 0 && !document.querySelector(".sheet, .osheet, dialog[open]") && !e.target.closest("input,textarea,select,[data-noptr]");
+  const ease = raw => Math.min(MAX, raw * 0.55 + (raw > THRESH ? 0 : 0)); // rubber band: 55% of finger travel, capped
+  const draw = () => { const m = el(), b = ui(); m.style.transform = d ? `translate3d(0,${d}px,0)` : ""; m.style.transition = pulling ? "none" : "transform .28s cubic-bezier(.2,.8,.2,1)"; b.style.setProperty("--p", Math.min(1, d / THRESH)); b.style.opacity = d > 6 ? 1 : 0; b.classList.toggle("armed", d >= THRESH); };
+  document.addEventListener("touchstart", e => { if (!can(e)) return; y0 = e.touches[0].clientY; pulling = true; d = 0; }, { passive: true });
+  document.addEventListener("touchmove", e => { if (!pulling) return; const raw = e.touches[0].clientY - y0; if (raw <= 0 || window.scrollY > 0) { d = 0; draw(); return; } d = ease(raw); draw(); }, { passive: true });
+  document.addEventListener("touchend", async () => {
+    if (!pulling) return; pulling = false;
+    if (d < THRESH) { d = 0; draw(); return; }
+    busy = true; d = 52; const b = ui(); b.classList.add("busy"); draw(); try { navigator.vibrate?.(8); } catch { /* ios */ }
+    try { await (window.PSTRefresh ? window.PSTRefresh() : Promise.resolve()); } catch { /* panes show their own errors */ }
+    setTimeout(() => { d = 0; b.classList.remove("busy", "armed"); draw(); busy = false; }, 250);
+  });
+  document.addEventListener("touchcancel", () => { pulling = false; d = 0; draw(); });
 })();

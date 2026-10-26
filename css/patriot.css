@@ -62,3 +62,11 @@ select.stsel{width:100%;min-height:48px;font-size:16px;background:var(--card);co
 
 /* v5.11 (from PST): tab bar steps aside while typing on a phone, so iOS cannot strand it mid-screen */
 html.okb .otabbar{display:none}
+
+/* pull-to-refresh, iOS style (owner app): page slides down, 12-spoke activity indicator in the gap */
+body.oapp #main{will-change:transform}
+.iosptr{--p:0;position:fixed;top:calc(env(safe-area-inset-top) + 14px);left:50%;transform:translateX(-50%) scale(calc(.6 + .4 * var(--p)));opacity:0;transition:opacity .12s;z-index:9998;pointer-events:none;color:var(--muted)}
+.iosptr svg rect{fill:currentColor;opacity:calc(.15 + .85 * clamp(0, (var(--p) * 12 - var(--i)), 1))}
+.iosptr.armed{color:var(--ink)}
+.iosptr.busy svg{animation:iosspin 1s steps(12) infinite}.iosptr.busy svg rect{opacity:calc(.15 + .85 * ((12 - var(--i)) / 12))}
+@keyframes iosspin{to{transform:rotate(360deg)}}
