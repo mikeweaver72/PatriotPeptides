@@ -34,8 +34,7 @@ h1.serif{font-size:clamp(1.9rem,6vw,3.2rem);line-height:1.05}h2.serif{font-size:
 .hero,.home-hero,#hero{background:var(--bg) url("../img/flag-texture.jpg") center/cover no-repeat;position:relative}
 .hero::before,.home-hero::before,#hero::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(10,16,32,.94) 0 36%,rgba(10,16,32,.35) 72%,rgba(10,16,32,.7));pointer-events:none}
 .hero>*,.home-hero>*,#hero>*{position:relative}
-/* faint shield/star silhouettes behind sections */
-.band,.sec,section.blk{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='360' viewBox='0 0 360 360'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.05' stroke-width='2'%3E%3Cpath transform='translate(20 30) scale(1.1)' d='M60 4 C75 11 90 13 106 12 L106 54 C106 85 86 105 60 117 C34 105 14 85 14 54 L14 12 C30 13 45 11 60 4 Z'/%3E%3Cpath transform='translate(210 200) scale(0.8)' d='M60 4 C75 11 90 13 106 12 L106 54 C106 85 86 105 60 117 C34 105 14 85 14 54 L14 12 C30 13 45 11 60 4 Z'/%3E%3C/g%3E%3Cg fill='%23ffffff' fill-opacity='0.045'%3E%3Cpolygon transform='translate(230 20) scale(0.6)' points='60,38 65.2,52.9 80.9,53.2 68.4,62.7 72.9,77.8 60,68.8 47.1,77.8 51.6,62.7 39.1,53.2 54.8,52.9'/%3E%3Cpolygon transform='translate(40 230) scale(0.45)' points='60,38 65.2,52.9 80.9,53.2 68.4,62.7 72.9,77.8 60,68.8 47.1,77.8 51.6,62.7 39.1,53.2 54.8,52.9'/%3E%3C/g%3E%3C/svg%3E")}
+/* (faint shield/star background pattern removed: it read as drifting icons on phones) */
 /* owner app accents */
 .owner .tab.on,.otabs a.on{color:#fff;border-color:var(--red)}
 .pill.on,.chip.on{background:var(--navy);border-color:var(--navy);color:#fff}
