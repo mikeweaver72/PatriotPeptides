@@ -142,22 +142,23 @@
   // Mike's rules (Oct 2026): what the liquid below the label looks like. Everything else shows the white powder cake.
   const LIQUID = [[/^b-?12\b/i, "#a3122a"], [/ghk-?cu|^glow\b|^klow\b/i, "#1f5fc4"], [/5-?amino/i, "#f1b67c"]];
   const vialLiquid = p => (LIQUID.find(([re]) => re.test(String(p.display_name || ""))) || [])[1] || "";
-  const vialSig = p => [p.product_key, vialName(p), vialStrength(p), vialHex(p), vialLiquid(p)].join("|");
+  const vialSig = p => ["ppu2", p.product_key, vialName(p), vialStrength(p), vialHex(p), vialLiquid(p)].join("|");
   const vialCache = new Map(); let vialAssets = null; const vialByKey = new Map();
   const loadImg = src => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; });
   function vialAssetsP() {
     return vialAssets || (vialAssets = Promise.all([loadImg("img/vial-base.webp"), loadImg("img/vial-shade.png"), loadImg("img/vial-stock.png"), fetch("img/vial.json").then(r => r.json()),
-      document.fonts.load("700 40px PSTLabel"), document.fonts.load("17px PSTLabelR")]).then(([base, shade, stock, m]) => ({ base, shade, stock, m })));
+      document.fonts.load("700 40px PSTLabel"), document.fonts.load("17px PSTLabelR"), loadImg("img/patriot-lockup.png")]).then(([base, shade, stock, m, , , lockup]) => ({ base, shade, stock, m, lockup })));
   }
   async function vialCanvas(p, S = 2) {
-    const { base, shade, stock, m } = await vialAssetsP(), col = vialHex(p), W = m.w * S, H = m.h * S;
+    const { base, shade, stock, m, lockup } = await vialAssetsP(), W = m.w * S, H = m.h * S;
     const mk = () => { const c = document.createElement("canvas"); c.width = W; c.height = H; return c; };
     const out = mk(), g = out.getContext("2d"); g.drawImage(base, 0, 0, W, H);
-    // color bands with the photo's metallic shading
-    const bandC = mk(), bg = bandC.getContext("2d"); bg.fillStyle = col; bg.fillRect(0, 0, W, H);
-    bg.globalCompositeOperation = "hard-light"; bg.drawImage(shade, 0, 0, W, H); bg.globalCompositeOperation = "destination-in"; bg.drawImage(shade, 0, 0, W, H);
-    g.drawImage(bandC, 0, 0);
-    // liquid below the label: tint the glass bottom, keeping the photo's light and shadow
+    const X = v => v * S, NAVY = "#12266E", RED = "#B22234";
+    // Patriot: blue cap like his bottles (tint the white cap, keeping the photo's shading)
+    { const capC = mk(), cc = capC.getContext("2d"); cc.drawImage(base, 0, 0, W, H); cc.globalCompositeOperation = "multiply"; cc.fillStyle = "#1D3FA6"; cc.fillRect(0, 0, W, X(118));
+      cc.globalCompositeOperation = "destination-in"; cc.drawImage(base, 0, 0, W, H);
+      g.save(); g.beginPath(); g.rect(0, 0, W, X(118)); g.clip(); g.globalAlpha = .9; g.drawImage(capC, 0, 0); g.restore(); }
+    // powder below the label: tint the glass bottom, keeping the photo's light and shadow
     const liq = vialLiquid(p);
     if (liq) {
       const y0 = (m.label[1] + m.label[3]) * S, liqC = mk(), lq = liqC.getContext("2d");
@@ -165,20 +166,23 @@
       lq.globalCompositeOperation = "destination-in"; lq.drawImage(base, 0, 0, W, H);
       g.save(); g.beginPath(); g.rect(0, y0, W, H - y0); g.clip(); g.globalAlpha = .92; g.drawImage(liqC, 0, 0); g.restore();
     }
-    // flat artwork: name, strength bar, research line, rule, vertical strength
-    const art = mk(), a = art.getContext("2d"), name = vialName(p), str = vialStrength(p), X = v => v * S;
-    let fs = m.name.size; a.font = `700 ${X(fs)}px PSTLabel`; while (a.measureText(name).width > X(m.name.maxW) && fs > 14) { fs--; a.font = `700 ${X(fs)}px PSTLabel`; }
-    a.fillStyle = "#121214"; a.textBaseline = "alphabetic"; a.fillText(name, X(m.name.x), X(m.name.y));
-    const barC = mk(), bb = barC.getContext("2d"); bb.fillStyle = col; bb.fillRect(X(m.bar.x), X(m.bar.y), X(m.bar.w), X(m.bar.h));
-    bb.globalCompositeOperation = "hard-light"; bb.drawImage(stock, 0, 0, W, H); bb.globalCompositeOperation = "destination-in"; bb.fillRect(X(m.bar.x), X(m.bar.y), X(m.bar.w), X(m.bar.h));
-    a.drawImage(barC, 0, 0);
-    a.fillStyle = "#fbfbfb"; a.font = `700 ${X(m.bar.text.size)}px PSTLabel`; a.textBaseline = "middle"; a.fillText(str, X(m.bar.text.x), X(m.bar.text.y));
-    a.fillStyle = "#222"; a.font = `${X(m.ruo.size)}px PSTLabelR`; a.textBaseline = "alphabetic"; a.fillText("For Research Use Only", X(m.ruo.x), X(m.ruo.y));
-    a.fillRect(X(m.rule.x), X(m.rule.y), Math.max(2, X(1.6)), X(m.rule.h));
-    if (m.rightBand) { a.save(); a.translate(X((m.rightBand[0] + m.rightBand[1]) / 2), X(m.vert.y)); a.rotate(Math.PI / 2); a.fillStyle = "#fbfbfb"; a.font = `700 ${X(m.vert.size)}px PSTLabel`; a.textAlign = "center"; a.textBaseline = "middle"; a.fillText(str, 0, 0); a.restore(); }
+    // flat artwork = Jeff's label: lockup, product code, purity | quality row, red "Not for human use" band, RESEARCH USE ONLY
+    const art = mk(), a = art.getContext("2d"), name = vialName(p), str = vialStrength(p);
+    const [LX, LY, LW, LH] = m.label, cx = LX + LW / 2;
+    a.fillStyle = "#fff"; a.fillRect(X(LX), X(LY), X(LW), X(LH));
+    const kw = LW * .62, kh = kw * lockup.height / lockup.width; a.drawImage(lockup, X(cx - kw / 2), X(LY + 12), X(kw), X(kh));
+    let fs = 46; a.font = `700 ${X(fs)}px PSTLabel`; while (a.measureText(name).width > X(LW - 28) && fs > 18) { fs--; a.font = `700 ${X(fs)}px PSTLabel`; }
+    a.fillStyle = NAVY; a.textAlign = "center"; a.textBaseline = "alphabetic"; a.fillText(name, X(cx), X(LY + 12 + kh + 50));
+    let y = LY + 12 + kh + 62;
+    if (str) { a.font = `700 ${X(18)}px PSTLabel`; a.fillStyle = RED; a.fillText(str, X(cx), X(y + 18)); y += 26; }
+    a.fillStyle = NAVY; a.fillRect(X(LX), X(y + 6), X(LW), X(1.5));
+    a.font = `700 ${X(11)}px PSTLabel`; a.fillStyle = NAVY; a.fillText("PURITY 99% HPLC", X(LX + LW * .28), X(y + 26)); a.fillText("QUALITY ASSURED", X(LX + LW * .72), X(y + 26));
+    a.fillRect(X(cx - .75), X(y + 12), X(1.5), X(18));
+    a.fillStyle = RED; a.fillRect(X(LX), X(y + 36), X(LW), X(22)); a.fillStyle = "#fff"; a.font = `700 ${X(12)}px PSTLabel`; a.textBaseline = "middle"; a.fillText("Not for human use", X(cx), X(y + 47));
+    a.fillStyle = NAVY; a.font = `700 ${X(14)}px PSTLabel`; a.textBaseline = "alphabetic"; a.fillText("RESEARCH USE ONLY", X(cx), X(Math.min(LY + LH - 8, y + 78)));
     // wrap the artwork around the bottle (cylinder) column by column
-    const [lx, ly, lw, lh] = m.label.map(X), cx = lx + lw / 2, half = lw / 2, ang = m.warpDeg * Math.PI / 180, rad = half / Math.sin(ang);
-    for (let x = 0; x < lw; x++) { const xs = x - half, src = rad * Math.asin(Math.max(-1, Math.min(1, xs / rad))) * (half / (rad * ang)) + cx; g.drawImage(art, src, ly, 1, lh, lx + x, ly, 1, lh); }
+    const [lx, ly, lw, lh] = m.label.map(X), wcx = lx + lw / 2, half = lw / 2, ang = m.warpDeg * Math.PI / 180, rad = half / Math.sin(ang);
+    for (let x = 0; x < lw; x++) { const xs = x - half, src = rad * Math.asin(Math.max(-1, Math.min(1, xs / rad))) * (half / (rad * ang)) + wcx; g.drawImage(art, src, ly, 1, lh, lx + x, ly, 1, lh); }
     return out;
   }
   // draw only as many pixels as the spot needs (thumbnails are ~10x cheaper), remember results across visits
@@ -207,7 +211,6 @@
     p.bottle_url = url; p.bottle_sig = sig; return url;
   }
   async function vialStudio(p, size = 1200) {
-    if (p?.image_file && /^img\/products\//.test(p.image_file)) return p.image_file;
     const [bgI, v] = await Promise.all([loadImg("img/vial-studio.webp"), vialCanvas(p, 3)]);
     const c = document.createElement("canvas"); c.width = c.height = size; const g = c.getContext("2d"); g.drawImage(bgI, 0, 0, size, size);
     const horizon = size * .8, s = (size * .7) / (v.height / 3), vw = v.width / 3 * s, vh = v.height / 3 * s, x = (size - vw) / 2, y = horizon - vh + 10 * s;
@@ -229,8 +232,8 @@
     .observe(document.documentElement, { childList: true, subtree: true });
   function vial(p, w = 110) {
     if (p?.product_key) vialByKey.set(p.product_key, p);
-    // Patriot: real product photos (img/products/<key>.webp) replace the drawn bottle when present
-    if (p?.image_file && /^img\/products\//.test(p.image_file)) { const h = Math.round(w * 200 / 120); return `<img class="vial vimg photo" src="${esc(p.image_file)}" width="${w}" height="${h}" alt="${esc(p.display_name)} ${esc(p.strength || "")} vial" loading="lazy" decoding="async">`; }
+    // Patriot: the drawn bottle carries Jeff's label design; his old product photos are only the fallback when drawing is off
+    if (!VIAL_ON && p?.image_file && /^img\/products\//.test(p.image_file)) { const h = Math.round(w * 200 / 120); return `<img class="vial vimg photo" src="${esc(p.image_file)}" width="${w}" height="${h}" alt="${esc(p.display_name)} ${esc(p.strength || "")} vial" loading="lazy" decoding="async">`; }
     if (VIAL_ON) {
       const alt = `${esc(p.display_name)} ${esc(p.strength || "")} vial`, h = Math.round(w * 200 / 120);
       if (p.bottle_url && p.bottle_sig === vialSig(p)) return `<img class="vial vimg" src="${esc(p.bottle_url)}" width="${w}" height="${h}" alt="${alt}" loading="lazy" decoding="async">`;
