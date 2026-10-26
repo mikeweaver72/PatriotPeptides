@@ -142,6 +142,8 @@
       L("Products: prices, sale tags, photos, lab reports and what shows on the home page", "#products"),
       L("Customers: look anyone up by name, PP-C number, phone or email; store credit and notes", "#customers"),
       L("Kit savings run automatically: 3 vials 5%, 5 vials 10%", ""),
+      L("Pull down from the top of any screen to refresh (it also picks up app updates)", ""),
+      L("Shop button, top right: see the site the way customers do; the Owner app chip brings you straight back", ""),
       L("Report a problem from the app with screenshots; fixes arrive as updates you approve here", "#help") ] },
   ];
   const NEXT = ["Text alerts to customers when an order ships (optional, if you turn texts on)", "Running-low reminders by email, not just phone alerts", "Sales and product reports you can download"];

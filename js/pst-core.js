@@ -1015,6 +1015,18 @@ ${rows.length ? `<div class="mbl">${rows.map(r => `<div class="mbr${r.key === ad
   const US_STATES = [["AL","Alabama"],["AK","Alaska"],["AZ","Arizona"],["AR","Arkansas"],["CA","California"],["CO","Colorado"],["CT","Connecticut"],["DE","Delaware"],["DC","District of Columbia"],["FL","Florida"],["GA","Georgia"],["HI","Hawaii"],["ID","Idaho"],["IL","Illinois"],["IN","Indiana"],["IA","Iowa"],["KS","Kansas"],["KY","Kentucky"],["LA","Louisiana"],["ME","Maine"],["MD","Maryland"],["MA","Massachusetts"],["MI","Michigan"],["MN","Minnesota"],["MS","Mississippi"],["MO","Missouri"],["MT","Montana"],["NE","Nebraska"],["NV","Nevada"],["NH","New Hampshire"],["NJ","New Jersey"],["NM","New Mexico"],["NY","New York"],["NC","North Carolina"],["ND","North Dakota"],["OH","Ohio"],["OK","Oklahoma"],["OR","Oregon"],["PA","Pennsylvania"],["RI","Rhode Island"],["SC","South Carolina"],["SD","South Dakota"],["TN","Tennessee"],["TX","Texas"],["UT","Utah"],["VT","Vermont"],["VA","Virginia"],["WA","Washington"],["WV","West Virginia"],["WI","Wisconsin"],["WY","Wyoming"],["PR","Puerto Rico"]];
   const stateCode = v => { const t = String(v || "").trim(); if (!t) return ""; const u = t.toUpperCase(); if (US_STATES.some(([c]) => c === u)) return u; const hit = US_STATES.find(([, n]) => n.toLowerCase() === t.toLowerCase()); return hit ? hit[0] : u.slice(0, 2); };
   const stateSelect = (name, value, extra = "") => { const cur = stateCode(value); return `<select name="${name}" class="stsel" ${extra}><option value="">State</option>${US_STATES.map(([c, n]) => `<option value="${c}"${c === cur ? " selected" : ""}>${c} · ${n}</option>`).join("")}</select>`; };
+  /* v1.1: owner ↔ shop toggle. Arriving from the owner app (index.html?from=owner) pins a small "Owner app" chip
+     above the tab bar on every shop page for this visit, so the owner can flip back without digging. */
+  function ownerChip() {
+    try {
+      if (params.get("from") === "owner") sessionStorage.setItem("ppu_from_owner", "1");
+      if (sessionStorage.getItem("ppu_from_owner") !== "1" || document.body.dataset.page === "owner") return;
+      const a = document.createElement("a"); a.href = "owner.html"; a.className = "ownerchip"; a.setAttribute("aria-label", "Back to the owner app");
+      a.innerHTML = `${icon("gear", 16)}<span>Owner app</span>`; a.addEventListener("click", () => { try { sessionStorage.removeItem("ppu_from_owner"); } catch {} });
+      document.body.appendChild(a);
+    } catch { /* private mode */ }
+  }
+  document.addEventListener("DOMContentLoaded", ownerChip);
   window.PST = { US_STATES, stateCode, stateSelect, kitInfo, SMS_CONSENT, usPhone, fmtPhone, PREVIEW, lockScroll, CFG, FOCUS, REMIND, $, $$, esc, money, round, params, store, fmtDate, isStandalone, isIOS, client, getUser, getProfile, isAdmin, customerName, firstName,
     products, groups, cycles, suggestDays, myHistory, myProducts, isDone, handedOff, stageOf, vialLiquid, paidNotice, gIn, gBest, gMin, unitPrice, onSale, qty, stock, focuses, isBlend, titleParts, productUrl, coaHref, vial, cmpProduct,
     readCart, writeCart, addToCart, setQty, count, refreshCount, cartRows, reminders, setReminder,
