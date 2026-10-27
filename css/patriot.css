@@ -162,3 +162,8 @@ body.kdragging{cursor:grabbing;user-select:none;-webkit-user-select:none}
 .cmpqty{display:flex;align-items:center;gap:12px;margin-top:10px;justify-content:flex-end}.cmpqty button{width:44px;height:44px;border-radius:50%;border:1px solid var(--line2);background:var(--bg);color:inherit;font-size:22px}.cmpqty b{min-width:24px;text-align:center;font-size:18px}
 .cmpbar{position:sticky;bottom:calc(70px + env(safe-area-inset-bottom));display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--bg2,var(--bg));border:1px solid var(--gold);border-radius:10px;padding:10px 12px;box-shadow:0 8px 24px rgba(0,0,0,.35);z-index:5}.cmpbar>span{flex:1 1 100%;font-size:14px}
 .cmpnote{margin:6px 0 12px}.cmpnote summary{cursor:pointer;color:var(--muted);font-size:13px}
+
+/* COA lookup */
+.coaform{display:grid;gap:12px;margin:18px 0;background:var(--card,var(--bg2));border:1px solid var(--line2);border-radius:10px;padding:16px}.coaform label{display:grid;gap:6px;font-weight:600;font-size:14px}.coaform input{font-size:16px;padding:12px;border-radius:6px;border:1px solid var(--line2);background:var(--bg);color:inherit}
+.coabtns{display:flex;gap:10px;flex-wrap:wrap}.coares{display:grid;gap:8px;margin:0 0 18px}.coarow{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--card,var(--bg2));border:1px solid var(--line2);border-radius:8px;padding:12px}.coarow small{display:block;color:var(--muted)}
+@media(min-width:720px){.coaform{grid-template-columns:repeat(3,1fr)}.coabtns{grid-column:1/-1}}
