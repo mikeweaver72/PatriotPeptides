@@ -1,3 +1,5 @@
+// Patriot: until GitHub "Enforce HTTPS" is on, send http visitors to https (the app, sign-in and alerts need it)
+if (location.protocol === "http:" && /(^|\.)patriotpeptides-usa\.com$/i.test(location.hostname)) location.replace("https://" + location.host + location.pathname + location.search + location.hash);
 /* Patriot Peptides USA · Old Glory storefront core (v1, Oct 2026)
    Same Supabase project, tables, RPCs, cart key (ppu_cart_v1) and order flow as the original app.js,
    so admin.html, order emails, store credit, rewards and discounts keep working untouched. */
