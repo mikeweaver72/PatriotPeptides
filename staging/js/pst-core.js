@@ -785,7 +785,7 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
   function registerSW() {
     if (!("serviceWorker" in navigator) || location.protocol !== "https:") return;
     if (PREVIEW) { navigator.serviceWorker.getRegistrations?.().then(rs => rs.forEach(r => r.unregister())).catch(() => {}); previewBanner(); return; } // previews never install or cache
-    const sw = navigator.serviceWorker, hadController = !!sw.controller;
+    const sw = navigator.serviceWorker; let hadController = !!sw.controller;
     let pending = false, last = 0;
     // Patriot v1.2: updates apply on their own. Never mid-form: if he's typing or has a sheet open, the update waits and
     // applies itself the moment he's done (form closed, nothing focused) or the app goes to the background. No tap needed.
@@ -795,7 +795,7 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
     let idleT = 0; const whenIdle = () => { if (!pending) return; clearTimeout(idleT); idleT = setTimeout(() => { if (pending && (document.hidden || !busy())) go(); }, 1500); };
     ["focusout", "click", "touchend", "keyup"].forEach(ev => document.addEventListener(ev, whenIdle, { passive: true }));
     setInterval(() => { if (pending && !busy()) go(); }, 5000);
-    sw.addEventListener("controllerchange", () => { if (hadController) reload(); });
+    sw.addEventListener("controllerchange", () => { if (hadController) reload(); hadController = true; }); // first-ever install just takes over quietly; every later one applies
     sw.register("sw.js", { updateViaCache: "none" }).then(reg => {
       const check = (force) => { if (force || Date.now() - last > 15000) { last = Date.now(); reg.update().catch(() => {}); } };
       if (reg.waiting) reg.waiting.postMessage({ type: "skip" });
