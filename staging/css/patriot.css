@@ -175,3 +175,5 @@ html.nostock .stockonly{display:none!important}
 /* Sign out where people look for it: account header + menu */
 .hello{display:flex;align-items:center;gap:14px;flex-wrap:wrap}.hello>div{min-width:0;flex:1 1 auto}.hello h1{overflow-wrap:anywhere}.hello .hsign{margin-left:auto;flex:none}
 .dsign{display:grid;gap:8px;margin:14px 0 6px;padding-top:14px;border-top:1px solid var(--line2)}.dsign span{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+/* Desktop: "Add to this order" wraps into a grid instead of a hidden-scrollbar strip a mouse can't scroll (phones keep the swipe row) */
+@media (min-width:760px){.addmore .row{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));overflow:visible}.addmore .amc{flex:none;min-width:0}}
