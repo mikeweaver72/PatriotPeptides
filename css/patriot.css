@@ -204,3 +204,6 @@ html.nostock .stockonly{display:none!important}
 .nav .mmb span{font-size:.8em;line-height:1;transform:translateY(-1px)}
 /* Top bar: "Free shipping over $200" stays together and drops to its own line on narrow phones */
 .annc .nw{white-space:nowrap;display:inline-block}
+/* The Patriot shield is not round: no circle crop, no gold ring (both were PST's round medal). Soft glow instead. */
+.medal{border-radius:0;box-shadow:none;object-fit:contain;filter:drop-shadow(0 18px 40px rgba(0,0,0,.55)) drop-shadow(0 0 30px rgba(29,63,166,.35))}
+.brand img,.hello img{border-radius:0;object-fit:contain}
