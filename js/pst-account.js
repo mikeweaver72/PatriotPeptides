@@ -42,7 +42,7 @@
     }
     mine = await P.myProducts(await P.myHistory(user)).catch(() => []);
     const due = mine.filter(m => !m.inProgress && m.left <= 7).map(m => ({ days: m.left }));
-    root.innerHTML = `<div class="hello"><img src="img/pst-emblem-96.webp" width="52" height="52" alt=""><div><small>${esc(profile?.customer_number ? "Customer PP-C" + profile.customer_number : "My account")}</small><h1 class="serif" style="font-size:2.2rem;margin:0">Hi, ${esc(P.firstName(profile, user))}</h1></div><button class="btn ghost sm hsign" type="button" data-signout>Sign out</button></div>
+    root.innerHTML = `<div class="hello"><img src="img/pst-emblem-96.webp" width="52" height="52" alt=""><div><small>${esc(profile?.customer_number ? "Customer PP-C" + profile.customer_number : "My account")}</small><h1 class="serif" style="font-size:2.2rem;margin:0">Hi, ${esc(P.firstName(profile, user))}</h1></div><button class="btn ghost sm hsign" type="button" data-signout>Sign out</button></div>${admin ? `<a class="ownercta" href="owner.html"><span class="oc-ic">${P.icon("box", 20)}</span><span><b>Open the owner app</b><small>Orders, payments, customers, products</small></span><span class="oc-go">›</span></a>` : ""}
 <div class="acct"><nav class="atabs" aria-label="Account sections">${[["orders", "Orders"], ["running-low", `Running low${due.filter(d => d.days <= 7).length ? ` (${due.filter(d => d.days <= 7).length})` : ""}`], ["rewards", "Rewards"], ["profile", "Profile"], ["alerts", "Notifications"]].map(([k, t]) => `<button class="tab" type="button" data-tab="${k}">${t}</button>`).join("")}</nav><div data-pane></div></div>`;
     root.addEventListener("click", accountClick);
     showTab((location.hash || "#orders").slice(1));

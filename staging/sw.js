@@ -1,7 +1,7 @@
 /* Patriot Peptides USA service worker (v4: pages always revalidate so uploads show up right away; v3: tells open pages when an alert arrives so the bell updates). Network-first pages, cached static files, push alerts.
    Admin pages and every Supabase call always go straight to the network. */
-const V = "ppu-v39";
-const CORE = ["offline.html", "css/pst-bl.css?v=510", "css/patriot.css?v=26", "js/pst-core.js?v=528", "img/pst-emblem-96.webp", "img/pst-emblem-192.webp", "icons/icon-192.png", "icons/badge-96.png"];
+const V = "ppu-v40";
+const CORE = ["offline.html", "css/pst-bl.css?v=510", "css/patriot.css?v=27", "js/pst-core.js?v=528", "img/pst-emblem-96.webp", "img/pst-emblem-192.webp", "icons/icon-192.png", "icons/badge-96.png"];
 const ADMIN = /\/(admin|admin-coa|inventory|products|promotions|reports|customers|discounts|manual-order|availability-requests|bulk-requests)\.html$/;
 self.addEventListener("install", e => { e.waitUntil(caches.open(V).then(c => c.addAll(CORE)).then(() => self.skipWaiting())); });
 self.addEventListener("message", e => { if (e.data && e.data.type === "skip") self.skipWaiting(); });
