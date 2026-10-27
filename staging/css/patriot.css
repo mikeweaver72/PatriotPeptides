@@ -198,3 +198,7 @@ html.nostock .stockonly{display:none!important}
 .eact{margin-top:12px}
 .esent{display:flex;align-items:center;gap:12px;margin-top:12px;padding:12px 14px;border-radius:12px;background:#0f8a3b;color:#fff}.esent>svg{flex:none}.esent span{flex:1}.esent b{display:block;color:#fff}.esent small{display:block;color:rgba(255,255,255,.9)}
 .esent .btn.primary{background:#fff;color:#0f8a3b;border-color:#fff}
+/* Desktop header: "Shop ▾" on one line, same size and baseline as the other links */
+.nav .mm{display:flex;align-items:center}
+.nav .mmb{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-size:inherit;line-height:inherit;letter-spacing:inherit;color:inherit}
+.nav .mmb span{font-size:.8em;line-height:1;transform:translateY(-1px)}
