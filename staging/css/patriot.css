@@ -202,3 +202,5 @@ html.nostock .stockonly{display:none!important}
 .nav .mm{display:flex;align-items:center}
 .nav .mmb{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-size:inherit;line-height:inherit;letter-spacing:inherit;color:inherit}
 .nav .mmb span{font-size:.8em;line-height:1;transform:translateY(-1px)}
+/* Top bar: "Free shipping over $200" stays together and drops to its own line on narrow phones */
+.annc .nw{white-space:nowrap;display:inline-block}

@@ -736,7 +736,7 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
       else { $("#drawer nav")?.insertAdjacentHTML("afterend", `<div class="dsign"><a class="btn primary wide" href="login.html">Sign in</a><a class="btn ghost wide" href="register.html">Create account</a></div>`); }
       if (!u) a.href = `login.html?redirect=${encodeURIComponent((location.pathname.split("/").pop() || "index.html") + location.search)}`;
       const promo = await activePromotion(u).catch(() => null), el = $("[data-annc]");
-      if (el) { el.innerHTML = promo ? `<span>${promo.badge ? `<b>${esc(promo.badge)}</b> ` : ""}${esc(promo.title)}</span>${promo.button_link ? `<a href="${esc(promo.button_link)}">${esc(promo.button_text || "Learn more")} →</a>` : ""}` : `<span><a href="kit.html"><b>Build a kit</b> 3 vials 5% <i>★</i> 5 vials 10%</a> <i>★</i> Free shipping over $200<span class="lg"> <i>★</i> Third-party tested</span></span>`; el.hidden = false; }
+      if (el) { el.innerHTML = promo ? `<span>${promo.badge ? `<b>${esc(promo.badge)}</b> ` : ""}${esc(promo.title)}</span>${promo.button_link ? `<a href="${esc(promo.button_link)}">${esc(promo.button_text || "Learn more")} →</a>` : ""}` : `<span><a href="kit.html" class="nw"><b>Build a kit</b> 3 vials 5% <i>★</i> 5 vials 10%</a> <span class="nw"><i>★</i> Free shipping over $200</span><span class="lg"> <i>★</i> Third-party tested</span></span>`; el.hidden = false; }
     });
   }
 
