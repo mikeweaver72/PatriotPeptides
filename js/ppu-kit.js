@@ -38,7 +38,7 @@
       .filter(p => !f || (f === "blend" ? P.isBlend(p) : P.focuses(p).includes(f))).sort(P.cmpProduct);
     $("[data-list]").innerHTML = rows.length ? rows.map(p => { const n = left(p), ok = n > 0;
       return `<div class="krow${ok ? "" : " out"}" data-key="${esc(p.product_key)}"><span class="kdrag" ${ok ? 'data-drag aria-hidden="true"' : ""}>${P.vial(p, 40)}</span>
-<span class="kinfo"><b>${esc(P.titleParts(p).main)}</b><small>${esc(p.strength || "")} · ${money(P.unitPrice(p))}${ok ? (n <= 3 ? ` · ${n} left` : "") : " · Sold out"}</small></span>
+<span class="kinfo"><b>${esc(P.titleParts(p).main)}</b><small>${esc(p.strength || "")} · ${money(P.unitPrice(p))}${ok ? (P.CFG.showStock && n <= 3 ? ` · ${n} left` : "") : " · Sold out"}</small></span>
 <button type="button" class="kadd" data-addone="${esc(p.product_key)}" ${ok ? "" : "disabled"} aria-label="Add ${esc(p.display_name)} ${esc(p.strength || "")} to your kit">+</button></div>`; }).join("")
       : `<p class="empty">Nothing matches. Try another search.</p>`;
   }

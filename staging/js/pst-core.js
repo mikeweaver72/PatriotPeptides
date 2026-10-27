@@ -3,7 +3,9 @@
    so admin.html, order emails, store credit, rewards and discounts keep working untouched. */
 (function () {
   "use strict";
+  const CFG_STOCK_CLASS = () => { try { if (!CFG.showStock && !/owner\.html|admin|inventory|manual-order/.test(location.pathname)) document.documentElement.classList.add("nostock"); } catch {} };
   const CFG = {
+    showStock: false,                      // Jeff: shoppers never see stock levels (In stock / Low / Limited). Sold out still shows. Counts are still kept for the owner app. Set true for a Jimmie-style stock display.
     url: "https://aoovvhbjugmqevwvekku.supabase.co",
     key: "sb_publishable_TBBWnARIoBJwvvJQAxJ0ug_Rw23NDsU",
     venmo: "Patriot-peptides-USA",              // Venmo handle for the one-tap pay button
@@ -17,6 +19,7 @@
     cartKey: "ppu_cart_v1", remindKey: "ppu_remind_v1", gateKey: "ppu_gate_v1",
     fields: "id,product_key,display_name,strength,category,research_focus,series,price,current_inventory,low_stock_threshold,limited_stock_threshold,is_active,featured,blend_stack,sort_name,created_at,updated_at,hot_peptide,sale_enabled,sale_price,sale_label,coa_url,coa_label,label_color,label_line_1,reorder_days_default,research_summary,home_feature_rank,coming_soon,bottle_url,bottle_sig"
   };
+  CFG_STOCK_CLASS();
   const FOCUS = { performance: "Performance", recovery: "Recovery", longevity: "Longevity" };
   const COLORS = { Blue: "#1d4ea3", Orange: "#e2661b", Red: "#c3262c", Purple: "#6b3fb4", Black: "#1d1d1f", Green: "#2c7a4b" };
   const REMIND = [[0, "No reminder"], [14, "2 wks"], [28, "4 wks"], [42, "6 wks"], [56, "8 wks"]];

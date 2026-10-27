@@ -167,3 +167,6 @@ body.kdragging{cursor:grabbing;user-select:none;-webkit-user-select:none}
 .coaform{display:grid;gap:12px;margin:18px 0;background:var(--card,var(--bg2));border:1px solid var(--line2);border-radius:10px;padding:16px}.coaform label{display:grid;gap:6px;font-weight:600;font-size:14px}.coaform input{font-size:16px;padding:12px;border-radius:6px;border:1px solid var(--line2);background:var(--bg);color:inherit}
 .coabtns{display:flex;gap:10px;flex-wrap:wrap}.coares{display:grid;gap:8px;margin:0 0 18px}.coarow{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--card,var(--bg2));border:1px solid var(--line2);border-radius:8px;padding:12px}.coarow small{display:block;color:var(--muted)}
 @media(min-width:720px){.coaform{grid-template-columns:repeat(3,1fr)}.coabtns{grid-column:1/-1}}
+
+/* Stock levels hidden from shoppers (CFG.showStock = false). Sold out / coming soon / on order still show. */
+html.nostock .stk-in,html.nostock .stk-lim,html.nostock .stk-low{display:none!important}
