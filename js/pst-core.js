@@ -739,9 +739,12 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
   }
 
   /* ---------- UI helpers ---------- */
-  function toast(msg, link) {
+  function toast(msg, link, kind) {
     let el = $("#toast"); if (!el) { el = document.createElement("div"); el.id = "toast"; el.setAttribute("role", "status"); el.setAttribute("aria-live", "polite"); document.body.appendChild(el); }
-    el.innerHTML = `${esc(msg)}${link ? ` <a href="${link[0]}">${esc(link[1])}</a>` : ""}`; el.className = "show"; clearTimeout(toast.t); toast.t = setTimeout(() => el.className = "", 2800);
+    // Patriot: the "just updated" notice is a brand-red card with a title line; every other toast stays one line
+    el.innerHTML = kind === "upd" ? `<span class="tic">${icon("check", 18)}</span><span class="ttx"><b>${esc(msg)}</b>${link ? `<small>${esc(link)}</small>` : ""}</span>`
+      : `${esc(msg)}${link ? ` <a href="${link[0]}">${esc(link[1])}</a>` : ""}`;
+    el.className = kind === "upd" ? "show upd" : "show"; clearTimeout(toast.t); toast.t = setTimeout(() => el.className = kind === "upd" ? "upd" : "", kind === "upd" ? 4200 : 2800);
   }
   // v5.2: real scroll lock for sheets on iPhone (overflow:hidden alone lets the page underneath scroll and shift fixed bars)
   let lockY = 0;
@@ -828,7 +831,7 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
       window.addEventListener("focus", () => check()); window.addEventListener("online", () => check(true));
       setInterval(() => { if (!document.hidden) check(true); }, 2 * 60000); // an open app picks up updates within ~2 min
     }).catch(() => {});
-    try { if (sessionStorage.getItem("pst_updated")) { sessionStorage.removeItem("pst_updated"); window.PST_JUST_UPDATED = true; if (!document.body.classList.contains("oapp") && !/owner\.html/.test(location.pathname)) setTimeout(() => toast("Patriot Peptides USA just updated to the latest version"), 600); } } catch {}
+    try { if (sessionStorage.getItem("pst_updated")) { sessionStorage.removeItem("pst_updated"); window.PST_JUST_UPDATED = true; if (!document.body.classList.contains("oapp") && !/owner\.html/.test(location.pathname)) setTimeout(() => toast("Updated", "You're on the newest version of Patriot Peptides USA.", "upd"), 600); } } catch {}
   }
   const canPrompt = () => !!deferredInstall;
   async function promptInstall() {

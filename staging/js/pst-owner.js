@@ -90,7 +90,7 @@
   // v5.3: tell him when the app updated, with the headline of what's new
   function updNote() {
     const R = window.PSTOps4?.RELEASES?.[0]; if (!R) return; let prev = null; try { prev = localStorage.getItem("pst-owner-ver"); localStorage.setItem("pst-owner-ver", R.v); } catch { /* private mode */ }
-    if (prev === R.v) { if (window.PST_JUST_UPDATED) P.toast("App updated"); return; }
+    if (prev === R.v) { if (window.PST_JUST_UPDATED) P.toast("App updated", "You're on the newest version.", "upd"); return; }
     const n = window.PSTVibe ? PSTVibe.nameOf(me) : "", d = document.createElement("div"); d.id = "updnote"; d.setAttribute("role", "status");
     d.innerHTML = `<div class="updin">${P.icon("star", 20)}<div><b>Updated to v${esc(R.v)}${n ? `, ${esc(n)}` : ""}!</b><small>${esc(R.title)}${R.items?.[0] ? ` · ${esc(R.items[0].t)}` : ""}</small></div><button type="button" class="sx" data-updnx aria-label="Dismiss">${P.icon("x", 16)}</button></div>
 <div class="updbtns"><a class="btn primary sm" href="owner.html#whatsnew" data-updgo>See what's new</a><button type="button" class="btn ghost sm" data-updnx>Got it</button></div>`;
