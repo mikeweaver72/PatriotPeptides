@@ -75,6 +75,10 @@ ${mine.length ? `<div class="mylist">${mine.map(productRow).join("")}</div><p cl
     bindCards(el);
   }
 
+  // Patriot: a short "Recently viewed" row is topped up with featured / in-stock picks so it never shows empty slots
+  function padPicks(have, pool, n) { const out = [...have]; const seen = new Set(have.map(g => P.gkey(g[0])));
+    for (const g of [...pool.filter(g => g.some(p => p.featured || p.hot_peptide)), ...pool]) { if (out.length >= n) break; const k = P.gkey(g[0]); if (!seen.has(k)) { seen.add(k); out.push(g); } }
+    return out; }
   /* ---------------- HOME ---------------- */
   async function home() {
     shelf();
@@ -86,11 +90,15 @@ ${mine.length ? `<div class="mylist">${mine.map(productRow).join("")}</div><p cl
       const st = $("[data-hstats]"); if (st) st.innerHTML = `<div><b>${gs.length}</b>Compounds</div>${P.CFG.showStock ? `<div><b>${inS.length}</b>In stock</div>` : ""}<div><b>${all.filter(p => P.coaHref(p)).length}</b>Lab reports</div>`;
       if (marq) { const items = inS.map(g => `<a href="${P.productUrl(P.gBest(g))}">${esc(P.titleParts(g[0]).main)}</a>`).join("<i>✦</i>"); marq.innerHTML = `<div aria-hidden="true">${items}<i>✦</i>${items}<i>✦</i></div>`; }
       if (avail) avail.innerHTML = inS.slice(0, 8).map(g => card(g)).join("") || `<p class="empty">Restocking now. Check back soon.</p>`;
-      const hr = $("[data-home-recent]"); if (hr) { const rg = P.recent().map(k => gs.find(g => P.gkey(g[0]) === k)).filter(Boolean).slice(0, 4); if (rg.length) { hr.innerHTML = `<div class="shead" style="margin-top:36px"><h2 class="serif">Recently viewed</h2></div><div class="lgrid">${rg.map(g => card(g)).join("")}</div>`; bindCards(hr); } }
+      const hr = $("[data-home-recent]"); if (hr) { const rv = P.recent().map(k => gs.find(g => P.gkey(g[0]) === k)).filter(Boolean).slice(0, 4), rg = padPicks(rv, inS, 4); if (rv.length) { hr.innerHTML = `<div class="shead" style="margin-top:36px"><h2 class="serif">${rv.length < 4 ? "Recently viewed, plus picks for you" : "Recently viewed"}</h2></div><div class="lgrid">${rg.map(g => card(g)).join("")}</div>`; bindCards(hr); } }
       if (ed) { // Patriot: featured spotlight, one big pick + four compact ones (was three full-width rows)
-        const pick = [...inS.filter(g => g.some(p => p.featured || p.hot_peptide)), ...inS].filter((g, i, arr) => arr.indexOf(g) === i).slice(0, 5);
+        // Jeff picks these in the owner app: Products → a product → "Home page spotlight" (Spot 1 = the big card).
+        // Empty spots fill with featured products, then in-stock ones.
+        const rank = g => Math.min(...g.map(x => Number(x.home_feature_rank) || 99));
+        const ranked = gs.filter(g => rank(g) < 99).sort((a, b) => rank(a) - rank(b));
+        const pick = [...ranked, ...inS.filter(g => g.some(p => p.featured || p.hot_peptide)), ...inS].filter((g, i, arr) => arr.indexOf(g) === i).slice(0, 5);
         ed.className = "hspot";
-        ed.innerHTML = pick.map((g, i) => { const p = P.gBest(g), t = P.titleParts(p), coa = g.some(P.coaHref), big = i === 0;
+        ed.innerHTML = pick.map((g, i) => { const p = g.find(x => Number(x.home_feature_rank) > 0) || P.gBest(g), t = P.titleParts(p), coa = g.some(P.coaHref), big = i === 0;
           const kick = P.focuses(p).map(f => P.FOCUS[f]).join(" · ") || (P.isBlend(p) ? "Research blend" : "Research peptide");
           return `<a class="spc${big ? " big" : ""}" href="${P.productUrl(p)}"><span class="spimg">${P.vial(p, big ? 170 : 74)}</span><span class="sptx"><span class="kick">${esc(kick)}</span><b class="serif">${esc(t.main)}</b>
 <span class="spstr">${esc(g.map(x => x.strength).filter(Boolean).join(" · "))}</span><span class="spfrom">from <b>${money(P.gMin(g))}</b></span>${big ? `<span class="muted small">${coa ? "Third-party lab report on file." : "Lab report for this batch is in progress."}</span>` : ""}<span class="lnk">View${big ? " " + esc(t.main) : ""} →</span></span></a>`; }).join("");
@@ -100,7 +108,7 @@ ${mine.length ? `<div class="mylist">${mine.map(productRow).join("")}</div><p cl
   async function loadAds(host) {
     if (!host) return;
     try {
-      const feat = P.groups(await P.products()).map(g => ({ g, r: Math.min(...g.map(x => x.home_feature_rank || 99)) })).filter(x => x.r < 99).sort((a, b) => a.r - b.r);
+      const feat = []; // Patriot: home_feature_rank now picks the Collection spotlight (home()), so this row shows only his carousel ads
       if (feat.length) {
         host.classList.add("featrow");
         host.innerHTML = feat.map(({ g }) => { const p = g.find(x => x.home_feature_rank) || P.gBest(g), t = P.titleParts(p), inS = g.some(x => P.qty(x) > 0);
@@ -220,7 +228,8 @@ ${addons()}
       const el = $("[data-recent]"), ks = P.recent().filter(k => k !== P.gkey(cur)).slice(0, 4);
       const gs = ks.map(k => P.groups(all).find(g => P.gkey(g[0]) === k)).filter(Boolean);
       if (!gs.length) { el.remove(); return; }
-      el.innerHTML = `<div class="shead"><h2 class="serif">Recently viewed</h2></div><div class="lgrid">${gs.map(g => card(g)).join("")}</div>`; bindCards(el);
+      const fill = padPicks(gs, P.groups(all).filter(g => P.gkey(g[0]) !== P.gkey(cur) && P.gIn(g)), 4);
+      el.innerHTML = `<div class="shead"><h2 class="serif">${gs.length < 4 ? "Recently viewed, plus picks for you" : "Recently viewed"}</h2></div><div class="lgrid">${fill.map(g => card(g)).join("")}</div>`; bindCards(el);
     }
     function seo() {
       let s = document.getElementById("ldp"); if (!s) { s = document.createElement("script"); s.type = "application/ld+json"; s.id = "ldp"; document.head.appendChild(s); }

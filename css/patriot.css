@@ -223,3 +223,10 @@ html.nostock .stockonly{display:none!important}
 @media (min-width:700px){.hspot{grid-template-columns:1fr 1fr}.spc.big{grid-column:1/-1;grid-template-columns:1fr 1fr;text-align:left}.spc.big .sptx{align-items:flex-start}}
 @media (min-width:1024px){.hspot{grid-template-columns:1.25fr 1fr 1fr;grid-template-rows:auto auto;gap:16px}.spc.big{grid-column:1;grid-row:1/span 2;grid-template-columns:1fr;text-align:center}.spc.big .sptx{align-items:center}.spc{grid-template-columns:96px 1fr;padding:18px}}
 html[data-theme=light] .spc{background:radial-gradient(circle at 20% 60%,#ebe5d8,#f6f2ea 75%)}html[data-theme=light] .spfrom b{color:#111}
+/* Desktop header: left links start at the left edge, with room before the logo (Rewards was touching it) */
+@media (min-width:900px){.hd .wrap.hrow{max-width:1440px;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)}.hrow>.nav.l{justify-content:flex-start;gap:22px;padding-right:28px;min-width:0}.hrow>.nav.r{padding-left:28px}}
+@media (min-width:900px) and (max-width:1279px){.hd .nav.l a[href^="rewards"]{display:none}}
+@media (min-width:900px) and (max-width:1099px){.hd .nav.l a[href*="Multi-Peptide"]{display:none}.hrow>.nav.l{gap:16px;padding-right:18px}.hrow>.nav.r{padding-left:18px}}
+/* Product grids: lines drawn by each card, not the grid background, so a part-filled last row has no blank boxes */
+.lgrid{background:none;border:0}.lgrid>*{box-shadow:0 0 0 1px var(--line)}
+@media (min-width:700px) and (max-width:1099px){[data-home-recent] .lgrid>:nth-child(n+4),[data-recent] .lgrid>:nth-child(n+4){display:none}}
