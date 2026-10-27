@@ -240,12 +240,12 @@ ${addons()}
     host.addEventListener("click", e => {
       const s = e.target.closest(".sopt"); if (s) { cur = group.find(p => p.product_key === s.dataset.key) || cur; qty = 1; history.replaceState(null, "", P.productUrl(cur)); draw(); return; }
       const q = e.target.closest("[data-q]"); if (q) { setQty(qty + Number(q.dataset.q)); return; }
+      const ad = e.target.closest("[data-addon]"); if (ad) { P.addAndShow(ad.dataset.addon, 1); return; } // was unreachable: it sat after the data-act2 early return
       const b = e.target.closest("[data-act2]"); if (!b) return;
       if (b.dataset.act2 === "avail") P.openAvailability(cur);
       if (b.dataset.act2 === "zoom") P.vialStudio(cur).then(src => P.sheet(`<figure class="zoomfig"><img src="${src}" alt="${esc(cur.display_name)} ${esc(cur.strength || "")}"><figcaption>${esc(cur.display_name)} · ${esc(cur.strength || "")}<span>For research use only</span></figcaption></figure>`, { label: "Product photo" }));
       if (b.dataset.act2 === "add") P.addAndShow(cur.product_key, qty);
       if (b.dataset.act2 === "share") { const url = shareUrl, title = `${cur.display_name} ${cur.strength || ""} · Patriot Peptides USA`; if (navigator.share) navigator.share({ title, url }).catch(() => {}); else navigator.clipboard?.writeText(url).then(() => P.toast("Link copied")); }
-      const ad = e.target.closest("[data-addon]"); if (ad) P.addAndShow(ad.dataset.addon, 1);
     });
     host.addEventListener("change", e => { if (e.target.id === "pq") setQty(Number(e.target.value)); });
     draw();
