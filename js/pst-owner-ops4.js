@@ -135,6 +135,11 @@
   /* ================= WHAT'S NEW ================= */
   const L = (t, h) => ({ t, h });
   const RELEASES = [
+    { v: "1.2", d: "Oct 26, 2026", title: "Updates install themselves", items: [
+      L("The app now updates on its own, no tapping Update. If you're in the middle of something, it waits until you're done"),
+      L("Opening the app or coming back to it checks for the newest version right away"),
+      L("Compare suppliers is under More: every supplier's price side by side, then one-tap purchase orders", "#compare")
+    ] },
     { v: "1.1", d: "Oct 26, 2026", title: "Compare suppliers", items: [
       L("Every product with each supplier's 10-vial kit price side by side, the cheapest one marked", "#compare"),
       L("See your margin on each supplier at today's shop price, colour coded, with filters for running low, margin under 85% and no supplier"),

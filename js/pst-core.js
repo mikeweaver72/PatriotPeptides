@@ -787,18 +787,22 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
     if (PREVIEW) { navigator.serviceWorker.getRegistrations?.().then(rs => rs.forEach(r => r.unregister())).catch(() => {}); previewBanner(); return; } // previews never install or cache
     const sw = navigator.serviceWorker, hadController = !!sw.controller;
     let pending = false, last = 0;
-    const busy = () => /input|textarea|select/i.test(document.activeElement?.tagName || "") || !!document.querySelector("#sheet form");
-    const reload = () => { if (document.hidden || !busy()) { try { sessionStorage.setItem("pst_updated", "1"); } catch {} location.reload(); } else { pending = true; updateBar(); } };
-    // v5.3: if they're mid-form when an update lands, offer it instead of waiting silently
-    const updateBar = () => { if ($("#updbar")) return; const b = document.createElement("div"); b.id = "updbar"; b.setAttribute("role", "status");
-      b.innerHTML = `<span>${icon("check", 16)} A new version is ready</span><button type="button" class="btn primary sm" data-upd>Update</button><button type="button" class="sx" data-updx aria-label="Later">${icon("x", 14)}</button>`;
-      b.addEventListener("click", e => { if (e.target.closest("[data-upd]")) { pending = false; try { sessionStorage.setItem("pst_updated", "1"); } catch {} location.reload(); } if (e.target.closest("[data-updx]")) b.remove(); });
-      document.body.appendChild(b); };
+    // Patriot v1.2: updates apply on their own. Never mid-form: if he's typing or has a sheet open, the update waits and
+    // applies itself the moment he's done (form closed, nothing focused) or the app goes to the background. No tap needed.
+    const busy = () => /input|textarea|select/i.test(document.activeElement?.tagName || "") || !!document.querySelector("#sheet:not([hidden])");
+    const go = () => { pending = false; try { sessionStorage.setItem("pst_updated", "1"); } catch {} location.reload(); };
+    const reload = () => { if (document.hidden || !busy()) go(); else pending = true; };
+    let idleT = 0; const whenIdle = () => { if (!pending) return; clearTimeout(idleT); idleT = setTimeout(() => { if (pending && (document.hidden || !busy())) go(); }, 1500); };
+    ["focusout", "click", "touchend", "keyup"].forEach(ev => document.addEventListener(ev, whenIdle, { passive: true }));
+    setInterval(() => { if (pending && !busy()) go(); }, 5000);
     sw.addEventListener("controllerchange", () => { if (hadController) reload(); });
     sw.register("sw.js", { updateViaCache: "none" }).then(reg => {
-      const check = () => { if (Date.now() - last > 60000) { last = Date.now(); reg.update().catch(() => {}); } };
-      document.addEventListener("visibilitychange", () => { if (!document.hidden) { if (pending) { pending = false; reload(); return; } check(); } });
-      window.addEventListener("focus", check); setInterval(() => { if (!document.hidden) check(); }, 5 * 60000); // v5.7: an open app picks up updates within ~5 min
+      const check = (force) => { if (force || Date.now() - last > 15000) { last = Date.now(); reg.update().catch(() => {}); } };
+      if (reg.waiting) reg.waiting.postMessage({ type: "skip" });
+      check(true);
+      document.addEventListener("visibilitychange", () => { if (document.hidden) { if (pending) go(); return; } check(true); });
+      window.addEventListener("focus", () => check()); window.addEventListener("online", () => check(true));
+      setInterval(() => { if (!document.hidden) check(true); }, 2 * 60000); // an open app picks up updates within ~2 min
     }).catch(() => {});
     try { if (sessionStorage.getItem("pst_updated")) { sessionStorage.removeItem("pst_updated"); window.PST_JUST_UPDATED = true; if (!document.body.classList.contains("oapp") && !/owner\.html/.test(location.pathname)) setTimeout(() => toast("Patriot Peptides USA just updated to the latest version"), 600); } } catch {}
   }
