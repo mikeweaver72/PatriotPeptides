@@ -170,3 +170,4 @@ body.kdragging{cursor:grabbing;user-select:none;-webkit-user-select:none}
 
 /* Stock levels hidden from shoppers (CFG.showStock = false). Sold out / coming soon / on order still show. */
 html.nostock .stk-in,html.nostock .stk-lim,html.nostock .stk-low{display:none!important}
+html.nostock .stockonly{display:none!important}
