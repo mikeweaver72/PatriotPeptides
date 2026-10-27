@@ -84,14 +84,17 @@
   }
   function previewEmail(o, type, opt) {
     return new Promise(async resolve => {
-      const w = P.sheet(`<div class="osheet"><h2 class="serif">Send the "${esc(LABEL[type] || "Email")}" email?</h2><p class="muted small">To ${esc(custEmail(o))}. It hasn't gone out yet: check it, then tap Send to customer.</p><div class="eprev" data-eprev><p class="muted small">Loading preview…</p></div>
-<div class="obar"><button class="btn primary wide" type="button" data-es="send">Send to customer</button><button class="btn ghost wide" type="button" data-es="skip">Not now</button></div></div>`, { label: "Email preview" });
+      const w = P.sheet(`<div class="osheet"><h2 class="serif">Send the "${esc(LABEL[type] || "Email")}" email?</h2><p class="muted small">To ${esc(custEmail(o))}. It hasn't gone out yet: check it, then tap Send to customer.</p><div class="obar eact"><button class="btn primary wide" type="button" data-es="send">Send to customer</button><button class="btn ghost wide" type="button" data-es="skip">Not now</button></div>
+<p class="kick" style="margin:14px 0 6px">Preview</p><div class="eprev" data-eprev><p class="muted small">Loading preview…</p></div></div>`, { label: "Email preview" });
       w.classList.add("full");
       try { const j = await callEmail({ ...(await payload(o, type, opt)), preview_only: true }); const f = document.createElement("iframe"); f.className = "eframe"; f.srcdoc = j.preview?.html || "<p>No preview</p>"; f.title = "Email preview"; w.querySelector("[data-eprev]").replaceChildren(f); }
       catch (e) { w.querySelector("[data-eprev]").innerHTML = `<p class="notice err">Preview failed: ${esc(e.message || e)}</p>`; }
       w.addEventListener("click", async e => { const b = e.target.closest("[data-es]"); if (!b) return;
         if (b.dataset.es === "skip") { P.closeSheet(); resolve(false); return; }
-        b.disabled = true; b.textContent = "Sending…"; const ok = await sendEmail(o, type, { ...opt, skipPreview: true }); P.closeSheet(); P.toast(ok ? "Email sent" : "Email not sent"); resolve(ok); });
+        $$("[data-es]", w).forEach(x => x.disabled = true); b.textContent = "Sending…"; const ok = await sendEmail(o, type, { ...opt, skipPreview: true });
+        if (!ok) { b.disabled = false; $$("[data-es]", w).forEach(x => x.disabled = false); b.textContent = "Try again"; return; }
+        const bar = w.querySelector(".eact"); if (bar) bar.outerHTML = `<div class="esent" role="status">${P.icon("check", 20)}<span><b>Email sent</b><small>To ${esc(custEmail(o))} · ${esc(LABEL[type] || type)}</small></span><button class="btn primary sm" type="button" data-esdone>Done</button></div>`;
+        w.querySelector("[data-esdone]")?.addEventListener("click", () => { P.closeSheet(); resolve(true); }); });
     });
   }
   /* ---- his protected-action rule: re-enter the admin password ---- */

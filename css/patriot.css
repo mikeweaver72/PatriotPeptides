@@ -193,3 +193,8 @@ html.nostock .stockonly{display:none!important}
 .ownercta b{display:block;font-size:16px;color:#fff}.ownercta small{display:block;font-size:13px;color:rgba(255,255,255,.88)}.ownercta .oc-go{margin-left:auto;font-size:26px;line-height:1;color:#fff}
 /* Owner app order sheet: shipped-email status with a one-tap send/resend */
 .resendrow{display:flex;align-items:center;gap:10px;margin:12px 0 0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);font-size:14px}.resendrow>svg{flex:none;color:#C8102E}.resendrow span{flex:1}
+/* Email preview sheet: Send buttons sit above the preview, and the preview is a fixed-height window so it never hides them */
+.eframe{display:block;width:100%;height:min(52vh,520px);border:0;border-radius:10px;background:#fff}
+.eact{margin-top:12px}
+.esent{display:flex;align-items:center;gap:12px;margin-top:12px;padding:12px 14px;border-radius:12px;background:#0f8a3b;color:#fff}.esent>svg{flex:none}.esent span{flex:1}.esent b{display:block;color:#fff}.esent small{display:block;color:rgba(255,255,255,.9)}
+.esent .btn.primary{background:#fff;color:#0f8a3b;border-color:#fff}
