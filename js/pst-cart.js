@@ -54,9 +54,10 @@ ${delivery === "ship" && live.length ? `<div class="ship"><div class="shipbar"><
     if (!user) return `<div class="box">${sum}</div><div class="signin"><h3 class="serif" style="font-size:1.5rem">Sign in to check out</h3><p class="muted small">Orders are saved to your account so you can track them and reorder in a tap.</p>
 <a class="btn primary wide" href="login.html?redirect=cart.html">Sign in</a><a class="btn ghost wide" style="margin-top:8px" href="register.html">Create an account</a></div>`;
     const addr = [profile?.shipping_address || profile?.address1 || profile?.address, [profile?.shipping_city || profile?.city, profile?.shipping_state || profile?.state, profile?.shipping_zip || profile?.zip].filter(Boolean).join(" ")].filter(Boolean).join(", ");
-    const venmo = methods.find(m => /venmo/i.test(m.id + m.label)), others = methods.filter(m => m !== venmo);
+    const otherM = methods.find(m => m.other), venmo = otherM || methods.find(m => /venmo/i.test(m.id + m.label)), others = methods.filter(m => m !== venmo);
     if (!pay || !methods.some(m => m.label === pay)) pay = venmo ? venmo.label : methods[0]?.label || "";
-    const pmRow = (m, best) => `<label><input type="radio" name="pm" value="${esc(m.label)}" ${pay === m.label ? "checked" : ""}>${best ? `<span class="vlogo"><svg viewBox="0 0 48 48" width="18" height="18"><path d="M33.6 11c1 1.6 1.4 3.3 1.4 5.4 0 6.7-5.7 15.4-10.4 21.6H13.9L9.6 12.4l9.4-.9 2.3 18.4c2.1-3.5 4.7-9 4.7-12.7 0-2-.3-3.4-.9-4.6l8.5-1.6z" fill="#fff"/></svg></span>` : ""}<span>${esc(P.payLabel(m))}</span>${m.pct ? `<span class="best">${m.pct}% off${discount ? " · not with codes" : ""}</span>` : best ? '<span class="best">Fastest · one tap</span>' : ""}</label>`;
+    const isO = !!otherM && pay === otherM.label;
+    const pmRow = (m, best) => `<label><input type="radio" name="pm" value="${esc(m.label)}" ${pay === m.label ? "checked" : ""}>${best && !m.other ? `<span class="vlogo"><svg viewBox="0 0 48 48" width="18" height="18"><path d="M33.6 11c1 1.6 1.4 3.3 1.4 5.4 0 6.7-5.7 15.4-10.4 21.6H13.9L9.6 12.4l9.4-.9 2.3 18.4c2.1-3.5 4.7-9 4.7-12.7 0-2-.3-3.4-.9-4.6l8.5-1.6z" fill="#fff"/></svg></span>` : ""}<span>${esc(m.other ? "Other method" : P.payLabel(m))}</span>${m.other ? '<span class="best">We contact you</span>' : m.pct ? `<span class="best">${m.pct}% off${discount ? " · not with codes" : ""}</span>` : best ? '<span class="best">Fastest · one tap</span>' : ""}</label>`;
     return `<div class="box"><h3>Delivery</h3><div class="dpick">
 <label><input type="radio" name="dl" value="ship" checked><span><b>Ships from the USA</b><small>${money(P.CFG.shipRate)} flat, free over ${money(P.CFG.freeShip)}. UPS or USPS with tracking, usually 2–4 days.</small></span></label></div>
 ${delivery === "ship" ? `<p class="addr" style="margin:10px 0 0">${addr ? `Ships to: ${esc(addr)} · <a href="account.html#profile">Change</a>` : `<span style="color:var(--bad)">No shipping address on your account yet.</span> <a href="account.html#profile">Add one</a>`}</p>` : ""}</div>
@@ -67,7 +68,7 @@ ${discount ? `<div class="promo"><input value="${esc(discount.code)}" readonly a
         : `<form class="promo" data-codeform><input name="code" placeholder="Discount code" autocomplete="off" aria-label="Discount code"><button class="btn ghost sm">Apply</button></form><p class="status" data-codestat></p>`}
 ${credit > 0 ? `<label class="toggle" style="margin-top:10px"><input type="checkbox" data-credit ${applyCredit ? "checked" : ""}> Use my ${money(credit)} store credit</label>` : ""}</div>
 <div class="box"><h3>Payment</h3><div class="pm">${venmo ? pmRow(venmo, true) : ""}${others.length ? (venmo ? `<details${pay && pay !== venmo?.label ? " open" : ""}><summary>Other ways to pay</summary><div class="pm">${others.map(m => pmRow(m)).join("")}</div></details>` : others.map(m => pmRow(m)).join("")) : ""}</div>
-<p class="muted small" style="margin:10px 0 0">${pay && venmo && pay === venmo.label ? "After you place the order, Venmo opens with the amount and your order number filled in." : "Payment instructions are emailed to you right after you place the order."}</p></div>
+<p class="muted small" style="margin:10px 0 0">${isO ? "A Patriot Peptides USA team member will contact you to arrange payment. Nothing to pay online." : pay && venmo && pay === venmo.label ? "After you place the order, Venmo opens with the amount and your order number filled in." : "Payment instructions are emailed to you right after you place the order."}</p></div>
 <div class="box">${sum}
 <label class="form" style="display:block"><span class="sr">Order notes</span><textarea data-notes placeholder="Notes for Patriot Peptides USA (optional)" style="width:100%;background:var(--bg);border:1px solid var(--line2);padding:10px;min-height:60px;font-size:15px;border-radius:4px">${esc(notes)}</textarea></label>
 ${smsBox()}
@@ -112,6 +113,7 @@ ${smsOn ? (has && !smsCustom ? `<p class="muted small">Texts go to ${esc(P.fmtPh
       await primeReminders();
       if (user) {
         [profile, methods] = await Promise.all([P.getProfile(user), P.paymentMethods()]);
+        if (profile?.other_payment_enabled) { methods = [P.OTHER_PAY, ...methods.filter(m => !P.isOtherPay(m.label))]; if (!ss.get("ppu_pay_chosen", "")) pay = P.OTHER_PAY.label; }
         credit = await P.creditBalance().catch(() => 0);
         [frees, choices] = await Promise.all([P.freeVials(rows).catch(() => []), P.choiceRewards(rows).catch(() => [])]);
       }
@@ -143,14 +145,14 @@ ${smsOn ? (has && !smsCustom ? `<p class="muted small">Texts go to ${esc(P.fmtPh
   }
 
   async function placed(r) {
-    const isV = /venmo/i.test(r.method || ""), link = P.venmoLink(r.due, r.no);
+    const isV = /venmo/i.test(r.method || ""), isO = P.isOtherPay(r.method), link = P.venmoLink(r.due, r.no);
     window.scrollTo(0, 0); const bt = $("[data-bagtitle]"); if (bt) bt.hidden = true; document.title = `Order ${r.no} | Patriot Peptides USA`;
     host().innerHTML = `<div class="placed"><div class="okc">${P.icon("check", 30)}</div><span class="kick">Order received</span><h1 class="serif">Order ${esc(r.no)}</h1>
 <p class="muted">${r.emailed ? `A confirmation is on its way to ${esc(r.email)}.` : "Your order is saved. The confirmation email didn't send, but we can see your order."}</p>
 ${r.due > 0 ? `<div data-paycard><div class="paycard"><p class="muted">Loading payment details…</p></div></div>` : ""}
-${r.due > 0 ? `<p class="holdnote">${P.icon("clock", 15)} We're holding your items until <b>${new Date(r.deadline).toLocaleString([], { weekday: "short", hour: "numeric", minute: "2-digit" })}</b>. Pay within 24 hours, or the order is cancelled automatically and the items go back on the shelf.</p>` : ""}
+${r.due > 0 && !isO ? `<p class="holdnote">${P.icon("clock", 15)} We're holding your items until <b>${new Date(r.deadline).toLocaleString([], { weekday: "short", hour: "numeric", minute: "2-digit" })}</b>. Pay within 24 hours, or the order is cancelled automatically and the items go back on the shelf.</p>` : ""}
 ${r.backorder?.length ? `<p class="holdnote">${P.icon("box", 15)} ${r.backorder.map(esc).join("<br>")}. Backordered vials go out as soon as they arrive.</p>` : ""}
-<ol class="track"><li class="ok"><b>Order placed</b><span>Just now</span></li><li class="cur"><b>Payment confirmed</b><span>We match it to your order number</span></li><li><b>${r.delivery === "pickup" ? "Ready for pickup" : "Packed"}</b><span>${r.delivery === "pickup" ? "We'll text you where and when" : "Goes out the same night"}</span></li><li><b>${r.delivery === "pickup" ? "Picked up" : "Shipped"}</b><span>${r.delivery === "pickup" ? "" : "Tracking in your account"}</span></li></ol>
+<ol class="track"><li class="ok"><b>Order placed</b><span>Just now</span></li><li class="cur"><b>Payment confirmed</b><span>${isO ? "Our team will contact you to arrange payment" : "We match it to your order number"}</span></li><li><b>${r.delivery === "pickup" ? "Ready for pickup" : "Packed"}</b><span>${r.delivery === "pickup" ? "We'll text you where and when" : "Goes out the same night"}</span></li><li><b>${r.delivery === "pickup" ? "Picked up" : "Shipped"}</b><span>${r.delivery === "pickup" ? "" : "Tracking in your account"}</span></li></ol>
 <div data-alertcta></div>
 <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><a class="btn ghost" href="account.html">Track this order</a><a class="btn ghost" href="catalog.html">Keep browsing</a></div></div>`;
     if (r.due > 0) P.payCard(r.method, r.due, r.no, r.id).then(h => { const el = $("[data-paycard]"); if (el) el.innerHTML = h; }).catch(() => {});
@@ -181,7 +183,7 @@ ${r.backorder?.length ? `<p class="holdnote">${P.icon("box", 15)} ${r.backorder.
     if (document.body.dataset.page !== "cart") return;
     const t = e.target;
     if (t.name === "dl") { delivery = t.value; P.store.set("ppu_delivery", delivery); redrawSide(); }
-    if (t.name === "pm") { pay = t.value; ss.set("ppu_pay", pay); redrawSide(); }
+    if (t.name === "pm") { pay = t.value; ss.set("ppu_pay", pay); ss.set("ppu_pay_chosen", "1"); redrawSide(); }
     if (t.matches("[data-credit]")) { applyCredit = t.checked; redrawSide(); }
     if (t.matches("[data-choice]")) picks[t.dataset.choice] = t.value;
     if (t.matches("[data-sms]")) { smsOn = t.checked; redrawSide(); if (smsOn) $("[data-smsph]")?.focus(); }

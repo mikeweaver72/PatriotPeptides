@@ -255,7 +255,7 @@ ${st.k !== "dead" && nm(pStatus(o)) === "paid" ? btn("refund", "Mark refunded", 
     });
   }
   async function payFlow(o, match) {
-    const methods = await P.paymentMethods().catch(() => [{ id: "venmo", label: "Venmo" }]);
+    const methods = [...await P.paymentMethods().catch(() => [{ id: "venmo", label: "Venmo" }]), P.OTHER_PAY];
     const cur = methods.find(m => String(m.label).toLowerCase() === String(o.payment_method || "").toLowerCase());
     const pre = cur ? cur.label : match ? "Venmo" : "";
     const w = P.sheet(`<form class="osheet" data-payf><h2 class="serif">Mark ${esc(o.order_number || "")} paid</h2><p class="muted">${money(o.total)} from ${esc(custName(o))}${match ? `<br>Venmo says ${money(match.amount)} from ${esc(match.payer || "someone")}.` : ""}</p>
@@ -296,7 +296,7 @@ ${st.k !== "dead" && nm(pStatus(o)) === "paid" ? btn("refund", "Mark refunded", 
   /* ================= CUSTOMERS ================= */
   let custs = [];
   async function loadCustomers() {
-    const [a, b] = await Promise.all([P.client().from("customer_profiles").select("user_id,customer_number,first_name,last_name,email,phone,shipping_address,shipping_city,shipping_state,shipping_zip,created_at"), P.client().from("manual_customers").select("id,customer_number,first_name,last_name,email,phone,shipping_address,shipping_city,shipping_state,shipping_zip,created_at")]);
+    const [a, b] = await Promise.all([P.client().from("customer_profiles").select("user_id,customer_number,first_name,last_name,email,phone,shipping_address,shipping_city,shipping_state,shipping_zip,created_at,other_payment_enabled"), P.client().from("manual_customers").select("id,customer_number,first_name,last_name,email,phone,shipping_address,shipping_city,shipping_state,shipping_zip,created_at")]);
     if (a.error) throw a.error;
     custs = [...(a.data || []).map(c => ({ ...c, source: "online", id: c.user_id })), ...(b.data || []).map(c => ({ ...c, source: "manual" }))]
       .map(c => ({ ...c, name: [c.first_name, c.last_name].filter(Boolean).join(" ") || c.email || "Customer", number: c.customer_number ? "PP-C" + c.customer_number : "" }));
@@ -331,9 +331,17 @@ ${st.k !== "dead" && nm(pStatus(o)) === "paid" ? btn("refund", "Mark refunded", 
     const w = P.sheet(`<div class="osheet"><div class="oshead"><div><small class="muted">${esc(c.number)}${c.source === "manual" ? " · no website account" : ""}</small><h2 class="serif">${esc(c.name)}</h2><span class="muted small">${esc([c.shipping_city, c.shipping_state].filter(Boolean).join(", "))}</span></div></div>
 <div class="ocontact">${ph ? `<a class="btn ghost sm" href="sms:${ph}">${P.icon("chat", 15)} Text</a><a class="btn ghost sm" href="tel:${ph}">Call</a>` : ""}${c.email ? `<a class="btn ghost sm" href="mailto:${esc(c.email)}">Email</a>` : ""}</div>
 <div class="tiles"><div class="tile"><small>Orders</small><b>${os.filter(o => !dead(o)).length}</b><span class="muted small">${money(os.filter(o => !dead(o)).reduce((n, o) => n + Number(o.total || 0), 0))}</span></div>${credit !== null ? `<div class="tile"><small>Store credit</small><b>${money(credit)}</b><button class="btn ghost sm" type="button" data-credit="${esc(key)}">Adjust</button></div>` : ""}</div>
+${c.source === "online" ? `<label class="toggle" style="margin-top:12px"><input type="checkbox" data-otherpay ${c.other_payment_enabled ? "checked" : ""}><span>Other payment method<small>Checkout picks "Other method" for ${esc(c.first_name || "them")}, and their emails say a Patriot team member will contact them for payment. No 24-hour hold.</small></span></label>` : ""}
 <div class="obar"><button class="btn primary wide" type="button" data-neworder="${esc(key)}">${P.icon("plus", 16)} New order for ${esc(c.first_name || c.name)}</button></div>
 <h3 class="kick" style="margin-top:18px">Orders</h3>${os.length ? os.map(o => `<button type="button" class="crow" data-ord="${o.id}"><span class="cav">${P.icon("box", 16)}</span><span><b>${esc(o.order_number || "")} · ${money(o.total)}</b><small>${P.fmtDate(o.created_at)} · ${esc(stage(o).t)}</small></span></button>`).join("") : `<p class="muted small">No orders yet.</p>`}</div>`, { label: c.name });
     w.classList.add("full");
+    w.querySelector("[data-otherpay]")?.addEventListener("change", async e => {
+      const on = e.target.checked; e.target.disabled = true;
+      const { error } = await P.client().from("customer_profiles").update({ other_payment_enabled: on }).eq("user_id", c.id);
+      e.target.disabled = false;
+      if (error) { e.target.checked = !on; P.toast("Couldn't save: " + error.message); return; }
+      c.other_payment_enabled = on; P.toast(on ? "Other method is on for " + (c.first_name || c.name) : "Other method is off");
+    });
   }
   function creditFlow(key) {
     const c = custs.find(x => x.source + ":" + x.id === key); if (!c) return;
@@ -373,7 +381,8 @@ ${st.k !== "dead" && nm(pStatus(o)) === "paid" ? btn("refund", "Mark refunded", 
     const c = custs.find(x => x.source + ":" + x.id === key); if (!c) return;
     const prods = (await P.products().catch(() => [])).filter(p => p.product_key);
     const bac = prods.filter(p => /bacteriostatic|bac water|^pst-misc$/i.test(p.display_name)).sort((a, b) => P.unitPrice(a) - P.unitPrice(b));
-    const methods = await P.paymentMethods().catch(() => [{ id: "venmo", label: "Venmo" }]);
+    const methods0 = await P.paymentMethods().catch(() => [{ id: "venmo", label: "Venmo" }]);
+    const methods = c.other_payment_enabled ? [P.OTHER_PAY, ...methods0] : [...methods0, P.OTHER_PAY];
     const lines = []; let bacAsked = false;
     const w = P.sheet(`<div class="osheet" data-nof><h2 class="serif">New order · ${esc(c.name)}</h2>
 <div class="csearch nopick">${P.icon("search", 18)}<input type="search" data-npq placeholder="Add a product" autocomplete="off" aria-label="Add a product"></div><div class="sres" data-npr></div>

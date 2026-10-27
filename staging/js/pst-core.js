@@ -420,7 +420,13 @@
   // payment-method savings: % of subtotal, never combined with a discount code (his rule)
   const payDiscount = (sub, method, code) => (code || !method?.pct ? 0 : round(sub * method.pct / 100));
   /* v3.7: "how to pay" card with his own QR code, account and instructions (checkout confirmation + unpaid orders) */
+  // "Other method": the owner turns it on per customer (owner app → customer → Other payment method).
+  // Nothing to pay online; a Patriot Peptides USA team member reaches out to arrange payment.
+  const OTHER_PAY = { id: "other", label: "Other method", pct: 0, other: true };
+  const isOtherPay = l => /^other( method)?$/i.test(String(l || "").trim());
   async function payCard(methodLabel, due, orderNo, orderId) {
+    if (isOtherPay(methodLabel)) return `<div class="paycard paycard2 pcother"><div class="vh"><span class="vlogo" style="width:40px;height:40px;border-radius:9px;background:var(--navy,#14213d);display:grid;place-items:center">${icon("chat", 22)}</span><div><b>Paying by other method</b><small class="muted" style="display:block">${money(due)} · order ${esc(orderNo)}</small></div></div>
+<p class="pcins">A Patriot Peptides USA team member will contact you to arrange payment. There's nothing to pay online right now.</p></div>`;
     const all = await paymentMethods().catch(() => []);
     const m = all.find(x => String(x.label).toLowerCase() === String(methodLabel || "").toLowerCase() || String(x.id).toLowerCase() === String(methodLabel || "").toLowerCase()) || { label: methodLabel || "Payment" };
     const isV = /venmo/i.test(m.id || m.label), label = payLabel(m), handle = (m.account || "@" + CFG.venmo).replace(/^@?/, "@");
@@ -1093,6 +1099,6 @@ ${rows.length ? `<div class="mbl">${rows.map(r => `<div class="mbr${r.key === ad
   window.PST = { vialCanvas, US_STATES, stateCode, stateSelect, kitInfo, SMS_CONSENT, usPhone, fmtPhone, PREVIEW, lockScroll, CFG, FOCUS, REMIND, $, $$, esc, money, round, params, store, fmtDate, isStandalone, isIOS, client, getUser, getProfile, isAdmin, customerName, firstName,
     products, groups, cycles, suggestDays, myHistory, myProducts, isDone, handedOff, stageOf, vialLiquid, paidNotice, gIn, gBest, gMin, unitPrice, onSale, qty, stock, focuses, isBlend, titleParts, productUrl, coaHref, vial, cmpProduct,
     readCart, writeCart, addToCart, setQty, count, refreshCount, cartRows, reminders, setReminder,
-    photo: () => VIAL_ON, vialStudio, bakeBottle, vialSig, vialColorName, LABEL_COLORS, track, validateDiscount, discountAmount, payDiscount, payLabel, backordersOn, creditBalance, freeVials, choiceRewards, paymentMethods, payCard, submitOrder, venmoLink, openAvailability,
+    photo: () => VIAL_ON, vialStudio, bakeBottle, vialSig, vialColorName, LABEL_COLORS, track, validateDiscount, discountAmount, payDiscount, payLabel, OTHER_PAY, isOtherPay, backordersOn, creditBalance, freeVials, choiceRewards, paymentMethods, payCard, submitOrder, venmoLink, openAvailability,
     icon, toast, sheet, closeSheet, saved, isSaved, toggleSaved, heart, recordRecent, recent, badges, gkey, miniBag, addAndShow, openSearch, install, canPrompt, promptInstall, pushSupported, pushState, enablePush, disablePush, getPrefs, setPref, testPush, openInbox, refreshBell, notifyPanel, PREFS, emailPayload, postEmail };
 })();

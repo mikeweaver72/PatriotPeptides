@@ -1,4 +1,5 @@
 // PST_EDGE_FUNCTION_PATCH_V7_EMAIL_BRAND_REFRESH
+// v62 (Oct 27, 2026, Patriot): "Other method" payment for customers the owner turns it on for: no pay instructions, "a team member will contact you".
 // v61 (Oct 27, 2026, Patriot): branded look: navy header with the eagle, vial photos per item, dot progress, navy footer.
 // v60 (Oct 27, 2026, Patriot): short phone-first emails (status, progress bar, only the needed action, one button); hard-coded SMS gateway removed.
 // v52 (owner app 5.8): adds the owner's "Promos in emails" block (pst_email_promos) above the footer of customer emails.
@@ -153,12 +154,17 @@ function itemList(rows:Rec[], prices:boolean){if(!rows.length)return ""; return 
 function totalRows(a:any){const r=(l:string,v:string,st="")=>`<tr><td style="padding:4px 0;font-size:14px;color:#6b7385;${st}">${l}</td><td align="right" style="padding:4px 0;font-size:14px;white-space:nowrap;${st}">${v}</td></tr>`;
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:12px 0 0">${r("Subtotal",money(a.subtotal))}${a.discount?r("Kit savings","&minus;"+money(a.discount),`color:${SUCCESS}`):""}${r("Shipping",a.shipping?money(a.shipping):"Free")}${a.tax?r("Tax",money(a.tax)):""}<tr><td style="padding:10px 0 0;border-top:1px solid ${LINE};font-size:17px;font-weight:800;color:${NAVY_DEEP}">Total</td><td align="right" style="padding:10px 0 0;border-top:1px solid ${LINE};font-size:17px;font-weight:800;color:${NAVY_DEEP};white-space:nowrap">${money(a.total)}</td></tr></table>`;}
 function card(inner:string,bg="#f6f8fb",bd="#e3e8ef"){return `<div style="margin:20px 0 0;padding:18px;border-radius:12px;background:${bg};border:1px solid ${bd}">${inner}</div>`;}
+// "Other method": the owner turned it on for this customer. No pay instructions; the team reaches out.
+const isOtherPay=(m:any)=>/^other( method)?$/i.test(String(m||"").trim());
+const OTHER_NOTE="A Patriot Peptides USA team member will contact you to arrange payment.";
 function payCard(p:any, orderNo:string, total:number){if(!p.show)return "";
+  if(isOtherPay(p.method))return card(`<p style="margin:0 0 10px;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:${NAVY_DEEP}">Payment</p><p style="margin:0 0 6px;font-size:16px;line-height:1.5;color:${INK}"><b>${money(total)}</b> · Other method</p><p style="margin:0;font-size:14px;line-height:1.55;color:#4a5563">${OTHER_NOTE} There's nothing you need to send right now.</p>`,"#f4f6fb","#d9deea");
   const to=p.accountValue?`<p style="margin:0 0 4px;font-size:15px;color:${INK}">Send <b>${money(total)}</b> by <b>${esc(p.method||"your payment app")}</b> to</p><p style="margin:0 0 12px;font-size:22px;font-weight:800;color:${NAVY_DEEP};word-break:break-all">${esc(p.accountValue)}</p>`:`<p style="margin:0 0 12px;font-size:15px">Send <b>${money(total)}</b>${p.method?` by <b>${esc(p.method)}</b>`:""}.</p>`;
   return card(`<p style="margin:0 0 10px;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:${RED}">How to pay</p>${to}<p style="margin:0;font-size:14px;line-height:1.5;color:#4a5563">In the payment note, put only <b style="color:${INK}">${esc(orderNo||"your order number")}</b>. Please don't list any product names.</p>${p.instructions&&!/order (number|#)|PP-O/i.test(p.instructions)?`<p style="margin:8px 0 0;font-size:13px;line-height:1.45;color:#6b7385;white-space:pre-line">${esc(p.instructions)}</p>`:""}${p.qrCodeUrl?`<p style="margin:14px 0 0;text-align:center"><img src="${esc(p.qrCodeUrl)}" alt="Scan to pay" width="160" style="width:160px;max-width:60%;height:auto;border-radius:8px;border:1px solid ${LINE};background:#fff;padding:6px"></p>`:""}`,"#fff7f8","#f6d3d9");}
 function trackCard(a:any){if(!(a.trackingNumber||a.trackingUrl))return ""; return card(`<p style="margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:${SUCCESS}">Tracking${a.carrier?` · ${esc(a.carrier)}`:""}</p>${a.trackingNumber?`<p style="margin:0;font-size:16px;font-weight:700;letter-spacing:.02em;color:${INK};word-break:break-all">${esc(a.trackingNumber)}</p>`:""}${a.trackingUrl?btn(a.trackingUrl,"Track package",SUCCESS):""}`,"#f1faf4","#cfe9d8");}
 function customerEmail(args:any){
   const c=cfg(args.type,args.orderNo), account=args.type==="account_created", inquiry=args.type==="inquiry_received";
+  if(c.showPayment&&isOtherPay(args.payment?.method)){c.intro=args.type==="awaiting_payment"?"Your order is ready to go. We'll be in touch shortly about payment.":"We've got it. We'll be in touch shortly about payment.";c.pre="A team member will contact you about payment.";}
   const items=Array.isArray(args.items)?args.items:[], rest=Array.isArray(args.remainingItems)?args.remainingItems:[];
   const pill=`<span style="display:inline-block;padding:4px 10px;border-radius:999px;background:${c.tone}1a;color:${c.tone};font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase">${esc(c.label)}</span>`;
   const meta=args.orderNo?`<p style="margin:10px 0 0;font-size:13px;color:#6b7385">${inquiry?"Request":"Order"} <b style="color:${INK}">${esc(args.orderNo)}</b>${args.total&&!account?` &nbsp;·&nbsp; ${money(args.total)}`:""}</p>`:"";
@@ -169,7 +175,8 @@ function customerEmail(args:any){
   const hi=args.name?`Hi ${esc(args.name)}, ${esc(c.intro.charAt(0).toLowerCase()+c.intro.slice(1))}`:esc(c.intro);
   const inner=`<tr><td style="padding:26px 22px 8px;font-family:${FONT}">${pill}<h1 style="margin:12px 0 0;font-size:25px;line-height:1.2;font-weight:800;color:${NAVY_DEEP}">${esc(c.heading)}</h1><p style="margin:8px 0 0;font-size:16px;line-height:1.5;color:#3a4356">${hi}</p>${meta}${progress(c.step)}${c.showPayment?payCard(args.payment,args.orderNo,args.total):""}${c.showTracking?trackCard(args):""}${note}${list}${pending}${cta}${args.promoHtml||""}<div style="height:16px;line-height:16px">&nbsp;</div></td></tr>`;
   const t=[c.heading+(args.orderNo?` · ${args.orderNo}`:""),"",args.name?`Hi ${args.name}, ${c.intro.charAt(0).toLowerCase()+c.intro.slice(1)}`:c.intro];
-  if(c.showPayment&&args.payment?.show)t.push("",`Send ${money(args.total)}${args.payment.method?` by ${args.payment.method}`:""}${args.payment.accountValue?` to ${args.payment.accountValue}`:""}.`,`Put only ${args.orderNo||"your order number"} in the payment note.`);
+  if(c.showPayment&&isOtherPay(args.payment?.method))t.push("",`Payment: ${money(args.total)} by other method. ${OTHER_NOTE}`);
+  else if(c.showPayment&&args.payment?.show)t.push("",`Send ${money(args.total)}${args.payment.method?` by ${args.payment.method}`:""}${args.payment.accountValue?` to ${args.payment.accountValue}`:""}.`,`Put only ${args.orderNo||"your order number"} in the payment note.`);
   if(c.showTracking&&args.trackingNumber)t.push("",`Tracking${args.carrier?` (${args.carrier})`:""}: ${args.trackingNumber}`,args.trackingUrl||"");
   if(args.rejectionReason)t.push("",args.rejectionReason);
   if(c.items!=="none"&&items.length)t.push("",...items.map((i:Rec)=>`${itemQty(i)}x ${lineName(i)}${c.items==="full"?` ${money(itemTotal(i))}`:""}`));
@@ -182,7 +189,7 @@ function customerEmail(args:any){
 }
 function adminHtml(a:any){
   const inquiry=a.inquiry===true;
-  const inner=`<tr><td style="padding:26px 22px 8px;font-family:${FONT}"><span style="display:inline-block;padding:4px 10px;border-radius:999px;background:${RED}1a;color:${RED};font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase">${inquiry?"New request":"New order"}</span><h1 style="margin:12px 0 0;font-size:25px;line-height:1.2;font-weight:800;color:${NAVY_DEEP}">${esc(a.orderNo||"")}${!inquiry?` · ${money(a.total)}`:""}</h1><p style="margin:8px 0 0;font-size:16px;color:#3a4356">${esc(a.name||"Customer")} · <a href="mailto:${esc(a.email)}" style="color:${BLUE}">${esc(a.email)}</a></p>${!inquiry&&a.payment?.method?`<p style="margin:6px 0 0;font-size:14px;color:#6b7385">Paying by ${esc(a.payment.method)} · ${esc(a.payment.status||"Pending")}</p>`:""}${itemList(a.items||[],!inquiry)}${!inquiry?totalRows(a):""}${btn(`${SITE_URL}/owner.html#orders`,"Open in the owner app",NAVY_DEEP)}<div style="height:16px;line-height:16px">&nbsp;</div></td></tr>`;
+  const inner=`<tr><td style="padding:26px 22px 8px;font-family:${FONT}"><span style="display:inline-block;padding:4px 10px;border-radius:999px;background:${RED}1a;color:${RED};font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase">${inquiry?"New request":"New order"}</span><h1 style="margin:12px 0 0;font-size:25px;line-height:1.2;font-weight:800;color:${NAVY_DEEP}">${esc(a.orderNo||"")}${!inquiry?` · ${money(a.total)}`:""}</h1><p style="margin:8px 0 0;font-size:16px;color:#3a4356">${esc(a.name||"Customer")} · <a href="mailto:${esc(a.email)}" style="color:${BLUE}">${esc(a.email)}</a></p>${!inquiry&&a.payment?.method?`<p style="margin:6px 0 0;font-size:14px;color:#6b7385">${isOtherPay(a.payment.method)?`<b style="color:${INK}">Other method</b> · contact the customer to arrange payment`:`Paying by ${esc(a.payment.method)} · ${esc(a.payment.status||"Pending")}`}</p>`:""}${itemList(a.items||[],!inquiry)}${!inquiry?totalRows(a):""}${btn(`${SITE_URL}/owner.html#orders`,"Open in the owner app",NAVY_DEEP)}<div style="height:16px;line-height:16px">&nbsp;</div></td></tr>`;
   return shell(inner, inquiry?"New request in your owner app.":`New order ${a.orderNo||""} · ${money(a.total)}`);
 }
 
@@ -220,7 +227,7 @@ serve(async(req)=>{
     if(type==="order_received"&&selectedPaymentLabel){
       const configured=await configuredPaymentMethods();
       selectedMethod=configured.find((m:any)=>String(m.label).toLowerCase()===selectedPaymentLabel.toLowerCase()||String(m.id).toLowerCase()===selectedPaymentLabel.toLowerCase());
-      if(!selectedMethod)throw new Error("The selected payment method is no longer available.");
+      if(!selectedMethod&&!isOtherPay(selectedPaymentLabel))throw new Error("The selected payment method is no longer available.");
     }
     const pay=payment({...order,...payload,...(selectedMethod?{
       paymentMethod:selectedMethod.label,
@@ -244,6 +251,7 @@ serve(async(req)=>{
         const subject=inquiry?`New request${orderNo?` · ${orderNo}`:""}`:`New order${orderNo?` · ${orderNo}`:""} · ${money(total)} · ${name||email}`;
         const textParts=[subject,`Customer: ${name}`,`Email: ${email}`];
         if(!inquiry)textParts.push(`Total: ${money(total)}`);
+        if(!inquiry&&isOtherPay(pay.method))textParts.push("Other method: contact the customer to arrange payment.");
         textParts.push(`Owner app: ${SITE_URL}/owner.html#orders`);
         admin=await sendMail(recipients,subject,html,textParts.join("\n"));
       }

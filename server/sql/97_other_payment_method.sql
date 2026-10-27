@@ -1,0 +1,6 @@
+-- Patriot (Oct 27, 2026): "Other method" payment, turned on per customer by the owner. Applied as migrations
+-- ppu_other_payment_method + ppu_is_owner_direct_db on aoovvhbjugmqevwvekku.
+--   customer_profiles.other_payment_enabled (default false) + other_payment_set_at
+--   ppu_is_owner(): service role, direct DB, or an active admin_users row
+--   trigger ppu_guard_other_payment: only the owner can change the flag (a customer's own save keeps the old value)
+--   pst_order_set_payment_deadline(): "Other method" orders need the flag (or the owner placing it); they get no 24-hour deadline
