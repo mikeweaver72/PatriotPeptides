@@ -135,6 +135,13 @@
   /* ================= WHAT'S NEW ================= */
   const L = (t, h) => ({ t, h });
   const RELEASES = [
+    { v: "1.1", d: "Oct 26, 2026", title: "Compare suppliers", items: [
+      L("Every product with each supplier's 10-vial kit price side by side, the cheapest one marked", "#compare"),
+      L("See your margin on each supplier at today's shop price, colour coded, with filters for running low, margin under 85% and no supplier"),
+      L("Tick products, pick a supplier, set kits, and tap PO to open a purchase order already filled in, one per supplier", "#compare"),
+      L("Your 5 suppliers' price lists are loaded in: Box, Catherin, Chinaman, Cousin Jason and Sophia"),
+      L("Build-A-Kit with drag and drop, the Wholesale page, and pull down to refresh are live")
+    ] },
     { v: "1.0", d: "Oct 26, 2026", title: "Welcome to your owner app", items: [
       L("Orders: mark paid, packed, shipped and delivered from your phone; customers get an email and an alert at each step", "#orders"),
       L("Payments: Venmo and Cash App, matched to the order by number", "#orders"),
