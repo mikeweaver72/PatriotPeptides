@@ -141,6 +141,8 @@
       L("Stock: count and receive inventory with an audit trail; the shop updates instantly", "#stock"),
       L("Products: prices, sale tags, photos, lab reports and what shows on the home page", "#products"),
       L("Customers: look anyone up by name, PP-C number, phone or email; store credit and notes", "#customers"),
+      L("Build-A-Kit page for customers: drag any 3 vials (5% off) or 5 vials (10% off) into a kit", ""),
+      L("Wholesale page: your 10-vial kits plus the bulk quote form", ""),
       L("Kit savings run automatically: 3 vials 5%, 5 vials 10%", ""),
       L("Take the tour: a two-minute walkthrough of every screen (More → Take the tour)", "#more"),
       L("Pull down from the top of any screen to refresh (it also picks up app updates)", ""),

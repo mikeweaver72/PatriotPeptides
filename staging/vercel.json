@@ -33,7 +33,7 @@
   },
   {
    "source": "/build-a-kit",
-   "destination": "/catalog.html",
+   "destination": "/kit.html",
    "permanent": true
   },
   {
@@ -223,7 +223,7 @@
   },
   {
    "source": "/product-category/wholesale",
-   "destination": "/bulk-request.html",
+   "destination": "/wholesale.html",
    "permanent": true
   },
   {

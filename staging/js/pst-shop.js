@@ -117,21 +117,21 @@ ${mine.length ? `<div class="mylist">${mine.map(productRow).join("")}</div><p cl
   async function catalog() {
     const grid = $("[data-grid]"), q = $("#cq"), tabs = $("[data-tabs]"), only = $("#instock"), head = $("[data-head]"), cnt = $("[data-count]");
     grid.innerHTML = skeleton(8); bindCards(grid);
-    const reqCat = P.params.get("category") || "", cat0 = ["Blend", "Stack", "Multi-Peptide Product"].includes(reqCat) ? "blend" : reqCat === "Supply" ? "supply" : "";
+    const reqCat = P.params.get("category") || "", cat0 = ["Blend", "Stack", "Multi-Peptide Product"].includes(reqCat) ? "blend" : reqCat === "Supply" ? "supply" : /^wholesale$/i.test(reqCat) ? "wholesale" : "";
     if (P.params.get("search")) P.track("search", { term: P.params.get("search").slice(0, 80) });
     const state = { f: (P.params.get("focus") || "").toLowerCase(), c: cat0, s: P.params.get("search") || "", only: P.params.get("stock") === "1", sort: P.params.get("sort") || "name" }; // v38: A–Z by default (5-Amino first)
     const sortSel = $("#csort"); if (sortSel) { sortSel.value = state.sort; sortSel.addEventListener("change", () => { state.sort = sortSel.value; draw(); }); }
     if (!P.FOCUS[state.f]) state.f = "";
     q.value = state.s; only.checked = state.only;
     let all = [];
-    const TABS = [["", "", "All"], ["f", "performance", "Performance"], ["f", "recovery", "Recovery"], ["f", "longevity", "Longevity"], ["c", "blend", "Blends"], ["c", "supply", "Supplies"]];
+    const TABS = [["", "", "All"], ["f", "performance", "Performance"], ["f", "recovery", "Recovery"], ["f", "longevity", "Longevity"], ["c", "blend", "Blends"], ["c", "supply", "Supplies"], ["c", "wholesale", "Wholesale"]];
     function drawTabs() { tabs.innerHTML = TABS.map(([k, v, t]) => `<button class="tab" type="button" data-k="${k}" data-v="${v}" aria-pressed="${k ? state[k] === v : !state.f && !state.c}">${t}</button>`).join(""); }
-    function syncUrl() { const u = new URLSearchParams(); if (state.s) u.set("search", state.s); if (state.f) u.set("focus", state.f); if (state.c === "blend") u.set("category", "Multi-Peptide Product"); if (state.c === "supply") u.set("category", "Supply"); if (state.only) u.set("stock", "1"); if (state.sort && state.sort !== "name") u.set("sort", state.sort); history.replaceState(null, "", "catalog.html" + (u.toString() ? "?" + u : "")); }
+    function syncUrl() { const u = new URLSearchParams(); if (state.s) u.set("search", state.s); if (state.f) u.set("focus", state.f); if (state.c === "blend") u.set("category", "Multi-Peptide Product"); if (state.c === "supply") u.set("category", "Supply"); if (state.c === "wholesale") u.set("category", "Wholesale"); if (state.only) u.set("stock", "1"); if (state.sort && state.sort !== "name") u.set("sort", state.sort); history.replaceState(null, "", "catalog.html" + (u.toString() ? "?" + u : "")); }
     function draw() {
       const s = state.s.trim().toLowerCase();
       let list = all.filter(p => {
         const hay = [p.display_name, p.strength, p.category, p.series, p.product_key, ...P.focuses(p)].filter(Boolean).join(" ").toLowerCase();
-        return (!s || hay.includes(s)) && (!state.f || P.focuses(p).includes(state.f)) && (!state.c || (state.c === "blend" ? P.isBlend(p) : p.category === "Supply"));
+        return (!s || hay.includes(s)) && (!state.f || P.focuses(p).includes(state.f)) && (!state.c || (state.c === "blend" ? P.isBlend(p) : state.c === "wholesale" ? /wholesale/i.test(p.category || "") : p.category === "Supply"));
       });
       let gs = sortStockFirst(P.groups(list)); if (state.only) gs = gs.filter(P.gIn);
       const newest = g => Math.max(...g.map(x => new Date(x.created_at || 0).getTime())), best = g => g.some(x => x.hot_peptide || x.featured);

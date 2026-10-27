@@ -645,7 +645,7 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
   <button class="mobi" type="button" data-act="drawer" aria-label="Menu" aria-controls="drawer">${icon("menu")}</button>
   <nav class="nav l" aria-label="Shop">
     <div class="mm"><button type="button" class="mmb" data-act="mega" aria-expanded="false" aria-controls="mega">Shop <span aria-hidden="true">▾</span></button></div>
-    ${a("catalog.html?category=Multi-Peptide%20Product", "Blends", "blends")}${a("testing.html", "Lab reports", "testing")}${a("rewards.html", "Rewards", "rewards")}</nav>
+    ${a("kit.html", "Build a kit", "kit")}${a("catalog.html?category=Multi-Peptide%20Product", "Blends", "blends")}${a("testing.html", "Lab reports", "testing")}${a("rewards.html", "Rewards", "rewards")}</nav>
   <a href="index.html" class="brand" aria-label="Patriot Peptides USA home"><img src="${EMB}" alt="" width="40" height="40"><span>PATRIOT <em>PEPTIDES</em></span></a>
   <nav class="nav r" aria-label="Account">
     <button type="button" class="hbtn" data-act="search" aria-label="Search">${icon("search", 18)} <span>Search</span></button>
@@ -656,9 +656,9 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
   <div class="mobr"><button class="mobi bell" type="button" data-bell data-act="inbox" aria-label="Notifications" hidden>${icon("bell")}<i hidden>0</i></button><button class="mobi" type="button" data-act="search" aria-label="Search">${icon("search")}</button></div>
 </div>
 <div class="mega" id="mega" hidden><div class="wrap mgrid">
-  <div><b>Shop by type</b><a href="catalog.html">All products</a><a href="catalog.html?category=Peptide">Peptides</a><a href="catalog.html?category=Multi-Peptide%20Product">Research blends</a><a href="catalog.html?category=Supply">Supplies</a></div>
+  <div><b>Shop by type</b><a href="catalog.html">All products</a><a href="catalog.html?category=Peptide">Peptides</a><a href="catalog.html?category=Multi-Peptide%20Product">Research blends</a><a href="catalog.html?category=Supply">Supplies</a><a href="wholesale.html">Wholesale kits</a></div>
   <div><b>Research focus</b><a href="catalog.html?focus=performance">Performance</a><a href="catalog.html?focus=recovery">Recovery</a><a href="catalog.html?focus=longevity">Longevity</a></div>
-  <div><b>Quick links</b><a href="catalog.html?stock=1">Available now</a><a href="catalog.html?sort=new">New arrivals</a><a href="catalog.html?sort=best">Best sellers</a><a href="testing.html">Lab reports</a><a href="bulk-request.html">Bulk requests</a></div>
+  <div><b>Quick links</b><a href="catalog.html?stock=1">Available now</a><a href="catalog.html?sort=new">New arrivals</a><a href="catalog.html?sort=best">Best sellers</a><a href="testing.html">Lab reports</a><a href="kit.html">Build a kit</a><a href="wholesale.html">Wholesale</a><a href="bulk-request.html">Bulk requests</a></div>
   <div class="mfeat" data-mfeat></div>
 </div></div></header>
 <div class="drawerwrap" id="drawer" hidden><aside class="drawer" role="dialog" aria-modal="true" aria-label="Menu">
@@ -668,7 +668,7 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
   <details open><summary>Shop</summary><a href="catalog.html">All products</a><a href="catalog.html?stock=1">Available now</a><a href="catalog.html?sort=new">New arrivals</a><a href="catalog.html?sort=best">Best sellers</a><a href="catalog.html?category=Peptide">Peptides</a><a href="catalog.html?category=Multi-Peptide%20Product">Research blends</a><a href="catalog.html?category=Supply">Supplies</a></details>
   <details><summary>Research focus</summary><a href="catalog.html?focus=performance">Performance</a><a href="catalog.html?focus=recovery">Recovery</a><a href="catalog.html?focus=longevity">Longevity</a></details>
   <details><summary>My account</summary><a href="index.html">My products</a><a href="account.html#orders">Orders &amp; tracking</a><a href="saved.html">Saved items</a><a href="account.html#rewards">Rewards &amp; credit</a><a href="account.html#alerts">Notifications</a></details>
-  <details><summary>Help</summary><a href="testing.html">Lab reports</a><a href="shipping.html">Shipping &amp; returns</a><a href="faq.html">FAQ</a><a href="contact.html">Contact</a><a href="about.html">About us</a><a href="bulk-request.html">Bulk requests</a></details>
+  <details><summary>Help</summary><a href="testing.html">Lab reports</a><a href="shipping.html">Shipping &amp; returns</a><a href="faq.html">FAQ</a><a href="contact.html">Contact</a><a href="about.html">About us</a><a href="kit.html">Build a kit</a><a href="wholesale.html">Wholesale</a><a href="bulk-request.html">Bulk requests</a></details>
   </nav>
   <a class="btn ghost wide" href="install.html" data-installlink>${icon("plus", 16)} Get the app</a>
   <p class="ruof" style="margin-top:16px">Research use only · Not for human or veterinary use</p>
@@ -679,13 +679,13 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
     return `<nav class="tabbar" aria-label="App">${t("index.html", "home", "home", "Home")}${t("catalog.html", "catalog", "shop", "Shop")}${t("cart.html", "cart", "bag", "Bag")}${t("account.html", "account", "user", "Account")}</nav>`;
   }
   function footer() {
-    const pay = ["Venmo", "Zelle", "Apple Cash", "PayPal", "Cash", "Bitcoin"];
+    const pay = ["Venmo", "Cash App"];
     return `<footer class="ft"><div class="wrap">
   <section class="news" aria-label="Restock alerts"><div><b class="serif">Restocks &amp; members-only deals</b><span>First word when something's back, plus the occasional code. No spam.</span></div>
   <form class="nform" action="register.html"><label class="sr" for="nem">Email</label><input id="nem" type="email" name="email" placeholder="Your email" autocomplete="email" required><input type="hidden" name="news" value="1"><button class="btn primary sm">Sign me up</button></form></section>
   <div class="fmark"><img src="${EMB2}" alt="" width="64" height="64" loading="lazy"><div class="wm">PATRIOT PEPTIDES<small>★ USA ★</small></div><p class="tagl">Quality <span>|</span> Consistency <span>|</span> Transparency</p></div>
   <div class="fcols f4">
-    <nav aria-label="Shop"><b>Shop</b><a href="catalog.html">All products</a><a href="catalog.html?stock=1">Available now</a><a href="catalog.html?sort=new">New arrivals</a><a href="catalog.html?category=Multi-Peptide%20Product">Research blends</a><a href="bulk-request.html">Bulk requests</a></nav>
+    <nav aria-label="Shop"><b>Shop</b><a href="catalog.html">All products</a><a href="catalog.html?stock=1">Available now</a><a href="catalog.html?sort=new">New arrivals</a><a href="catalog.html?category=Multi-Peptide%20Product">Research blends</a><a href="kit.html">Build a kit</a><a href="wholesale.html">Wholesale</a><a href="bulk-request.html">Bulk requests</a></nav>
     <nav aria-label="Help"><b>Help</b><a href="shipping.html">Shipping &amp; returns</a><a href="faq.html">FAQ</a><a href="testing.html">Lab reports</a><a href="contact.html">Contact</a><a href="mailto:${CFG.support}">${CFG.support}</a></nav>
     <nav aria-label="Account"><b>Account</b><a href="account.html">My account</a><a href="account.html#orders">Track an order</a><a href="saved.html">Saved items</a><a href="rewards.html">Researcher rewards</a><a href="install.html">Get the app</a><a href="account.html#alerts">Notifications</a></nav>
     <nav aria-label="Company"><b>Company</b><a href="about.html">About us</a><a href="terms.html">Terms</a><a href="privacy.html">Privacy</a></nav>
@@ -710,7 +710,7 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
         } }
       else a.href = `login.html?redirect=${encodeURIComponent((location.pathname.split("/").pop() || "index.html") + location.search)}`;
       const promo = await activePromotion(u).catch(() => null), el = $("[data-annc]");
-      if (el) { el.innerHTML = promo ? `<span>${promo.badge ? `<b>${esc(promo.badge)}</b> ` : ""}${esc(promo.title)}</span>${promo.button_link ? `<a href="${esc(promo.button_link)}">${esc(promo.button_text || "Learn more")} →</a>` : ""}` : `<span><b>Kit savings</b> 3 vials 5% <i>★</i> 5 vials 10% <i>★</i> Free shipping over $200<span class="lg"> <i>★</i> Third-party tested</span></span>`; el.hidden = false; }
+      if (el) { el.innerHTML = promo ? `<span>${promo.badge ? `<b>${esc(promo.badge)}</b> ` : ""}${esc(promo.title)}</span>${promo.button_link ? `<a href="${esc(promo.button_link)}">${esc(promo.button_text || "Learn more")} →</a>` : ""}` : `<span><a href="kit.html"><b>Build a kit</b> 3 vials 5% <i>★</i> 5 vials 10%</a> <i>★</i> Free shipping over $200<span class="lg"> <i>★</i> Third-party tested</span></span>`; el.hidden = false; }
     });
   }
 
