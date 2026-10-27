@@ -1,0 +1,4 @@
+-- Applied to aoovvhbjugmqevwvekku on 2026-10-27 as migration "ppu_profile_from_signup".
+-- Creates customer_profiles from the sign-up form (auth.users.raw_user_meta_data) on account creation,
+-- normalizes state names to 2-letter codes (ppu_state_code), and backfills accounts that had no profile.
+-- See the migration in Supabase for the full body; re-run safe (on conflict do nothing).

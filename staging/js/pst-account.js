@@ -204,7 +204,10 @@ ${admin ? `<div class="setrow"><div><b>Store owner</b><span>The owner app (order
   function register() {
     const f = $("[data-form=register]"), msg = $("[data-msg]"); pwToggles(f);
     if (P.params.get("email")) f.email.value = P.params.get("email"); if (P.params.get("news") === "1") f.marketing_opt_in.checked = true;
-    const same = f.same_as_shipping, bill = $("[data-bill]"); const sync = () => bill.hidden = same.checked; same.addEventListener("change", sync); sync();
+    f.querySelectorAll("[data-stslot]").forEach(sl => { sl.outerHTML = P.stateSelect(sl.dataset.stslot, "", `autocomplete="${sl.dataset.stslot.startsWith("ship") ? "shipping" : "billing"} address-level1"${sl.dataset.req ? " required" : ""}`); });
+    const same = f.same_as_shipping, bill = $("[data-bill]");
+    const sync = () => { bill.hidden = same.checked; bill.querySelectorAll("[data-breq], select").forEach(x => { x.required = !same.checked; }); }; // billing is only required when it differs
+    same.addEventListener("change", sync); sync();
     f.addEventListener("submit", async e => {
       e.preventDefault(); const b = f.querySelector("button[type=submit]"), v = n => String(f.elements[n]?.value || "").trim();
       const email = v("email").toLowerCase(), pw = f.password.value, mk = f.marketing_opt_in.checked;
@@ -214,10 +217,12 @@ ${admin ? `<div class="setrow"><div><b>Store owner</b><span>The owner app (order
         ...sh, marketing_opt_in: mk, marketing_opt_out: false, marketing_source: mk ? "registration" : null };
       b.disabled = true; b.textContent = "Creating account…"; notice(msg, "");
       try {
-        const { error } = await P.client().auth.signUp({ email, password: pw, options: { emailRedirectTo: "https://www.patriotpeptides-usa.com/login.html", data } });
+        const { data: su, error } = await P.client().auth.signUp({ email, password: pw, options: { emailRedirectTo: "https://www.patriotpeptides-usa.com/login.html", data } });
         if (error) throw error;
+        if (su?.user && Array.isArray(su.user.identities) && !su.user.identities.length) throw new Error("There's already an account with that email. Sign in, or reset your password.");
         P.track("signup");
         try { await fetch(`${P.CFG.url}/functions/v1/${P.CFG.emailFn}`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${P.CFG.key}` }, body: JSON.stringify({ type: "account_created", to: email, customer_email: email, customer_name: [data.first_name, data.last_name].filter(Boolean).join(" "), ...data }) }); } catch {}
+        if (su?.session) { const back = P.params.get("redirect") || (P.readCart?.().length ? "cart.html" : "account.html"); f.innerHTML = `<div class="okmsg">${P.icon("check", 34)}<h2 class="serif">You're all set${data.first_name ? `, ${esc(data.first_name)}` : ""}</h2><p class="muted">Your account is ready. Taking you ${/cart/.test(back) ? "back to your bag" : "to your account"}…</p></div>`; setTimeout(() => { location.href = back; }, 900); return; }
         f.innerHTML = `<div class="okmsg">${P.icon("check", 34)}<h2 class="serif">Check your email</h2><p class="muted">We sent a confirmation link to <b style="color:var(--ink)">${esc(email)}</b>. Tap it, then sign in. Your bag will be waiting.</p><a class="btn primary" href="login.html?redirect=cart.html">Go to sign in</a></div>`;
       } catch (err) { notice(msg, err.message || "Something went wrong creating the account.", "err"); b.disabled = false; b.textContent = "Create account"; }
     });
