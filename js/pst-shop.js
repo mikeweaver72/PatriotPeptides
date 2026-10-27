@@ -87,13 +87,13 @@ ${mine.length ? `<div class="mylist">${mine.map(productRow).join("")}</div><p cl
       if (marq) { const items = inS.map(g => `<a href="${P.productUrl(P.gBest(g))}">${esc(P.titleParts(g[0]).main)}</a>`).join("<i>✦</i>"); marq.innerHTML = `<div aria-hidden="true">${items}<i>✦</i>${items}<i>✦</i></div>`; }
       if (avail) avail.innerHTML = inS.slice(0, 8).map(g => card(g)).join("") || `<p class="empty">Restocking now. Check back soon.</p>`;
       const hr = $("[data-home-recent]"); if (hr) { const rg = P.recent().map(k => gs.find(g => P.gkey(g[0]) === k)).filter(Boolean).slice(0, 4); if (rg.length) { hr.innerHTML = `<div class="shead" style="margin-top:36px"><h2 class="serif">Recently viewed</h2></div><div class="lgrid">${rg.map(g => card(g)).join("")}</div>`; bindCards(hr); } }
-      if (ed) {
-        const pick = [...inS.filter(g => g.some(p => p.featured || p.hot_peptide)), ...inS].filter((g, i, arr) => arr.indexOf(g) === i).slice(0, 3);
-        ed.innerHTML = pick.map((g, i) => { const p = P.gBest(g), t = P.titleParts(p), coa = g.some(P.coaHref);
-          return `<div class="ed ${i % 2 ? "rev" : ""}"><a href="${P.productUrl(p)}" class="edimg" aria-hidden="true" tabindex="-1">${P.vial(p, 150)}</a>
-<div class="edtx"><span class="kick">${esc(P.focuses(p).map(f => P.FOCUS[f]).join(" · ") || (P.isBlend(p) ? "Research blend" : "Research peptide"))}</span><h3 class="serif">${esc(t.main)}</h3>${t.sub ? `<p class="muted">${esc(t.sub)}</p>` : ""}
-<p>${esc(g.map(x => x.strength).filter(Boolean).join(" · "))} <span class="muted">· from ${money(P.gMin(g))}</span></p>
-<p class="muted small">${coa ? "Third-party lab report on file." : "Lab report for this batch is in progress."}</p><a class="lnk" href="${P.productUrl(p)}">View ${esc(t.main)} →</a></div></div>`; }).join("");
+      if (ed) { // Patriot: featured spotlight, one big pick + four compact ones (was three full-width rows)
+        const pick = [...inS.filter(g => g.some(p => p.featured || p.hot_peptide)), ...inS].filter((g, i, arr) => arr.indexOf(g) === i).slice(0, 5);
+        ed.className = "hspot";
+        ed.innerHTML = pick.map((g, i) => { const p = P.gBest(g), t = P.titleParts(p), coa = g.some(P.coaHref), big = i === 0;
+          const kick = P.focuses(p).map(f => P.FOCUS[f]).join(" · ") || (P.isBlend(p) ? "Research blend" : "Research peptide");
+          return `<a class="spc${big ? " big" : ""}" href="${P.productUrl(p)}"><span class="spimg">${P.vial(p, big ? 170 : 74)}</span><span class="sptx"><span class="kick">${esc(kick)}</span><b class="serif">${esc(t.main)}</b>
+<span class="spstr">${esc(g.map(x => x.strength).filter(Boolean).join(" · "))}</span><span class="spfrom">from <b>${money(P.gMin(g))}</b></span>${big ? `<span class="muted small">${coa ? "Third-party lab report on file." : "Lab report for this batch is in progress."}</span>` : ""}<span class="lnk">View${big ? " " + esc(t.main) : ""} →</span></span></a>`; }).join("");
       }
     } catch (err) { if (avail) avail.innerHTML = `<p class="empty">Couldn't load products. ${esc(err.message || "")}</p>`; }
   }
