@@ -1,0 +1,30 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="css/pst-bl.css"><link rel="stylesheet" href="css/patriot.css"></head><body data-page="test" style="margin:0;background:#0A1020">
+<canvas id="c" width="1800" height="1500" style="position:fixed;inset:0;z-index:99999"></canvas>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/pst-core.js"></script>
+<script>
+const li = s => new Promise((r, j) => { const i = new Image(); i.onload = () => r(i); i.onerror = j; i.src = s; });
+addEventListener("load", async () => {
+  const c = document.getElementById("c"), g = c.getContext("2d"), W = c.width, H = c.height;
+  // background: his flag texture, deep navy grade, soft key light from upper right
+  const flag = await li("img/flag-texture.jpg"); const sc = Math.max(W / flag.width, H / flag.height);
+  g.drawImage(flag, (W - flag.width * sc) / 2, (H - flag.height * sc) / 2, flag.width * sc, flag.height * sc);
+  g.fillStyle = "rgba(10,16,32,.62)"; g.fillRect(0, 0, W, H);
+  let k = g.createRadialGradient(W * .72, H * .12, 0, W * .72, H * .12, W * .7); k.addColorStop(0, "rgba(150,170,220,.22)"); k.addColorStop(1, "rgba(150,170,220,0)"); g.fillStyle = k; g.fillRect(0, 0, W, H);
+  // floor: a soft pool of light under the bottles, no hard plinth edge
+  const py = H * .84; let fl = g.createRadialGradient(W / 2, py, 0, W / 2, py, W * .5); fl.addColorStop(0, "rgba(170,185,225,.18)"); fl.addColorStop(.5, "rgba(170,185,225,.05)"); fl.addColorStop(1, "rgba(170,185,225,0)");
+  g.save(); g.scale(1, .18); g.fillStyle = fl; g.beginPath(); g.arc(W / 2, py / .18, W * .5, 0, Math.PI * 2); g.fill(); g.restore();
+  // three vials drawn by the shop's own renderer (same rules as every product)
+  const v = [["PP-KLW", "80mg", 1, .22], ["PP-3-RT", "10mg", 1, .5], ["PP-WLV", "10mg", 1, .78]];
+  for (const [n, s, z, xf] of v.sort((a, b) => a[2] - b[2])) {
+    await document.fonts.ready; const can = await PST.vialCanvas({ product_key: n + s, display_name: n, strength: s, label_color: "Blue" }, 3);
+    const h = H * .62 * z, w = h * can.width / can.height, x = W * xf - w / 2, y = py - h + H * .012;
+    { const rc = document.createElement("canvas"); rc.width = Math.round(w); rc.height = Math.round(h * .22); const r = rc.getContext("2d");   // short, fading reflection of the glass base only
+      r.translate(0, rc.height); r.scale(1, -1); r.drawImage(can, 0, can.height * .78, can.width, can.height * .22, 0, 0, rc.width, rc.height);
+      r.setTransform(1, 0, 0, 1, 0, 0); r.globalCompositeOperation = "destination-in"; const fd = r.createLinearGradient(0, 0, 0, rc.height); fd.addColorStop(0, "rgba(0,0,0,.28)"); fd.addColorStop(1, "rgba(0,0,0,0)"); r.fillStyle = fd; r.fillRect(0, 0, rc.width, rc.height);
+      g.drawImage(rc, x, y + h); }
+    g.save(); g.shadowColor = "rgba(0,0,0,.55)"; g.shadowBlur = 40; g.shadowOffsetY = 18; g.drawImage(can, x, y, w, h); g.restore();
+  }
+  const f = g.createLinearGradient(0, py + 20, 0, H); f.addColorStop(0, "rgba(10,16,32,0)"); f.addColorStop(.6, "rgba(10,16,32,1)"); g.fillStyle = f; g.fillRect(0, py + 20, W, H);
+  document.body.dataset.done = c.toDataURL("image/webp", .9).length;
+});
+</script></body></html>
