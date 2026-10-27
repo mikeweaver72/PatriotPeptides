@@ -7,7 +7,7 @@ let index = {}; try { index = JSON.parse(fs.readFileSync(path.join(root, "img/sh
 const have = new Set(Object.values(index).map(v => v.sig));
 fetch(`${url}/rest/v1/product_catalog?select=product_key,display_name,strength&is_active=eq.true`, { headers: { apikey: key, Authorization: `Bearer ${key}` } })
   .then(r => r.json()).then(rows => {
-    const missing = rows.filter(x => x.product_key && !have.has(`${x.product_key}|${x.display_name || ""}|${x.strength || ""}`));
+    const missing = rows.filter(x => x.product_key && (!have.has(`${x.product_key}|${x.display_name || ""}|${x.strength || ""}`) || !fs.existsSync(path.join(root, "img/email/vials", x.product_key + ".png"))));
     if (missing.length) console.error("needs share pages:", missing.map(x => x.product_key).join(", "));
     console.log(missing.length ? "yes" : "no");
   }).catch(e => { console.error(e); console.log("no"); });

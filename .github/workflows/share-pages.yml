@@ -33,14 +33,14 @@ jobs:
         run: |
           node tools/make_share_pages.js . https://www.patriotpeptides-usa.com --changed
           mkdir -p staging/img/share
-          cp -f img/share/*.jpg staging/img/share/ && cp -f img/share/index.json staging/img/share/
+          cp -f img/share/*.jpg staging/img/share/ && cp -f img/share/index.json staging/img/share/ && mkdir -p staging/img/email/vials && cp -f img/email/vials/*.png staging/img/email/vials/
           for f in $(ls *.html | grep -E -- '-pp-|^bac-w-'); do cp -f "$f" staging/; done
       - name: Publish
         if: steps.check.outputs.needed == 'yes'
         run: |
           git config user.name "patriot-share-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add -A '*.html' img/share staging
+          git add -A "*.html" img/share img/email/vials staging
           git diff --cached --quiet && echo "nothing changed" && exit 0
           git commit -m "Share pages for new or renamed products"
           git push

@@ -21,14 +21,17 @@ const esc = s => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").re
       const t = P.titleParts(x), main = String(t.main || "");
       const slug = main.toLowerCase().replace(/\([^)]*\)/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "product";
       const cv = await P.vialCanvas(x, 3);
-      out.push({ sig: x.product_key + "|" + (x.display_name || "") + "|" + (x.strength || ""), key: x.product_key, slug: `${slug}-${String(x.product_key).toLowerCase()}`, name: main, strength: x.strength || t.sub || "", cat: x.category || "", vial: cv.toDataURL("image/png") });
+      const em = document.createElement("canvas"); em.width = 63; em.height = 144; const eg = em.getContext("2d"); eg.imageSmoothingQuality = "high";
+      const r = Math.min(63 / cv.width, 144 / cv.height), w = cv.width * r, h = cv.height * r; eg.drawImage(cv, (63 - w) / 2, (144 - h) / 2, w, h);
+      out.push({ sig: x.product_key + "|" + (x.display_name || "") + "|" + (x.strength || ""), key: x.product_key, slug: `${slug}-${String(x.product_key).toLowerCase()}`, name: main, strength: x.strength || t.sub || "", cat: x.category || "", vial: cv.toDataURL("image/png"), email: em.toDataURL("image/png") });
     }
     return out;
   }, ONLY_CHANGED ? Object.values(index).map(v => v.sig) : []);
   const emblem = SITE + "/img/pst-emblem-384.webp", flag = SITE + "/img/flag-texture.jpg";
-  fs.mkdirSync(path.join(OUT, "img/share"), { recursive: true });
+  fs.mkdirSync(path.join(OUT, "img/share"), { recursive: true }); fs.mkdirSync(path.join(OUT, "img/email/vials"), { recursive: true });
   const card = await c.newPage();
   for (const x of list) {
+    const ev = path.join(OUT, "img/email/vials", x.key + ".png"); if (!fs.existsSync(ev)) fs.writeFileSync(ev, Buffer.from(x.email.split(",")[1], "base64"));
     const bac = /bac/i.test(x.name);
     await card.setContent(`<!doctype html><html><head><style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800;900&display=swap');
