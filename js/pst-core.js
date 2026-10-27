@@ -68,7 +68,11 @@
     return rows.some(r => r && (r.is_active === true || r.active === true || r.is_admin === true || r.email === user.email));
   }
   const customerName = (p = {}, u = {}) => [p.first_name, p.last_name].filter(Boolean).join(" ") || p.full_name || u.user_metadata?.full_name || u.email || "Customer";
-  const firstName = (p = {}, u = {}) => String(p.first_name || p.full_name || u.user_metadata?.first_name || u.email || "there").trim().split(/[\s@]+/)[0];
+  const firstName = (p = {}, u = {}) => { // a real first name, or a friendly one from the email (mike.weaver2013@ → Mike), never the raw address
+    const n = String(p?.first_name || p?.full_name || u?.user_metadata?.first_name || u?.user_metadata?.full_name || "").trim().split(/\s+/)[0];
+    if (n) return n;
+    const e = (String(u?.email || "").split("@")[0].split(/[._\-+\d]+/).find(x => x.length > 1) || "");
+    return e ? e.charAt(0).toUpperCase() + e.slice(1).toLowerCase() : "there"; };
 
   /* ---------- products (same query + incoming status as app.js) ---------- */
   let productsP = null;
@@ -715,12 +719,14 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
     getUser().then(async u => {
       const a = $("[data-acct]"); if (!a) return;
       if (u) { const p = await getProfile(u); a.textContent = `Hi, ${firstName(p, u)}`; refreshBell(); appAlertsNudge();
+        $("#drawer nav")?.insertAdjacentHTML("afterend", `<div class="dsign"><span>Signed in as <b>${esc(u.email || "")}</b></span><button type="button" class="btn ghost wide" data-signout-g>Sign out</button></div>`);
         if (await isAdmin(u)) { // same as his old header: staff see an Admin link (plus the order inbox)
           a.insertAdjacentHTML("beforebegin", `<details class="ownmenu" data-adminlink><summary>Owner</summary><div><a href="owner.html">Owner app</a><a href="admin.html">Admin dashboard</a></div></details>`);
           document.addEventListener("click", e => { const d = document.querySelector(".ownmenu[open]"); if (d && !d.contains(e.target)) d.open = false; });
           $("#drawer nav")?.insertAdjacentHTML("afterbegin", `<details open><summary>Store owner</summary><a href="owner.html">Owner app (phone)</a><a href="admin.html">Admin dashboard</a></details>`);
         } }
-      else a.href = `login.html?redirect=${encodeURIComponent((location.pathname.split("/").pop() || "index.html") + location.search)}`;
+      else { $("#drawer nav")?.insertAdjacentHTML("afterend", `<div class="dsign"><a class="btn primary wide" href="login.html">Sign in</a><a class="btn ghost wide" href="register.html">Create account</a></div>`); }
+      if (!u) a.href = `login.html?redirect=${encodeURIComponent((location.pathname.split("/").pop() || "index.html") + location.search)}`;
       const promo = await activePromotion(u).catch(() => null), el = $("[data-annc]");
       if (el) { el.innerHTML = promo ? `<span>${promo.badge ? `<b>${esc(promo.badge)}</b> ` : ""}${esc(promo.title)}</span>${promo.button_link ? `<a href="${esc(promo.button_link)}">${esc(promo.button_text || "Learn more")} →</a>` : ""}` : `<span><a href="kit.html"><b>Build a kit</b> 3 vials 5% <i>★</i> 5 vials 10%</a> <i>★</i> Free shipping over $200<span class="lg"> <i>★</i> Third-party tested</span></span>`; el.hidden = false; }
     });
@@ -1083,6 +1089,7 @@ ${rows.length ? `<div class="mbl">${rows.map(r => `<div class="mbr${r.key === ad
     } catch { /* private mode */ }
   }
   document.addEventListener("DOMContentLoaded", ownerChip);
+  document.addEventListener("click", async e => { if (!e.target.closest("[data-signout-g]")) return; e.preventDefault(); try { await client().auth.signOut(); } catch {} location.href = "index.html"; });
   window.PST = { vialCanvas, US_STATES, stateCode, stateSelect, kitInfo, SMS_CONSENT, usPhone, fmtPhone, PREVIEW, lockScroll, CFG, FOCUS, REMIND, $, $$, esc, money, round, params, store, fmtDate, isStandalone, isIOS, client, getUser, getProfile, isAdmin, customerName, firstName,
     products, groups, cycles, suggestDays, myHistory, myProducts, isDone, handedOff, stageOf, vialLiquid, paidNotice, gIn, gBest, gMin, unitPrice, onSale, qty, stock, focuses, isBlend, titleParts, productUrl, coaHref, vial, cmpProduct,
     readCart, writeCart, addToCart, setQty, count, refreshCount, cartRows, reminders, setReminder,
