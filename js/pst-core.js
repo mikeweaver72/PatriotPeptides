@@ -140,9 +140,9 @@
   const vialName = p => String(p.label_line_1 || p.display_name || "").replace(/\s*\(.*\)\s*/, "").toUpperCase();
   const vialStrength = p => { const v = String(p.strength || "").replace(/\s+/g, ""); return /^b-?12\b/i.test(String(p.display_name || "")) ? v.replace(/\/.*$/, "") : v; }; // B12 label reads "10mg" (Mike's rule)
   // Mike's rules (Oct 2026): what the liquid below the label looks like. Everything else shows the white powder cake.
-  const LIQUID = [[/^b-?12\b/i, "#a3122a"], [/ghk-?cu|^glow\b|^klow\b/i, "#1f5fc4"], [/5-?amino/i, "#f1b67c"]];
+  const LIQUID = [[/^b-?12\b/i, "#a3122a"], [/ghk-?cu|\bglow\b|\bklow\b|(^|-)glw\b|(^|-)klw\b/i, "#4f86e8"], [/5-?amino/i, "#f0a35e"]]; // Patriot: GHK-Cu / Glow / Klow powders are blue, 5-Amino cream-orange
   const vialLiquid = p => (LIQUID.find(([re]) => re.test(String(p.display_name || ""))) || [])[1] || "";
-  const vialSig = p => ["ppu2", p.product_key, vialName(p), vialStrength(p), vialHex(p), vialLiquid(p)].join("|");
+  const vialSig = p => ["ppu4", p.product_key, vialName(p), vialStrength(p), vialHex(p), vialLiquid(p)].join("|");
   const vialCache = new Map(); let vialAssets = null; const vialByKey = new Map();
   const loadImg = src => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; });
   function vialAssetsP() {
@@ -166,32 +166,68 @@
       lq.globalCompositeOperation = "destination-in"; lq.drawImage(base, 0, 0, W, H);
       g.save(); g.beginPath(); g.rect(0, y0, W, H - y0); g.clip(); g.globalAlpha = .92; g.drawImage(liqC, 0, 0); g.restore();
     }
-    // flat artwork = Jeff's label: lockup, product code, purity | quality row, red "Not for human use" band, RESEARCH USE ONLY
-    const art = mk(), a = art.getContext("2d"), name = vialName(p), str = vialStrength(p);
-    const [LX, LY, LW, LH] = m.label, cx = LX + LW / 2;
+    // flat artwork = Jeff's label, laid out top to bottom: lockup, product code, strength, purity | quality row,
+    // red "Not for human use" band, RESEARCH USE ONLY. Text is fitted to the front ~74% of the wrap so nothing rolls off the edge.
+    const art = mk(), a = art.getContext("2d"), name = vialName(p).replace(/GHK-CU/g, "GHK-Cu"), str = vialStrength(p);
+    const [LX, LY, LW, LH] = m.label, cx = LX + LW / 2, FW = LW * .74, at = f => LY + LH * f;
     a.fillStyle = "#fff"; a.fillRect(X(LX), X(LY), X(LW), X(LH));
-    const kw = LW * .62, kh = kw * lockup.height / lockup.width; a.drawImage(lockup, X(cx - kw / 2), X(LY + 12), X(kw), X(kh));
-    let fs = 46; a.font = `700 ${X(fs)}px PSTLabel`; while (a.measureText(name).width > X(LW - 28) && fs > 18) { fs--; a.font = `700 ${X(fs)}px PSTLabel`; }
-    a.fillStyle = NAVY; a.textAlign = "center"; a.textBaseline = "alphabetic"; a.fillText(name, X(cx), X(LY + 12 + kh + 50));
-    let y = LY + 12 + kh + 62;
-    if (str) { a.font = `700 ${X(18)}px PSTLabel`; a.fillStyle = RED; a.fillText(str, X(cx), X(y + 18)); y += 26; }
-    a.fillStyle = NAVY; a.fillRect(X(LX), X(y + 6), X(LW), X(1.5));
-    a.font = `700 ${X(11)}px PSTLabel`; a.fillStyle = NAVY; a.fillText("PURITY 99% HPLC", X(LX + LW * .28), X(y + 26)); a.fillText("QUALITY ASSURED", X(LX + LW * .72), X(y + 26));
-    a.fillRect(X(cx - .75), X(y + 12), X(1.5), X(18));
-    a.fillStyle = RED; a.fillRect(X(LX), X(y + 36), X(LW), X(22)); a.fillStyle = "#fff"; a.font = `700 ${X(12)}px PSTLabel`; a.textBaseline = "middle"; a.fillText("Not for human use", X(cx), X(y + 47));
-    a.fillStyle = NAVY; a.font = `700 ${X(14)}px PSTLabel`; a.textBaseline = "alphabetic"; a.fillText("RESEARCH USE ONLY", X(cx), X(Math.min(LY + LH - 8, y + 78)));
+    a.textAlign = "center";
+    const kw = LW * .62, kh = kw * lockup.height / lockup.width; a.drawImage(lockup, X(cx - kw / 2), X(at(.07)), X(kw), X(kh));
+    const fit = (txt, size, min, wt = 700) => { let f = size; a.font = `${wt} ${X(f)}px PSTLabel`; while (a.measureText(txt).width > X(FW) && f > min) { f -= .5; a.font = `${wt} ${X(f)}px PSTLabel`; } return f; };
+    fit(name, 50, 16); a.fillStyle = NAVY; a.textBaseline = "alphabetic"; a.fillText(name, X(cx), X(at(.445)));
+    if (str) { a.font = `700 ${X(20)}px PSTLabel`; a.fillStyle = RED; a.fillText(str, X(cx), X(at(.555))); }
+    // purity | quality row on a navy band like his label
+    a.fillStyle = NAVY; a.fillRect(X(LX), X(at(.625)), X(LW), X(LH * .1));
+    a.fillStyle = "#fff"; a.textBaseline = "middle"; fit("PURITY 99% HPLC", 12.5, 8);
+    a.fillText("PURITY 99% HPLC", X(cx - FW * .26), X(at(.675))); a.fillText("QUALITY ASSURED", X(cx + FW * .26), X(at(.675)));
+    a.fillRect(X(cx - .8), X(at(.64)), X(1.6), X(LH * .07));
+    a.fillStyle = RED; a.fillRect(X(LX), X(at(.74)), X(LW), X(LH * .085));
+    a.fillStyle = "#fff"; a.font = `700 ${X(14)}px PSTLabel`; a.fillText("Not for human use", X(cx), X(at(.7825)));
+    a.fillStyle = NAVY; fit("RESEARCH USE ONLY", 17, 10); a.fillText("RESEARCH USE ONLY", X(cx), X(at(.9)));
     // wrap the artwork around the bottle (cylinder) column by column
     const [lx, ly, lw, lh] = m.label.map(X), wcx = lx + lw / 2, half = lw / 2, ang = m.warpDeg * Math.PI / 180, rad = half / Math.sin(ang);
     for (let x = 0; x < lw; x++) { const xs = x - half, src = rad * Math.asin(Math.max(-1, Math.min(1, xs / rad))) * (half / (rad * ang)) + wcx; g.drawImage(art, src, ly, 1, lh, lx + x, ly, 1, lh); }
+    // label on a cylinder: edges roll away into shadow, a soft key light sits left of centre (legible, not flat)
+    { g.save(); g.beginPath(); g.rect(lx, ly, lw, lh); g.clip();
+      const sh = g.createLinearGradient(lx, 0, lx + lw, 0);
+      sh.addColorStop(0, "rgba(8,12,24,.42)"); sh.addColorStop(.12, "rgba(8,12,24,.12)"); sh.addColorStop(.3, "rgba(8,12,24,0)");
+      sh.addColorStop(.72, "rgba(8,12,24,0)"); sh.addColorStop(.9, "rgba(8,12,24,.18)"); sh.addColorStop(1, "rgba(8,12,24,.5)");
+      g.fillStyle = sh; g.fillRect(lx, ly, lw, lh);
+      g.globalCompositeOperation = "screen"; const kl = g.createLinearGradient(lx, 0, lx + lw, 0);
+      kl.addColorStop(.2, "rgba(255,255,255,0)"); kl.addColorStop(.3, "rgba(255,255,255,.22)"); kl.addColorStop(.36, "rgba(255,255,255,0)");
+      g.fillStyle = kl; g.fillRect(lx, ly, lw, lh); g.restore(); }
+    // fine lyophilized powder: a matte cake with a soft, very fine grain (deterministic so every render matches)
+    { const py = ly + lh, ph = X(78), px0 = X(30), pw = X(240); let r = 1234567;
+      const rnd = () => (r = (r * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+      g.save(); g.beginPath(); g.rect(px0, py, pw, ph); g.clip();
+      const sh = g.createLinearGradient(px0, 0, px0 + pw, 0); sh.addColorStop(0, "rgba(0,0,0,.22)"); sh.addColorStop(.3, "rgba(0,0,0,0)"); sh.addColorStop(.7, "rgba(0,0,0,0)"); sh.addColorStop(1, "rgba(0,0,0,.26)");
+      g.fillStyle = sh; g.fillRect(px0, py, pw, ph);
+      const n = Math.round(2600 * S * S), d = Math.max(1, Math.round(S * .45));
+      for (let i = 0; i < n; i++) { const x = px0 + rnd() * pw, y = py + rnd() * ph, v = rnd();
+        g.fillStyle = v < .6 ? `rgba(255,255,255,${(.03 + rnd() * .06).toFixed(3)})` : `rgba(0,0,0,${(.02 + rnd() * .04).toFixed(3)})`; g.fillRect(x, y, d, d); }
+      const top = g.createLinearGradient(0, py, 0, py + X(12)); top.addColorStop(0, "rgba(0,0,0,.25)"); top.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = top; g.fillRect(px0, py, pw, X(12)); // label's shadow on the cake
+      g.restore(); }
+    // clear glass under angled light: a long diagonal specular, a thin rim light on the right, a cooler reflection low left
+    { g.save(); g.beginPath(); g.roundRect ? g.roundRect(X(18), X(212), X(266), X(472), X(22)) : g.rect(X(18), X(212), X(266), X(472)); g.clip();
+      g.globalCompositeOperation = "screen";
+      g.save(); g.translate(X(70), X(120)); g.rotate(-0.21);
+      const sp = g.createLinearGradient(0, 0, X(46), 0); sp.addColorStop(0, "rgba(255,255,255,0)"); sp.addColorStop(.45, "rgba(255,255,255,.34)"); sp.addColorStop(.55, "rgba(255,255,255,.34)"); sp.addColorStop(1, "rgba(255,255,255,0)");
+      g.fillStyle = sp; g.fillRect(0, 0, X(46), X(640));
+      g.restore();
+      const rim = g.createLinearGradient(X(262), 0, X(284), 0); rim.addColorStop(0, "rgba(220,235,255,0)"); rim.addColorStop(.6, "rgba(220,235,255,.38)"); rim.addColorStop(1, "rgba(220,235,255,0)");
+      g.fillStyle = rim; g.fillRect(X(262), X(212), X(22), X(472));
+      const lo = g.createRadialGradient(X(70), X(640), 0, X(70), X(640), X(90)); lo.addColorStop(0, "rgba(150,190,255,.16)"); lo.addColorStop(1, "rgba(150,190,255,0)");
+      g.fillStyle = lo; g.fillRect(X(18), X(540), X(150), X(144));
+      g.restore(); }
     return out;
   }
   // draw only as many pixels as the spot needs (thumbnails are ~10x cheaper), remember results across visits
-  const vialScale = w => { const px = w * Math.min(2, window.devicePixelRatio || 1); return px <= 70 ? .4 : px <= 160 ? .7 : px <= 260 ? 1.2 : 2; };
+  const vialScale = w => { const px = w * Math.min(3, window.devicePixelRatio || 1); return px <= 70 ? .4 : px <= 160 ? .7 : px <= 260 ? 1.2 : px <= 420 ? 1.8 : px <= 640 ? 2.4 : 3; }; // Patriot: sharper bottles on retina
   const toBlob = (c, type = "image/webp", q = .88) => new Promise(r => c.toBlob(r, type, q));
   async function vialURL(p, sc = 2) {
     const sig = vialSig(p) + "@" + sc; if (vialCache.has(sig)) return vialCache.get(sig);
     const req = location.origin + "/__pst_vial/" + encodeURIComponent(sig);
-    let box = null; try { box = await caches.open("pst-vials-v2"); const hit = await box.match(req); if (hit) { const u = URL.createObjectURL(await hit.blob()); vialCache.set(sig, u); return u; } } catch {}
+    let box = null; try { box = await caches.open("ppu-vials-v3"); const hit = await box.match(req); if (hit) { const u = URL.createObjectURL(await hit.blob()); vialCache.set(sig, u); return u; } } catch {}
     const c = await vialCanvas(p, sc), blob = await toBlob(c);
     const u = URL.createObjectURL(blob); vialCache.set(sig, u);
     try { box && blob && box.put(req, new Response(blob, { headers: { "Content-Type": blob.type } })); } catch {}
@@ -1031,7 +1067,7 @@ ${rows.length ? `<div class="mbl">${rows.map(r => `<div class="mbr${r.key === ad
     } catch { /* private mode */ }
   }
   document.addEventListener("DOMContentLoaded", ownerChip);
-  window.PST = { US_STATES, stateCode, stateSelect, kitInfo, SMS_CONSENT, usPhone, fmtPhone, PREVIEW, lockScroll, CFG, FOCUS, REMIND, $, $$, esc, money, round, params, store, fmtDate, isStandalone, isIOS, client, getUser, getProfile, isAdmin, customerName, firstName,
+  window.PST = { vialCanvas, US_STATES, stateCode, stateSelect, kitInfo, SMS_CONSENT, usPhone, fmtPhone, PREVIEW, lockScroll, CFG, FOCUS, REMIND, $, $$, esc, money, round, params, store, fmtDate, isStandalone, isIOS, client, getUser, getProfile, isAdmin, customerName, firstName,
     products, groups, cycles, suggestDays, myHistory, myProducts, isDone, handedOff, stageOf, vialLiquid, paidNotice, gIn, gBest, gMin, unitPrice, onSale, qty, stock, focuses, isBlend, titleParts, productUrl, coaHref, vial, cmpProduct,
     readCart, writeCart, addToCart, setQty, count, refreshCount, cartRows, reminders, setReminder,
     photo: () => VIAL_ON, vialStudio, bakeBottle, vialSig, vialColorName, LABEL_COLORS, track, validateDiscount, discountAmount, payDiscount, payLabel, backordersOn, creditBalance, freeVials, choiceRewards, paymentMethods, payCard, submitOrder, venmoLink, openAvailability,

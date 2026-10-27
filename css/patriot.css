@@ -88,3 +88,13 @@ body.has-appbar .ownerchip{bottom:calc(150px + env(safe-area-inset-bottom))}
 .band>*{position:relative;z-index:1}
 body[data-page=catalog] main,body[data-page=product] main,body[data-page=account] main,body[data-page=cart] main{position:relative;isolation:isolate}
 body[data-page=catalog] main::before,body[data-page=product] main::before,body[data-page=cart] main::before,body[data-page=account] main::before{content:"USA";position:absolute;left:-8vw;top:38vh;font:400 clamp(260px,80vw,700px)/1 "Archivo Black","Arial Black",Impact,sans-serif;letter-spacing:-.02em;color:#fff;opacity:.028;pointer-events:none;user-select:none;z-index:-1;writing-mode:vertical-rl;transform:rotate(180deg)}
+/* benefits tiles: lighter, smaller headings with breathing room */
+.bgrid{gap:28px 18px}.bgrid div{gap:6px;padding:4px 2px}
+.bgrid b{font-family:var(--fb);font-weight:600;font-size:1.05rem;letter-spacing:.01em;line-height:1.25;color:var(--ink)}
+.bgrid span{font-size:.86rem;line-height:1.4;color:var(--muted);max-width:18ch}
+.bgrid svg{width:24px;height:24px;margin-bottom:2px}
+/* research-focus cards: lighter, tighter headings (Archivo Black read too heavy at this size) */
+.focus b{font-family:var(--fb);font-weight:700;font-size:1.65rem;line-height:1.05;letter-spacing:-.01em}
+.focus span{margin-top:6px;display:block}
+h2.serif{line-height:1.08}
+.lcard h3,.cline h3{font-family:var(--fb);font-weight:700;font-size:1.25rem;line-height:1.12;letter-spacing:-.005em}
