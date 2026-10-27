@@ -1,5 +1,5 @@
-const PST_SUPABASE_URL = "https://__PPU_SUPABASE_REF__.supabase.co";
-const PST_SUPABASE_PUBLISHABLE_KEY = "__PPU_SUPABASE_ANON_KEY__";
+const PST_SUPABASE_URL = "https://aoovvhbjugmqevwvekku.supabase.co";
+const PST_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_TBBWnARIoBJwvvJQAxJ0ug_Rw23NDsU";
 const pstAccountSupabase = window.supabase.createClient(PST_SUPABASE_URL, PST_SUPABASE_PUBLISHABLE_KEY);
 
 let pstAccountOrders = [];

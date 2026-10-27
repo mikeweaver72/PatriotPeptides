@@ -1,8 +1,8 @@
 (() => {
   "use strict";
 
-  const SUPABASE_URL = "https://__PPU_SUPABASE_REF__.supabase.co";
-  const SUPABASE_PUBLISHABLE_KEY = "__PPU_SUPABASE_ANON_KEY__";
+  const SUPABASE_URL = "https://aoovvhbjugmqevwvekku.supabase.co";
+  const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_TBBWnARIoBJwvvJQAxJ0ug_Rw23NDsU";
   const mode = document.documentElement.dataset.authGuard || "";
   const style = document.getElementById("pst-auth-guard-style");
 

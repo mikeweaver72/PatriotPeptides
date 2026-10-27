@@ -1,5 +1,5 @@
-const SUPABASE_URL = "https://__PPU_SUPABASE_REF__.supabase.co";
-const SUPABASE_KEY = "__PPU_SUPABASE_ANON_KEY__";
+const SUPABASE_URL = "https://aoovvhbjugmqevwvekku.supabase.co";
+const SUPABASE_KEY = "sb_publishable_TBBWnARIoBJwvvJQAxJ0ug_Rw23NDsU";
 const CART_KEY = "ppu_cart_v1";
 const REORDER_NOTICE_KEY = "pst_reorder_notice_v1";
 const SUPPORT_EMAIL = "info@patriotpeptides-usa.com";

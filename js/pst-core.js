@@ -4,8 +4,8 @@
 (function () {
   "use strict";
   const CFG = {
-    url: "https://__PPU_SUPABASE_REF__.supabase.co",
-    key: "__PPU_SUPABASE_ANON_KEY__",
+    url: "https://aoovvhbjugmqevwvekku.supabase.co",
+    key: "sb_publishable_TBBWnARIoBJwvvJQAxJ0ug_Rw23NDsU",
     venmo: "Patriot-peptides-USA",              // Venmo handle for the one-tap pay button
     support: "info@patriotpeptides-usa.com",
     cashapp: "inkfreak69",                 // Cash App cashtag (shown as $inkfreak69)
@@ -430,14 +430,23 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
   const payLabel = m => (/apple/i.test(m?.id || "") && /apple pay/i.test(m?.label || "") ? "Apple Cash" : m?.label || ""); // what his Apple option really is
   let boP = null; // checkout backorders are on only after the v4 server update is installed
   const backordersOn = () => boP || (boP = client().rpc("pst_backorders_enabled").then(r => r.data === true, () => false));
-  // Patriot kit savings: 3–4 research vials in the bag = 5% off those vials, 5+ = 10%. Supplies (BAC water) and 10-vial wholesale kits don't count.
-  const KIT_TIERS = [[5, 0.10], [3, 0.05]];
+  // Patriot kit savings, matched dollar for dollar to his WooCommerce kit prices (checked Oct 27, 2026):
+  //   research vials: 3–4 in the bag = 5% off, 5+ = 10% off, and the kit total rounds DOWN to the whole dollar
+  //   (3 × BPC-157 5mg $35 = $105 → $99; 5 × $35 = $175 → $157, exactly his "3 Vial Kit" / "5 Vial Kit" prices).
+  //   BAC water: 5+ in the bag = 20% off, rounded down the same way (his 5 and 10 vial BAC kits). 10-vial wholesale kits never count.
+  const KIT_TIERS = [[5, 0.10], [3, 0.05]], BAC_TIER = [5, 0.20];
+  const isBac = p => /^suppl/i.test(p.category || "") && /bac/i.test(`${p.display_name || ""} ${p.product_key || ""}`);
+  const kitOff = (base, pct) => pct ? round(base - Math.floor(round(base * (1 - pct)) + 1e-9)) : 0;
   function kitInfo(items) { // items: [{p, q, t}]
     const elig = items.filter(i => i.p && !/^suppl|wholesale/i.test(i.p.category || "") && !/10-vial/i.test(i.p.strength || ""));
+    const bac = items.filter(i => i.p && isBac(i.p));
     const vials = elig.reduce((n, i) => n + i.q, 0), base = elig.reduce((n, i) => n + i.t, 0);
+    const bv = bac.reduce((n, i) => n + i.q, 0), bb = bac.reduce((n, i) => n + i.t, 0), bpct = bv >= BAC_TIER[0] ? BAC_TIER[1] : 0;
     const tier = KIT_TIERS.find(([n]) => vials >= n);
     const pct = tier ? tier[1] : 0, next = KIT_TIERS.slice().reverse().find(([n]) => vials < n);
-    return { vials, pct, amount: round(base * pct), nextAt: next ? next[0] : null, nextPct: next ? next[1] : null };
+    const pa = kitOff(base, pct), ba = kitOff(bb, bpct);
+    const label = [pa ? `${vials} vials · ${Math.round(pct * 100)}%` : "", ba ? `${bv} BAC water · 20%` : ""].filter(Boolean).join(" + ");
+    return { vials, pct, amount: round(pa + ba), peptideAmount: pa, bacAmount: ba, bacVials: bv, label, nextAt: next ? next[0] : null, nextPct: next ? next[1] : null };
   }
   function discountAmount(sub, d) {
     const base = Math.max(0, Number(sub || 0)); if (!d || base <= 0) return 0;
@@ -582,7 +591,7 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
       shipping_address_line1: l1, shipping_address_line2: l2, shipping_city: city, shipping_state: st, shipping_zip: zip,
       status: "pending", order_status: "pending", payment_status: "pending", payment_method: paymentLabel,
       payment_instructions_snapshot: null, payment_qr_image: null,
-      customer_notes: [`Delivery method: Shipping`, kitDisc ? `Kit savings: ${kit.vials} vials, ${Math.round(kit.pct * 100)}% (−$${kitDisc.toFixed(2)})` : "", remindLines.length ? `Reorder reminder: ${remindLines.join("; ")}` : "", payDisc ? `Payment discount: ${payMethod.label} ${payMethod.pct}% (−$${payDisc.toFixed(2)})` : "", short.length ? `Backorder: ${short.join("; ")}` : "", notes].filter(Boolean).join("\n"),
+      customer_notes: [`Delivery method: Shipping`, kitDisc ? `Kit savings: ${kit.label} (−$${kitDisc.toFixed(2)})` : "", remindLines.length ? `Reorder reminder: ${remindLines.join("; ")}` : "", payDisc ? `Payment discount: ${payMethod.label} ${payMethod.pct}% (−$${payDisc.toFixed(2)})` : "", short.length ? `Backorder: ${short.join("; ")}` : "", notes].filter(Boolean).join("\n"),
       subtotal: sub, discount: disc, subtotal_before_discount: sub, discount_amount: disc, discount_code_amount: codeDisc, vial_discount_amount: kitDisc, discount_percent: payDisc ? payMethod.pct : undefined, store_credit_applied: 0,
       shipping: ship, tax: 0, tax_rate: 0, tax_region: "", tax_jurisdiction: "", total, source: "website_inquiry", created_at: now, updated_at: now
     });

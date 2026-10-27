@@ -1,7 +1,7 @@
 
   /* IMPORTANT: use the same Supabase URL and anon key already used in index.html/products.html. */
-  const SUPABASE_URL = "https://__PPU_SUPABASE_REF__.supabase.co";
-  const SUPABASE_ANON_KEY = "__PPU_SUPABASE_ANON_KEY__";
+  const SUPABASE_URL = "https://aoovvhbjugmqevwvekku.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_TBBWnARIoBJwvvJQAxJ0ug_Rw23NDsU";
   const EMAIL_FUNCTION_NAME = "send-order-email";
 
   let supabaseClient = null;

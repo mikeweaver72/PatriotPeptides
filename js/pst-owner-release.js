@@ -32,7 +32,7 @@ ${r.status === "review" && pub ? `<p class="small muted">Waiting for Jeff to che
   // v5.10: everything about a published update (Mike asked to tap a published update and see the details)
   function details(r) {
     if (!r) return;
-    const repo = "https://github.com/__PPU_GITHUB_REPO__", row = (k, v) => v ? `<div class="reldl"><dt>${k}</dt><dd>${v}</dd></div>` : "";
+    const repo = "https://github.com/mikeweaver72/PatriotPeptides", row = (k, v) => v ? `<div class="reldl"><dt>${k}</dt><dd>${v}</dd></div>` : "";
     const w = P.sheet(`<div class="osheet"><small class="muted">${r.status === "published" ? `Published ${P.fmtDate(r.publish_at)}` : esc(r.status)}</small><h2 class="serif">v${esc(r.version)} · ${esc(r.title)}</h2>
 <dl class="reldls">${row("What changed", r.notes ? `<p class="relnotes">${esc(r.notes)}</p>` : "")}
 ${row("Reports it fixed", (r.tickets || []).length ? r.tickets.map(n => `<a class="linkish" href="owner.html#help">#${n}</a>`).join(", ") : "")}

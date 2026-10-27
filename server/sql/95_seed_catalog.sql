@@ -412,7 +412,7 @@ PP-Kiss is an experimental research peptide and is not presented as a fertility 
 The information provided is intended solely for research and educational purposes and should not be interpreted as a recommendation for human use or as evidence that PP-Kiss can diagnose, treat, cure, or prevent any disease or medical condition.
 
 Researchers should'),
-('BAC-W-10ML','BAC-W','10ml','Supply',null,80.0,0,true,false,false,'BAC-W 10ml','{}','img/products/BAC-W.webp',null,null,false,'BAC-W
+('BAC-W-10ML','BAC-W','10ml','Supply',null,10.0,0,true,false,false,'BAC-W 10ml','{}','img/products/BAC-W.webp',null,null,false,'BAC-W
 
 BAC-W | Sterile Multi-Dose Diluent |For laboratory research and drug-diluent applications only. Not for use in neonates.
 
@@ -421,7 +421,7 @@ Bacteriostatic Water is a diluent/solvent and does not itself provide the pharma
 The information provided is for research and educational purposes and is not intended to provide instructions for preparing, administering, or dosing any medication or research compound.
 
 Always follow the manufacturer’s labeling, applicable pharmaceutical standards, and instructions from a qualified healthcare'),
-('BAC-W-3ML','BAC-W','3ml','Supply',null,40.0,0,true,false,false,'BAC-W 3ml','{}','img/products/BAC-W.webp',null,null,false,'BAC-W
+('BAC-W-3ML','BAC-W','3ml','Supply',null,5.0,0,true,false,false,'BAC-W 3ml','{}','img/products/BAC-W.webp',null,null,false,'BAC-W
 
 BAC-W | Sterile Multi-Dose Diluent |For laboratory research and drug-diluent applications only. Not for use in neonates.
 
