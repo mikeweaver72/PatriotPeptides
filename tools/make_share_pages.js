@@ -1,26 +1,30 @@
 // Builds a share page + 1200x630 picture for every product, so a texted or posted product link shows
 // that vial, name and strength (the shop page itself is filled in by script, which link previews can't run).
-// Usage: node tools/make_share_pages.js <site root to write into> [live site url]
+// Usage: node tools/make_share_pages.js <site root to write into> [live site url] [--changed]
+//   --changed: only products that are new or renamed since the last run (img/share/index.json); used by the
+//   hourly GitHub job (.github/workflows/share-pages.yml), so Jeff's new products get share pages on their own.
 // Reads the live catalog and draws each vial with the site's own renderer.
 const { chromium } = require("playwright"); const fs = require("fs"), path = require("path");
-const OUT = path.resolve(process.argv[2] || "."), SITE = (process.argv[3] || "https://www.patriotpeptides-usa.com").replace(/\/$/, "");
+const args = process.argv.slice(2).filter(a => !a.startsWith("--")), ONLY_CHANGED = process.argv.includes("--changed");
+const OUT = path.resolve(args[0] || "."), SITE = (args[1] || "https://www.patriotpeptides-usa.com").replace(/\/$/, "");
+const IDX = path.join(OUT, "img/share/index.json"); let index = {}; try { index = JSON.parse(fs.readFileSync(IDX, "utf8")); } catch {}
 const esc = s => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 (async () => {
   const b = await chromium.launch({ proxy: process.env.HTTPS_PROXY ? { server: process.env.HTTPS_PROXY } : undefined });
   const c = await b.newContext({ viewport: { width: 1200, height: 630 } });
   await c.addInitScript(() => { try { localStorage.setItem("ppu_gate_v1", "1"); } catch {} });
   const p = await c.newPage(); await p.goto(SITE + "/catalog.html", { waitUntil: "networkidle" }); await p.waitForTimeout(1500);
-  const list = await p.evaluate(async () => {
-    const P = window.PST, all = (await P.products()).filter(x => x.product_key);
+  const list = await p.evaluate(async (skip) => {
+    const P = window.PST, all = (await P.products()).filter(x => x.product_key && !skip.includes(x.product_key + "|" + (x.display_name || "") + "|" + (x.strength || "")));
     const out = [];
     for (const x of all) {
       const t = P.titleParts(x), main = String(t.main || "");
       const slug = main.toLowerCase().replace(/\([^)]*\)/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "product";
       const cv = await P.vialCanvas(x, 3);
-      out.push({ key: x.product_key, slug: `${slug}-${String(x.product_key).toLowerCase()}`, name: main, strength: x.strength || t.sub || "", cat: x.category || "", vial: cv.toDataURL("image/png") });
+      out.push({ sig: x.product_key + "|" + (x.display_name || "") + "|" + (x.strength || ""), key: x.product_key, slug: `${slug}-${String(x.product_key).toLowerCase()}`, name: main, strength: x.strength || t.sub || "", cat: x.category || "", vial: cv.toDataURL("image/png") });
     }
     return out;
-  });
+  }, ONLY_CHANGED ? Object.values(index).map(v => v.sig) : []);
   const emblem = SITE + "/img/pst-emblem-384.webp", flag = SITE + "/img/flag-texture.jpg";
   fs.mkdirSync(path.join(OUT, "img/share"), { recursive: true });
   const card = await c.newPage();
@@ -68,6 +72,8 @@ h1{margin:26px 0 0;font-weight:900;font-size:${x.name.length <= 10 ? 92 : x.name
 </head><body><p>Opening <a href="${dest}">${esc(x.name)} at Patriot Peptides USA</a>…</p></body></html>
 `);
   }
+  for (const x of list) index[x.key] = { sig: x.sig, slug: x.slug };
+  fs.writeFileSync(IDX, JSON.stringify(index, null, 1));
   console.log(`made ${list.length} share pages`);
   await b.close();
 })();

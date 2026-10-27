@@ -1,0 +1,230 @@
+{
+ "BAC-W-3ML": {
+  "sig": "BAC-W-3ML|BAC-W|3ml",
+  "slug": "bac-w-bac-w-3ml"
+ },
+ "BAC-W-10ML": {
+  "sig": "BAC-W-10ML|BAC-W|10ml",
+  "slug": "bac-w-bac-w-10ml"
+ },
+ "PP-2-TZ-10MG": {
+  "sig": "PP-2-TZ-10MG|PP-2-TZ|10mg",
+  "slug": "pp-2-tz-pp-2-tz-10mg"
+ },
+ "PP-2-TZ-20MG": {
+  "sig": "PP-2-TZ-20MG|PP-2-TZ|20mg",
+  "slug": "pp-2-tz-pp-2-tz-20mg"
+ },
+ "PP-2-TZ-30MG": {
+  "sig": "PP-2-TZ-30MG|PP-2-TZ|30mg",
+  "slug": "pp-2-tz-pp-2-tz-30mg"
+ },
+ "PP-2-TZ-40MG": {
+  "sig": "PP-2-TZ-40MG|PP-2-TZ|40mg",
+  "slug": "pp-2-tz-pp-2-tz-40mg"
+ },
+ "PP-3-RT-15MG": {
+  "sig": "PP-3-RT-15MG|PP-3-RT|15mg",
+  "slug": "pp-3-rt-pp-3-rt-15mg"
+ },
+ "PP-3-RT-20MG": {
+  "sig": "PP-3-RT-20MG|PP-3-RT|20mg",
+  "slug": "pp-3-rt-pp-3-rt-20mg"
+ },
+ "PP-3-RT-30MG": {
+  "sig": "PP-3-RT-30MG|PP-3-RT|30mg",
+  "slug": "pp-3-rt-pp-3-rt-30mg"
+ },
+ "PP-3-RT-40MG": {
+  "sig": "PP-3-RT-40MG|PP-3-RT|40mg",
+  "slug": "pp-3-rt-pp-3-rt-40mg"
+ },
+ "PP-3-RT-50MG": {
+  "sig": "PP-3-RT-50MG|PP-3-RT|50mg",
+  "slug": "pp-3-rt-pp-3-rt-50mg"
+ },
+ "PP-5AMINO-1MQ-10MG": {
+  "sig": "PP-5AMINO-1MQ-10MG|PP-5Amino-1MQ|10mg",
+  "slug": "pp-5amino-1mq-pp-5amino-1mq-10mg"
+ },
+ "PP-5AMINO-1MQ-50MG": {
+  "sig": "PP-5AMINO-1MQ-50MG|PP-5Amino-1MQ|50mg",
+  "slug": "pp-5amino-1mq-pp-5amino-1mq-50mg"
+ },
+ "PP-AOD-5MG": {
+  "sig": "PP-AOD-5MG|PP-AOD|5mg",
+  "slug": "pp-aod-pp-aod-5mg"
+ },
+ "PP-AOD-10MG": {
+  "sig": "PP-AOD-10MG|PP-AOD|10mg",
+  "slug": "pp-aod-pp-aod-10mg"
+ },
+ "PP-BPC-157-5MG": {
+  "sig": "PP-BPC-157-5MG|PP-BPC-157|5mg",
+  "slug": "pp-bpc-157-pp-bpc-157-5mg"
+ },
+ "PP-BPC-157-10-MG-10VIAL": {
+  "sig": "PP-BPC-157-10-MG-10VIAL|PP-BPC-157|10-vial kit",
+  "slug": "pp-bpc-157-pp-bpc-157-10-mg-10vial"
+ },
+ "PP-BPC-157-10MG": {
+  "sig": "PP-BPC-157-10MG|PP-BPC-157|10mg",
+  "slug": "pp-bpc-157-pp-bpc-157-10mg"
+ },
+ "PP-CJC-IPA-10MG": {
+  "sig": "PP-CJC-IPA-10MG|PP-CJC-IPA|10mg",
+  "slug": "pp-cjc-ipa-pp-cjc-ipa-10mg"
+ },
+ "PP-CJC-NO-DAC-10MG": {
+  "sig": "PP-CJC-NO-DAC-10MG|PP-CJC-No DAC|10mg",
+  "slug": "pp-cjc-no-dac-pp-cjc-no-dac-10mg"
+ },
+ "PP-CJC-NO-DAC-20MG": {
+  "sig": "PP-CJC-NO-DAC-20MG|PP-CJC-No DAC|20mg",
+  "slug": "pp-cjc-no-dac-pp-cjc-no-dac-20mg"
+ },
+ "PP-EPN-10MG": {
+  "sig": "PP-EPN-10MG|PP-EPN|10mg",
+  "slug": "pp-epn-pp-epn-10mg"
+ },
+ "PP-EPN-40MG": {
+  "sig": "PP-EPN-40MG|PP-EPN|40mg",
+  "slug": "pp-epn-pp-epn-40mg"
+ },
+ "PP-GHK-CU-50MG": {
+  "sig": "PP-GHK-CU-50MG|PP-GHK-Cu|50mg",
+  "slug": "pp-ghk-cu-pp-ghk-cu-50mg"
+ },
+ "PP-GHK-CU-100MG": {
+  "sig": "PP-GHK-CU-100MG|PP-GHK-Cu|100mg",
+  "slug": "pp-ghk-cu-pp-ghk-cu-100mg"
+ },
+ "PP-GLW-10VIAL": {
+  "sig": "PP-GLW-10VIAL|PP-GLW|10-vial kit",
+  "slug": "pp-glw-pp-glw-10vial"
+ },
+ "PP-GLW-70MG": {
+  "sig": "PP-GLW-70MG|PP-GLW|70mg",
+  "slug": "pp-glw-pp-glw-70mg"
+ },
+ "PP-IGF1-LR3-1-0-MG": {
+  "sig": "PP-IGF1-LR3-1-0-MG|PP-IGF1-LR3|1.0 mg",
+  "slug": "pp-igf1-lr3-pp-igf1-lr3-1-0-mg"
+ },
+ "PP-IPA-5MG": {
+  "sig": "PP-IPA-5MG|PP-IPA|5mg",
+  "slug": "pp-ipa-pp-ipa-5mg"
+ },
+ "PP-IPA-10MG": {
+  "sig": "PP-IPA-10MG|PP-IPA|10mg",
+  "slug": "pp-ipa-pp-ipa-10mg"
+ },
+ "PP-KISS-5MG": {
+  "sig": "PP-KISS-5MG|PP-KISS|5mg",
+  "slug": "pp-kiss-pp-kiss-5mg"
+ },
+ "PP-KISS-10MG": {
+  "sig": "PP-KISS-10MG|PP-KISS|10mg",
+  "slug": "pp-kiss-pp-kiss-10mg"
+ },
+ "PP-KLW-80MG": {
+  "sig": "PP-KLW-80MG|PP-KLW|80mg",
+  "slug": "pp-klw-pp-klw-80mg"
+ },
+ "PP-KPV-5MG": {
+  "sig": "PP-KPV-5MG|PP-KPV|5mg",
+  "slug": "pp-kpv-pp-kpv-5mg"
+ },
+ "PP-KPV-10MG": {
+  "sig": "PP-KPV-10MG|PP-KPV|10mg",
+  "slug": "pp-kpv-pp-kpv-10mg"
+ },
+ "PP-MK-677-5MG": {
+  "sig": "PP-MK-677-5MG|PP-MK-677|5mg",
+  "slug": "pp-mk-677-pp-mk-677-5mg"
+ },
+ "PP-MLTN-I-10MG": {
+  "sig": "PP-MLTN-I-10MG|PP-MLTN-I|10mg",
+  "slug": "pp-mltn-i-pp-mltn-i-10mg"
+ },
+ "PP-MTS-C-10MG": {
+  "sig": "PP-MTS-C-10MG|PP-MTS-c|10mg",
+  "slug": "pp-mts-c-pp-mts-c-10mg"
+ },
+ "PP-MTS-C-20MG-10VIAL": {
+  "sig": "PP-MTS-C-20MG-10VIAL|PP-MTS-c|10-vial kit",
+  "slug": "pp-mts-c-pp-mts-c-20mg-10vial"
+ },
+ "PP-MTS-C-20MG": {
+  "sig": "PP-MTS-C-20MG|PP-MTS-c|20mg",
+  "slug": "pp-mts-c-pp-mts-c-20mg"
+ },
+ "PP-MTS-C-40MG": {
+  "sig": "PP-MTS-C-40MG|PP-MTS-c|40mg",
+  "slug": "pp-mts-c-pp-mts-c-40mg"
+ },
+ "PP-NAD-500MG": {
+  "sig": "PP-NAD-500MG|PP-NAD+|500mg",
+  "slug": "pp-nad-pp-nad-500mg"
+ },
+ "PP-NAD-1000MG": {
+  "sig": "PP-NAD-1000MG|PP-NAD+|1000mg",
+  "slug": "pp-nad-pp-nad-1000mg"
+ },
+ "PP-PT-141-10MG": {
+  "sig": "PP-PT-141-10MG|PP-PT-141|10mg",
+  "slug": "pp-pt-141-pp-pt-141-10mg"
+ },
+ "PP-SERM-10MG": {
+  "sig": "PP-SERM-10MG|PP-Serm|10mg",
+  "slug": "pp-serm-pp-serm-10mg"
+ },
+ "PP-SERM-20MG": {
+  "sig": "PP-SERM-20MG|PP-Serm|20mg",
+  "slug": "pp-serm-pp-serm-20mg"
+ },
+ "PP-SLU-332-10MG": {
+  "sig": "PP-SLU-332-10MG|PP-SLU-332|10mg",
+  "slug": "pp-slu-332-pp-slu-332-10mg"
+ },
+ "PP-SLU-332-20MG": {
+  "sig": "PP-SLU-332-20MG|PP-SLU-332|20mg",
+  "slug": "pp-slu-332-pp-slu-332-20mg"
+ },
+ "PP-SMX-10MG": {
+  "sig": "PP-SMX-10MG|PP-SMX|10mg",
+  "slug": "pp-smx-pp-smx-10mg"
+ },
+ "PP-SMX-10VIAL": {
+  "sig": "PP-SMX-10VIAL|PP-SMX|10-vial kit",
+  "slug": "pp-smx-pp-smx-10vial"
+ },
+ "PP-SS-31-10MG": {
+  "sig": "PP-SS-31-10MG|PP-SS-31|10mg",
+  "slug": "pp-ss-31-pp-ss-31-10mg"
+ },
+ "PP-SS-31-50MG": {
+  "sig": "PP-SS-31-50MG|PP-SS-31|50mg",
+  "slug": "pp-ss-31-pp-ss-31-50mg"
+ },
+ "PP-TESA-10-MG-10VIAL": {
+  "sig": "PP-TESA-10-MG-10VIAL|PP-Tesa|10-vial kit",
+  "slug": "pp-tesa-pp-tesa-10-mg-10vial"
+ },
+ "PP-TESA-10MG": {
+  "sig": "PP-TESA-10MG|PP-Tesa|10mg",
+  "slug": "pp-tesa-pp-tesa-10mg"
+ },
+ "PP-TESA-20MG": {
+  "sig": "PP-TESA-20MG|PP-Tesa|20mg",
+  "slug": "pp-tesa-pp-tesa-20mg"
+ },
+ "PP-WLV-10MG": {
+  "sig": "PP-WLV-10MG|PP-WLV|10mg",
+  "slug": "pp-wlv-pp-wlv-10mg"
+ },
+ "PP-WLV-20MG": {
+  "sig": "PP-WLV-20MG|PP-WLV|20mg",
+  "slug": "pp-wlv-pp-wlv-20mg"
+ }
+}

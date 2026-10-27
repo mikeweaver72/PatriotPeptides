@@ -1,0 +1,46 @@
+# Keeps product share pages (link previews for texts and social posts) up to date on their own.
+# Every hour it checks the live catalog; when Jeff adds a product, a strength, or renames one, it builds that
+# product's share page + picture and publishes them. Nothing to do by hand. Run it any time from the Actions tab.
+name: Product share pages
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: share-pages
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Anything new?
+        id: check
+        run: echo "needed=$(node tools/share_pages_needed.js .)" >> "$GITHUB_OUTPUT"
+      - name: Install browser
+        if: steps.check.outputs.needed == 'yes'
+        run: |
+          npm i --no-save --no-package-lock playwright@1.48.2
+          npx playwright install --with-deps chromium
+      - name: Build share pages for new products
+        if: steps.check.outputs.needed == 'yes'
+        run: |
+          node tools/make_share_pages.js . https://www.patriotpeptides-usa.com --changed
+          mkdir -p staging/img/share
+          cp -f img/share/*.jpg staging/img/share/ && cp -f img/share/index.json staging/img/share/
+          for f in $(ls *.html | grep -E -- '-pp-|^bac-w-'); do cp -f "$f" staging/; done
+      - name: Publish
+        if: steps.check.outputs.needed == 'yes'
+        run: |
+          git config user.name "patriot-share-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A '*.html' img/share staging
+          git diff --cached --quiet && echo "nothing changed" && exit 0
+          git commit -m "Share pages for new or renamed products"
+          git push
