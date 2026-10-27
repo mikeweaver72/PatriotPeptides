@@ -218,7 +218,7 @@ async function ticketEvent(kind: string, id: string) {
   if (!(await once(`ticket_${kind}`, kind === "new" ? id : `${id}:${fu.length}:${t.status}`, null))) return { skipped: "already sent" };
   const to = PUBLISHERS.filter(e => e !== by);
   if (!to.length) return { skipped: "filed by the publisher" };
-  const who = /^owner@patriotpeptides-usa\.com$/.test(by) ? "Jeff" : (by.split("@")[0] || "Someone");
+  const who = /^(owner@patriotpeptides-usa\.com|patriotpepps@gmail\.com)$/.test(by) ? "Jeff" : (by.split("@")[0] || "Someone");
   const urg = ({ blocking: "Can't do my work", annoying: "Annoying", idea: "Idea / request" } as Row)[t.urgency] || t.urgency || "";
   const reopened = t.status === "reopened", last = fu[fu.length - 1];
   const title = kind === "new" ? `${who} reported a problem · #${t.ticket_no}` : reopened ? `${who} says #${t.ticket_no} is still happening` : `${who} added to report #${t.ticket_no}`;
@@ -263,7 +263,7 @@ async function releaseEvent(id: string) {
   const { data: tix } = nums.length ? await admin.from("pst_support_tickets").select("ticket_no,what,reply,created_by_email").in("ticket_no", nums).order("ticket_no") : { data: [] };
   const list = (tix || []) as Row[];
   // who hears: RELEASE_NOTIFY (default Jeff) + whoever filed a report in this update; active owners only, never the publisher
-  const want = new Set([...(Deno.env.get("RELEASE_NOTIFY") ?? "owner@patriotpeptides-usa.com").toLowerCase().split(","), ...list.map(t => lower(t.created_by_email))].map(e => e.trim()).filter(Boolean));
+  const want = new Set([...(Deno.env.get("RELEASE_NOTIFY") ?? "patriotpepps@gmail.com,owner@patriotpeptides-usa.com").toLowerCase().split(","), ...list.map(t => lower(t.created_by_email))].map(e => e.trim()).filter(Boolean));
   const { data: au } = await admin.from("admin_users").select("user_id,email").eq("is_active", true);
   const team = (au || []).filter((x: Row) => x.email && want.has(lower(x.email)) && lower(x.email) !== pub);
   const range = nums.length ? (nums.length > 2 && nums.every((n: number, i: number) => !i || n === nums[i - 1] + 1) ? `#${nums[0]}–#${nums[nums.length - 1]}` : nums.map((n: number) => `#${n}`).join(", ")) : "";

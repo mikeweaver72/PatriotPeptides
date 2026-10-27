@@ -20,7 +20,7 @@
     const u = await who(), md = u?.user_metadata || {}, f = md.first_name || md.given_name, l = md.last_name || md.family_name;
     if (f && l) return `${String(f)[0].toUpperCase()}.${l}`;
     const full = String(md.full_name || md.name || "").trim().split(/\s+/); if (full.length >= 2) return `${full[0][0].toUpperCase()}.${full[full.length - 1]}`;
-    if (String(u?.email || "").toLowerCase() === "owner@patriotpeptides-usa.com") return "J.Weaver";
+    if (/^(owner@patriotpeptides-usa\.com|patriotpepps@gmail\.com)$/i.test(String(u?.email || ""))) return "Jeff";
     return String(u?.email || "").split("@")[0] || "";
   }
   const vendorLead = v => { const n = Number(v?.standard_shipping_lead_time ?? LEAD); return Number.isFinite(n) && n >= 0 ? n : LEAD; };

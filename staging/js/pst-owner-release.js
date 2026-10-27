@@ -14,7 +14,7 @@
     const r = await fetch(`${P.CFG.url}/functions/v1/pst-release`, { method: "POST", headers: { "Content-Type": "application/json", apikey: P.CFG.key, Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ release_id: id }) });
     const j = await r.json().catch(() => ({})); if (!r.ok || j.ok === false) throw new Error(j.error || `Publish failed (${r.status}).`); return j;
   }
-  const who = e => /owner@patriotpeptides-usa\.com/i.test(e || "") ? "Jeff" : /mike\.weaver2013/i.test(e || "") ? "Mike" : String(e || "").split("@")[0];
+  const who = e => /owner@patriotpeptides-usa\.com|patriotpepps@gmail\.com/i.test(e || "") ? "Jeff" : /mike\.weaver2013/i.test(e || "") ? "Mike" : String(e || "").split("@")[0];
   function card(r) {
     const pub = isPublisher(me), fixes = (r.tickets || []).length ? `<p class="small muted">Fixes report${r.tickets.length > 1 ? "s" : ""} ${r.tickets.map(n => `#${n}`).join(", ")}</p>` : "";
     const head = { review: "Fix ready to check", approved: `${who(r.review_by)} checked it`, changes: `${who(r.review_by)} found something`, publishing: "Publishing…", failed: "Publishing didn't go through" }[r.status] || r.status;

@@ -7,7 +7,7 @@
   const store = (k, v) => { try { if (v === undefined) return JSON.parse(localStorage.getItem(k) || "null"); localStorage.setItem(k, JSON.stringify(v)); } catch { return null; } };
   function nameOf(me) {
     const md = me?.user_metadata || {}, em = String(me?.email || "").toLowerCase();
-    if (em === "owner@patriotpeptides-usa.com") return "Jeff";
+    if (em === "owner@patriotpeptides-usa.com" || em === "patriotpepps@gmail.com") return "Jeff";
     const f = String(md.first_name || md.given_name || String(md.full_name || md.name || "").split(/\s+/)[0] || "").trim();
     return f ? f[0].toUpperCase() + f.slice(1) : "";
   }

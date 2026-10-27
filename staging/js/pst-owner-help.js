@@ -42,7 +42,7 @@
     el.innerHTML = `<p class="muted small">Loading…</p>`;
     const { data, error } = await P.client().from("pst_support_tickets").select("id,ticket_no,created_at,created_by_email,screen,what,expected,urgency,status,reply,replied_at,fixed_in,shot_count,confirmed,followups,view_key").order("created_at", { ascending: false }).limit(30);
     const last = [...SCREENS].reverse().find(s => !["help", "more"].includes(s)) || "today";
-    const me = await P.getUser().catch(() => null), pub = !!window.PSTRelease?.isPublisher?.(me), who = e => /owner@patriotpeptides-usa\.com/i.test(e || "") ? "Jeff" : /mike\.weaver2013/i.test(e || "") ? "you" : String(e || "").split("@")[0];
+    const me = await P.getUser().catch(() => null), pub = !!window.PSTRelease?.isPublisher?.(me), who = e => /owner@patriotpeptides-usa\.com|patriotpepps@gmail\.com/i.test(e || "") ? "Jeff" : /mike\.weaver2013/i.test(e || "") ? "you" : String(e || "").split("@")[0];
     const OPEN = t => !["fixed", "wont_fix"].includes(t.status) || (t.status === "fixed" && t.confirmed === false);
     const shotUrl = (t, i) => `${P.CFG.url}/functions/v1/pst-support-shot?t=${t.id}&k=${t.view_key}&i=${i}`;
     const card = t => { const s = STATUS[t.status] || [t.status, "pend"], k = stepOf(t.status); return `<div class="htk" data-tk="${t.id}"><div class="emhd"><b>#${t.ticket_no} · ${esc(String(t.what).split("\n")[0].slice(0, 70))}${t.what.length > 70 ? "…" : ""}</b><span class="opill ${s[1]}">${esc(s[0])}</span></div>

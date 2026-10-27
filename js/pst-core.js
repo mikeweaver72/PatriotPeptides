@@ -9,7 +9,7 @@
     venmo: "Patriot-peptides-USA",              // Venmo handle for the one-tap pay button
     support: "info@patriotpeptides-usa.com",
     cashapp: "inkfreak69",                 // Cash App cashtag (shown as $inkfreak69)
-    adminEmails: ["owner@patriotpeptides-usa.com", "mike.weaver2013@gmail.com"], // order alert emails (same as app.js)
+    adminEmails: ["patriotpepps@gmail.com", "owner@patriotpeptides-usa.com", "mike.weaver2013@gmail.com"], // order alert emails (same as app.js)
     shipRate: 20.00, freeShip: 200.00,     // Jeff's WooCommerce zone: flat $20, free over $200
     emailFn: "send-order-email",
     pushFn: "pst-push",

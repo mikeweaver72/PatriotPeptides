@@ -22,7 +22,7 @@
   const PREVIEW = ["order_shipped", "order_cancelled", "order_rejected", "shipment_update"];
   let ctx = null; // { me, orders, items, reload, openTab }
   const me = () => ctx.me;
-  const adminName = () => String(me()?.email || "").toLowerCase() === "owner@patriotpeptides-usa.com" ? "Jeff Weaver" : (me()?.user_metadata?.full_name || me()?.email || "Admin");
+  const adminName = () => /^(owner@patriotpeptides-usa\.com|patriotpepps@gmail\.com)$/i.test(String(me()?.email || "")) ? "Jeff" : (me()?.user_metadata?.full_name || me()?.email || "Admin");
   const auditLine = t => `[${new Date().toLocaleString()}] ${t} | Admin account: ${adminName()}`;
   const missingCol = e => { const m = String(e?.message || e || ""); return (m.match(/column\s+orders\.([a-zA-Z0-9_]+)\s+does\s+not\s+exist/i) || m.match(/column\s+"?([a-zA-Z0-9_]+)"?\s+of\s+relation\s+"?orders"?\s+does\s+not\s+exist/i) || m.match(/Could not find the ['"]([a-zA-Z0-9_]+)['"] column/i) || [])[1] || ""; };
   const trackUrl = (c, n) => { if (!n) return ""; const x = encodeURIComponent(n), k = String(c || "").toLowerCase(); return k.includes("usps") ? `https://tools.usps.com/go/TrackConfirmAction?tLabels=${x}` : k.includes("ups") ? `https://www.ups.com/track?tracknum=${x}` : k.includes("fedex") ? `https://www.fedex.com/fedextrack/?trknbr=${x}` : ""; };
