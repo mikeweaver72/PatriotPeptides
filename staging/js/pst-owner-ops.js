@@ -84,8 +84,8 @@
   }
   function previewEmail(o, type, opt) {
     return new Promise(async resolve => {
-      const w = P.sheet(`<div class="osheet"><h2 class="serif">${esc(LABEL[type] || "Email")} email</h2><p class="muted small">To ${esc(custEmail(o))}. Check it, then send.</p><div class="eprev" data-eprev><p class="muted small">Loading preview…</p></div>
-<div class="obar"><button class="btn primary wide" type="button" data-es="send">Send email</button><button class="btn ghost wide" type="button" data-es="skip">Don't send</button></div></div>`, { label: "Email preview" });
+      const w = P.sheet(`<div class="osheet"><h2 class="serif">Send the "${esc(LABEL[type] || "Email")}" email?</h2><p class="muted small">To ${esc(custEmail(o))}. It hasn't gone out yet: check it, then tap Send to customer.</p><div class="eprev" data-eprev><p class="muted small">Loading preview…</p></div>
+<div class="obar"><button class="btn primary wide" type="button" data-es="send">Send to customer</button><button class="btn ghost wide" type="button" data-es="skip">Not now</button></div></div>`, { label: "Email preview" });
       w.classList.add("full");
       try { const j = await callEmail({ ...(await payload(o, type, opt)), preview_only: true }); const f = document.createElement("iframe"); f.className = "eframe"; f.srcdoc = j.preview?.html || "<p>No preview</p>"; f.title = "Email preview"; w.querySelector("[data-eprev]").replaceChildren(f); }
       catch (e) { w.querySelector("[data-eprev]").innerHTML = `<p class="notice err">Preview failed: ${esc(e.message || e)}</p>`; }
@@ -156,6 +156,7 @@ ${o.tracking_number ? `<p class="small">${P.icon("truck", 14)} ${esc(o.tracking_
 <p class="small muted">${esc(custEmail(o))}${ph ? ` · ${esc(o.customer_phone || o.shipping_phone)}` : ""}</p>
 <div class="ocontact">${ph ? `<button class="btn ghost sm" type="button" data-texts="${o.id}">${P.icon("chat", 15)} Text</button><a class="btn ghost sm" href="tel:${ph}">Call</a>` : ""}${custEmail(o) ? `<a class="btn ghost sm" href="mailto:${esc(custEmail(o))}?subject=${encodeURIComponent("Your Patriot Peptides USA order " + (o.order_number || ""))}">Email</a>` : ""}<button class="btn ghost sm" type="button" data-copy="${esc(o.order_number || o.id)}">Copy #</button></div>
 <div class="obar">${next}</div>
+${/^(shipped|partially_shipped|delivered|complete|completed)$/.test(nm(o.order_status || o.status || "")) && custEmail(o) ? `<div class="resendrow">${P.icon("truck", 16)}<span>${o.shipping_email_sent_at ? `Shipped email sent ${esc(P.fmtDate(o.shipping_email_sent_at))}` : "Shipped email not sent yet"}</span><button class="btn ${o.shipping_email_sent_at ? "ghost" : "primary"} sm" type="button" data-oa="resendship">${o.shipping_email_sent_at ? "Resend" : "Send shipped email"}</button></div>` : ""}
 <details class="omore"><summary>More actions</summary>
 ${st.k !== "dead" && !isLocked(o) ? btn("edit", "Edit items") : ""}${st.k !== "dead" && isLocked(o) && left > 0 ? btn("reduce", "Remove unshipped items") : ""}${st.k !== "dead" ? btn("comp", "+ Free item ($0)") : ""}
 ${st.k === "unpaid" && o.payment_deadline_at ? btn("extend", "Give 24 more hours to pay") : ""}${btn("emails", "Email the customer…")}
@@ -184,6 +185,7 @@ ${st.k !== "dead" && nm(pStatus(o)) === "paid" ? btn("refund", "Mark refunded", 
       if (a === "comp") return compFlow(o);
       if (a === "extend") return extendFlow(o);
       if (a === "emails") return emailToolsFlow(o);
+      if (a === "resendship") { const ok = await previewEmail(o, "order_shipped", {}); if (ok) { o.shipping_email_sent_at = nowIso(); P.closeSheet(); openOrder(o.id); } return; }
       if (a === "refund") return refundFlow(o);
       if (a === "pickedup") {
         if (!(await confirmSheet("Picked up?", `Records ${esc(o.order_number || "")} as handed off and complete, and emails ${esc(custName(o))} a thank-you.`, "Yes, picked up"))) return;
@@ -249,8 +251,8 @@ ${st.k !== "dead" && nm(pStatus(o)) === "paid" ? btn("refund", "Mark refunded", 
       try {
         const r = await recordShipment(o, carrier, tracking, lines, hist); P.closeSheet();
         const sl = (ctx.items[o.id] || []).filter(i => lines.some(l => String(l.id) === String(i.id))).map(i => ({ ...i, quantity: lines.find(l => String(l.id) === String(i.id)).qty, line_total: Math.round(Number(i.unit_price || 0) * lines.find(l => String(l.id) === String(i.id)).qty * 100) / 100 }));
-        await sendEmail(o, r.complete ? "order_shipped" : "shipment_update", { carrier, tracking, lines: sl, remaining: r.remaining });
-        done(o, r.complete ? "Shipped" : "Partial shipment recorded");
+        const sent = await sendEmail(o, r.complete ? "order_shipped" : "shipment_update", { carrier, tracking, lines: sl, remaining: r.remaining });
+        done(o, (r.complete ? "Shipped" : "Partial shipment recorded") + (sent ? " · email sent" : " · email not sent. Tap Send shipped email on the order to send it"));
       } catch (err) { st.textContent = err.message || "Couldn't record the shipment."; b.disabled = false; b.textContent = "Record shipment"; }
     });
   }

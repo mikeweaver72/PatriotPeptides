@@ -136,6 +136,8 @@
   const L = (t, h) => ({ t, h });
   const RELEASES = [
     { v: "1.3", d: "Oct 27, 2026", title: "Other payment method", items: [
+      L("Shipped orders show whether the shipped email went out, with Send shipped email (or Resend) right on the order"),
+      L("After you record a shipment, the email asks Send to customer or Not now, and the result says if it was sent"),
       L("Turn on Other payment method for a customer: Customers, open them, flip the switch. Only you can turn it on", "#customers"),
       L("Their checkout picks Other method for them, and their emails say a Patriot team member will contact them for payment"),
       L("No 24-hour hold on those orders. When they've paid, Mark paid like any other order"),

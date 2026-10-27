@@ -191,3 +191,5 @@ html.nostock .stockonly{display:none!important}
 .ownercta{display:flex;align-items:center;gap:12px;margin:14px 0 6px;padding:14px 16px;border-radius:12px;background:#C8102E;color:#fff;text-decoration:none;box-shadow:0 10px 26px rgba(200,16,46,.28)}
 .ownercta .oc-ic{flex:none;width:38px;height:38px;border-radius:50%;background:#fff;color:#C8102E;display:grid;place-items:center}
 .ownercta b{display:block;font-size:16px;color:#fff}.ownercta small{display:block;font-size:13px;color:rgba(255,255,255,.88)}.ownercta .oc-go{margin-left:auto;font-size:26px;line-height:1;color:#fff}
+/* Owner app order sheet: shipped-email status with a one-tap send/resend */
+.resendrow{display:flex;align-items:center;gap:10px;margin:12px 0 0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);font-size:14px}.resendrow>svg{flex:none;color:#C8102E}.resendrow span{flex:1}
