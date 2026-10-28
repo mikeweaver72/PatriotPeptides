@@ -47,7 +47,7 @@ ${P.REMIND.slice(1).map(([d, l]) => `<button type="button" data-rem="${esc(r.key
 ${t.kd ? `<div class="r disc"><span>Kit savings · ${t.kit.label}</span><b>−${money(t.kd)}</b></div>` : t.kit.nextAt ? `<div class="r"><span class="muted small">Add ${t.kit.nextAt - t.kit.vials} more vial${t.kit.nextAt - t.kit.vials === 1 ? "" : "s"} for ${Math.round(t.kit.nextPct * 100)}% kit savings</span><b></b></div>` : ""}
 ${t.disc ? `<div class="r disc"><span>Code ${esc(discount?.code || "")}</span><b>−${money(t.disc)}</b></div>` : ""}
 ${t.pd ? `<div class="r disc"><span>${esc(P.payLabel(t.pm))} savings · ${t.pm.pct}%</span><b>−${money(t.pd)}</b></div>` : ""}
-<div class="r"><span>Shipping</span><b>${t.ship ? money(t.ship) : "Free"}</b></div>${!t.ship || t.sub >= P.CFG.freeShip ? "" : `<div class="r"><span class="muted small">${money(P.CFG.freeShip - t.sub)} more for free shipping</span><b></b></div>`}
+<div class="r"><span>Shipping</span><b>${t.ship ? money(t.ship) : "Free"}</b></div>
 ${t.cr ? `<div class="r disc"><span>Store credit</span><b>−${money(t.cr)}</b></div>` : ""}
 <div class="r tot"><span>Total</span><b>${money(t.due)}</b></div>
 ${delivery === "ship" && live.length ? `<div class="ship"><div class="shipbar"><i style="width:${Math.min(100, t.sub / P.CFG.freeShip * 100)}%"></i></div><span>${t.ship ? `${money(P.CFG.freeShip - t.sub)} away from free shipping` : "You've got free shipping"}</span></div>` : ""}</div>`;

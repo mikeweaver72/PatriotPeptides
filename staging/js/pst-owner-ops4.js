@@ -135,6 +135,11 @@
   /* ================= WHAT'S NEW ================= */
   const L = (t, h) => ({ t, h });
   const RELEASES = [
+    { v: "1.4", d: "Oct 27, 2026", title: "Wholesale picks and light mode", items: [
+      L("Products → Wholesale: choose up to 4 products to sell as 10-vial kits, set each kit's price, flip it on or off", "#products"),
+      L("Stock never runs out: you don't track inventory, so every product and kit can always be bought"),
+      L("Light or dark: tap the sun/moon at the top of the app. Shoppers get the same switch on the website")
+    ] },
     { v: "1.3", d: "Oct 27, 2026", title: "Other payment method", items: [
       L("Pick the 5 products in the home page spotlight: Products, open one, Home page spotlight. Spot 1 is the big card", "#products"),
       L("Shipped orders show whether the shipped email went out, with Send shipped email (or Resend) right on the order"),

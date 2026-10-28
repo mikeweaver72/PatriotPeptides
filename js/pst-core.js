@@ -673,6 +673,7 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
   <a href="index.html" class="brand" aria-label="Patriot Peptides USA home"><img src="${EMB}" alt="" width="40" height="40"><span>PATRIOT <em>PEPTIDES</em></span></a>
   <nav class="nav r" aria-label="Account">
     <button type="button" class="hbtn" data-act="search" aria-label="Search">${icon("search", 18)} <span>Search</span></button>
+    <button type="button" class="hbtn thb" data-act="theme" aria-label="Switch light or dark">${themeIcon()}</button>
     <a href="account.html" data-acct${page === "account" ? ' aria-current="page"' : ""}>Sign in</a>
     <button type="button" class="hbtn bell" data-bell data-act="inbox" aria-label="Notifications" hidden>${icon("bell", 18)}<i hidden>0</i></button>
     <a href="saved.html" class="hbtn" aria-label="Saved items">${icon("heart", 18)}<i data-saved-count hidden>0</i></a>
@@ -694,6 +695,7 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
   <details><summary>My account</summary><a href="index.html">My products</a><a href="account.html#orders">Orders &amp; tracking</a><a href="saved.html">Saved items</a><a href="account.html#rewards">Rewards &amp; credit</a><a href="account.html#alerts">Notifications</a></details>
   <details><summary>Help</summary><a href="testing.html">Lab reports</a><a href="shipping.html">Shipping &amp; returns</a><a href="faq.html">FAQ</a><a href="contact.html">Contact</a><a href="about.html">About us</a><a href="kit.html">Build a kit</a><a href="wholesale.html">Wholesale</a><a href="bulk-request.html">Bulk requests</a></details>
   </nav>
+  <button type="button" class="dtheme" data-act="theme">${themeIcon()}<span data-themelabel>${themeLabel()}</span></button>
   <a class="btn ghost wide" href="install.html" data-installlink>${icon("plus", 16)} Get the app</a>
   <p class="ruof" style="margin-top:16px">Research use only · Not for human or veterinary use</p>
 </aside></div>`;
@@ -741,6 +743,18 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
   }
 
   /* ---------- UI helpers ---------- */
+  // Patriot: light/dark for shoppers (header ☀/☾ and in the menu). Dark is the default; the choice is remembered per device.
+  const SUN = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>`;
+  const MOON = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg>`;
+  const isLight = () => document.documentElement.getAttribute("data-theme") === "light";
+  const themeIcon = () => isLight() ? MOON : SUN, themeLabel = () => isLight() ? "Dark mode" : "Light mode";
+  function setTheme(light) {
+    document.documentElement.setAttribute("data-theme", light ? "light" : "dark");
+    try { localStorage.setItem("ppu-theme", light ? "light" : "dark"); } catch {}
+    const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = light ? "#f6f3ec" : "#0A1020";
+    document.querySelectorAll('[data-act="theme"]').forEach(b => { const lab = b.querySelector("[data-themelabel]"); b.querySelector("svg")?.remove(); b.insertAdjacentHTML("afterbegin", themeIcon()); if (lab) lab.textContent = themeLabel(); b.setAttribute("aria-label", light ? "Switch to dark mode" : "Switch to light mode"); });
+  }
+  document.addEventListener("click", e => { if (e.target.closest('[data-act="theme"]')) setTheme(!isLight()); });
   function toast(msg, link, kind) {
     let el = $("#toast"); if (!el) { el = document.createElement("div"); el.id = "toast"; el.setAttribute("role", "status"); el.setAttribute("aria-live", "polite"); document.body.appendChild(el); }
     // Patriot: the "just updated" notice is a brand-red card with a title line; every other toast stays one line

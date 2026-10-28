@@ -230,3 +230,40 @@ html[data-theme=light] .spc{background:radial-gradient(circle at 20% 60%,#ebe5d8
 /* Product grids: lines drawn by each card, not the grid background, so a part-filled last row has no blank boxes */
 .lgrid{background:none;border:0}.lgrid>*{box-shadow:0 0 0 1px var(--line)}
 @media (min-width:700px) and (max-width:1099px){[data-home-recent] .lgrid>:nth-child(n+4),[data-recent] .lgrid>:nth-child(n+4){display:none}}
+/* Owner app → Products → Wholesale */
+.oseg.four{grid-template-columns:repeat(4,1fr)}
+.whhead{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:6px 0 2px}.whhead .serif{font-size:1.3rem}
+.whcount{font-size:13px;font-weight:700;color:#fff;background:#12266E;border-radius:999px;padding:4px 10px;white-space:nowrap}.whcount.over{background:#C8102E}
+.whlist{display:grid;gap:8px}
+.whrow{display:grid;grid-template-columns:30px minmax(0,1fr) auto;grid-template-areas:"v t s" "v p p";gap:6px 12px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+.whrow.on{border-color:rgba(46,160,67,.6);box-shadow:inset 3px 0 0 #2EA043}
+.whrow>.vial,.whrow>img{grid-area:v}.whtx{grid-area:t;min-width:0}.whtx b{display:block;font-size:15px}.whrow .pmlive{grid-area:s}
+.whsel{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-top:3px}.whsel select{font-size:12px;padding:4px 6px;max-width:100%}
+.whpr{grid-area:p;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}.whpr input{width:110px;padding:6px 8px}
+@media (min-width:700px){.whrow{grid-template-columns:30px minmax(0,1fr) auto auto;grid-template-areas:"v t p s"}}
+/* Light/dark switch: header icon (desktop), menu row (phone), owner app header */
+.hd .thb svg{display:block}
+.dtheme{display:flex;align-items:center;gap:10px;width:100%;margin:6px 0 10px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:none;color:inherit;font:inherit;font-weight:600;cursor:pointer}
+.othb svg{display:block}
+/* Patriot light mode (shop + owner app). Content goes Cloud white with navy ink and Signal Red accents (the PST light theme was gold).
+   The brand bands stay Night navy in both modes: top bar, header, hero, menu and footer. */
+html[data-theme=light]{--bg:#F3F1EC;--bg2:#ECE9E2;--card:#FFFFFF;--card2:#F7F5F0;--line:#DCD8CF;--line2:#C3C9D6;--ink:#0A1020;--muted:#4A5468;--dim:#6E778A;
+  --gold:#C8102E;--gold2:#12266E;--ok:#1E7A45;--warn:#9A6A00;--bad:#B3261E}
+html[data-theme=light] :is(.annc,.hd,.hero,.drawer,.ft){--bg:#0A1020;--bg2:#0D1527;--card:#111A30;--card2:#141F38;--line:#243050;--line2:#2E3A58;
+  --ink:#F3F1EC;--muted:#C9CFDC;--dim:#98A2B8;--gold:#E8475F;--gold2:#F3F1EC;color:var(--ink)}
+html[data-theme=light] .hd,html[data-theme=light] .ft{background:#0A1020}html[data-theme=light] .nav{color:#d8d0bf}html[data-theme=light] .annc{color:#fff}
+html[data-theme=light] .hero{background:radial-gradient(ellipse at 50% 28%,#1a2742,#0A1020 66%)}
+html[data-theme=light] .hspot .spc{background:radial-gradient(circle at 20% 60%,#E7EAF2,#FFFFFF 75%)}html[data-theme=light] .spfrom b{color:#0A1020}
+html[data-theme=light] .spot{background:radial-gradient(circle at 50% 45%,#DCE2EE,#F3F1EC 66%)}
+html[data-theme=light] .spot .back,html[data-theme=light] .spot .zoomb{color:#4A5468}
+html[data-theme=light] .heartb{background:#fff;color:#0A1020;border:1px solid var(--line);box-shadow:0 2px 6px rgba(10,16,32,.08)}html[data-theme=light] .heartb[aria-pressed=true]{color:#C8102E}
+/* light mode: PST's dark-grey text rules don't apply inside the navy bands */
+html[data-theme=light] :is(.ft,.hd,.annc,.hero,.drawer) :is(nav,p,small,span,a,li,.fcols nav,.ruof){color:inherit}
+html[data-theme=light] .ft{color:#C9CFDC}html[data-theme=light] .ft :is(b,h3,h4){color:#F3F1EC}
+html[data-theme=light] .kchip,html[data-theme=light] [data-kitcount]{color:#0A1020}
+html[data-theme=light] .pmlive[aria-checked=true] i{background:#2EA043}html[data-theme=light] .pmlive[aria-checked=true]{color:#1E7A45}
+/* owner header on phones: room for the title with the light/dark button added */
+@media (max-width:480px){.ohr{gap:6px}.ohr .btn.sm{padding:0 9px;min-width:38px}.ohr .shopsw span{display:none}.ohd small{white-space:nowrap;letter-spacing:.14em}.ohd>div:first-child{min-width:0;flex:1}.ohd h1{font-size:1.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+/* wholesale rows on phones: the strength picker gets its own full-width line */
+@media (max-width:699px){.whsel{flex-wrap:wrap}.whsel select{flex:1 1 100%;width:100%}.whsel{white-space:nowrap}}
+html[data-theme=light] .kitbox{background:rgba(255,255,255,.97);box-shadow:0 8px 24px rgba(10,16,32,.08)}

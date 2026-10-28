@@ -35,14 +35,14 @@
     if (!me) { root.innerHTML = `<div class="empty"><h1 class="serif">Owner sign in</h1><p>Sign in with your admin account.</p><a class="btn primary" href="login.html?redirect=owner.html">Sign in</a></div>`; return; }
     if (!(await P.isAdmin(me))) { root.innerHTML = `<div class="empty"><h1 class="serif">Owners only</h1><p>This page is for Patriot Peptides USA staff.</p><a class="btn ghost" href="index.html">Go to the shop</a></div>`; return; }
     document.body.classList.add("oapp");
-    root.innerHTML = `<header class="ohd"><div><small>Patriot Peptides USA</small><h1 class="serif" data-otitle>Today</h1></div><div class="ohr"><button class="btn ghost sm" type="button" data-q="lookup" aria-label="Look up anything">${P.icon("search", 18)}</button><button class="btn ghost sm bell" type="button" data-bell data-act="inbox" aria-label="Notifications">${P.icon("bell", 18)}<i hidden>0</i></button><a class="btn ghost sm shopsw" href="index.html?from=owner" aria-label="Open the shop as a customer">${P.icon("shop", 18)}<span>Shop</span></a></div></header>
+    root.innerHTML = `<header class="ohd"><div><small>Patriot Peptides USA</small><h1 class="serif" data-otitle>Today</h1></div><div class="ohr"><button class="btn ghost sm othb" type="button" data-othb aria-label="Switch light or dark"></button><button class="btn ghost sm" type="button" data-q="lookup" aria-label="Look up anything">${P.icon("search", 18)}</button><button class="btn ghost sm bell" type="button" data-bell data-act="inbox" aria-label="Notifications">${P.icon("bell", 18)}<i hidden>0</i></button><a class="btn ghost sm shopsw" href="index.html?from=owner" aria-label="Open the shop as a customer">${P.icon("shop", 18)}<span>Shop</span></a></div></header>
 <section class="opane" data-pane="today"><p class="vibe" data-vibe></p><div data-rels></div><div data-tix></div><div data-cheer></div><div data-alerts></div><div class="tiles otiles" data-stats></div>
 <div class="oquick"><button class="btn primary" type="button" data-q="neworder">${P.icon("plus", 16)} New order</button><button class="btn ghost" type="button" data-q="addcust">${P.icon("users", 16)} Add customer</button></div>
 <div data-vmbox></div><h2 class="serif osec">Needs you</h2><div data-attn></div>
 <h2 class="serif osec">Running low soon</h2><p class="muted small">Customers likely to run low in the next 10 days, based on their own reorder rhythm. A friendly text sells.</p><div data-due></div><p class="mlinks hlink"><button type="button" class="linkish" data-go-help>Something not right? Report it with a screenshot</button></p></section>
 <section class="opane" data-pane="orders" hidden><div class="pmtop"><input class="psearch" type="search" data-osearch placeholder="Search orders" aria-label="Search orders by name, order number or email"><button class="btn primary sm" type="button" data-q="neworder">+ New</button></div><div class="oseg" role="tablist" data-tabs></div><div data-list aria-live="polite"></div></section>
-<section class="opane" data-pane="products" hidden><div class="oseg three" role="tablist"><button class="on" type="button" data-psub="catalog">Catalog</button><button type="button" data-psub="stock">Stock</button><button type="button" data-psub="reorder">Reorder</button></div>
-<div data-pm><p class="muted small">Loading…</p></div><div data-reorder hidden></div><div data-stock hidden><div class="pmtop"><p class="muted small" style="margin:0;flex:1">Purchase orders and the shelf</p><a class="btn ghost sm" href="#compare">Compare prices</a><button class="btn primary sm" type="button" data-newpo>+ New PO</button></div><div data-po></div><h2 class="serif osec">On the shelf</h2><p class="muted small" data-ssum></p><div class="schips" role="tablist" data-schips></div><input class="psearch" type="search" data-ssearch placeholder="Search products" aria-label="Search stock"><div data-slist><p class="muted small">Loading…</p></div><p class="muted small">Tap a product to correct its count.</p></div></section>
+<section class="opane" data-pane="products" hidden><div class="oseg four" role="tablist"><button class="on" type="button" data-psub="catalog">Catalog</button><button type="button" data-psub="wholesale">Wholesale</button><button type="button" data-psub="stock">Stock</button><button type="button" data-psub="reorder">Reorder</button></div>
+<div data-pm><p class="muted small">Loading…</p></div><div data-whs hidden></div><div data-reorder hidden></div><div data-stock hidden><div class="pmtop"><p class="muted small" style="margin:0;flex:1">Purchase orders and the shelf</p><a class="btn ghost sm" href="#compare">Compare prices</a><button class="btn primary sm" type="button" data-newpo>+ New PO</button></div><div data-po></div><h2 class="serif osec">On the shelf</h2><p class="muted small" data-ssum></p><div class="schips" role="tablist" data-schips></div><input class="psearch" type="search" data-ssearch placeholder="Search products" aria-label="Search stock"><div data-slist><p class="muted small">Loading…</p></div><p class="muted small">Tap a product to correct its count.</p></div></section>
 <section class="opane" data-pane="customers" hidden><div data-custs></div></section>
 <section class="opane" data-pane="more" hidden><div data-morehome><button type="button" class="wnbar" data-more="whatsnew">${P.icon("star", 18)}<span><b>What's new</b><small>v${PSTOps4.RELEASES[0].v} · ${PSTOps4.RELEASES[0].title}</small></span><i data-wndot${PSTOps4.unseen() ? "" : " hidden"}>New</i></button><div class="mcards">${MORE.map(m => mcard(...m)).join("")}${mcard("", "gear", "Full admin", "Everything else, on the computer", "admin.html")}${mcard("", "shop", "View the shop", "See it the way customers do", "index.html")}</div>
 <div class="nalbox thbox"><h2 class="serif">Look</h2><div class="oseg three" role="radiogroup" aria-label="App look" data-theme-pick>${[["dark", "Dark"], ["light", "Light"], ["auto", "Match phone"]].map(([k, l]) => `<button type="button" role="radio" data-th="${k}" aria-checked="${themePref() === k}" class="${themePref() === k ? "on" : ""}">${l}</button>`).join("")}</div></div>
@@ -50,6 +50,7 @@
 <div class="nalbox" id="alerts"><h2 class="serif">Alerts on this device</h2><div data-nal><p class="muted small">Loading…</p></div></div></div>
 <div data-moresub hidden><button class="oback" type="button" data-moreback>${P.icon("back", 18)} More</button><div data-sub="compare" data-cmp hidden></div><div data-sub="insights" data-ins hidden></div><div data-sub="requests" data-reqs hidden></div><div data-sub="coa" data-coa hidden></div><div data-sub="vendors" data-vens hidden></div><div data-sub="blast" data-blast hidden></div><div data-sub="ads" data-ads hidden></div><div data-sub="whatsnew" data-wn hidden></div><div data-sub="vprices" data-vpr hidden></div><div data-sub="reports" data-rep hidden></div><div data-sub="writer" data-wri hidden></div><div data-sub="paymethods" data-pay hidden></div><div data-sub="emails" data-ems2 hidden></div><div data-sub="help" data-help hidden></div><div data-sub="updates" data-upd hidden></div><div data-sub="emailpromos" data-epr hidden></div><div data-sub="texts" data-txt hidden></div><div data-sub="discounts" data-discs hidden></div><div data-sub="promos" data-promos hidden></div><div data-sub="protos" data-protos hidden></div><div data-sub="times" data-times hidden></div></div></section>
 <nav class="otabbar" aria-label="Owner app">${NAV.map(([k, i, l]) => `<button type="button" data-go="${k}" aria-current="${k === "today" ? "page" : "false"}">${P.icon(i, 22)}<span>${l}</span><i data-badge="${k}" hidden></i></button>`).join("")}</nav>`;
+    applyTheme(themePref()); // fills the header light/dark switch
     setTimeout(wnDot, 0); setTimeout(updNote, 400); setTimeout(() => window.PSTHelp?.notices(n => { if (n) { const b = $('[data-badge="more"]'); if (b) { b.hidden = false; b.textContent = n; } } }), 2500);
     PSTOps.init({ me, get orders() { return orders; }, get items() { return items; }, reload: load, lineExtra: (o, i) => lineDays(o, i) });
     document.addEventListener("click", onClick);
@@ -85,7 +86,9 @@
   function applyTheme(t) { try { localStorage.setItem("pst-owner-theme", t); } catch { /* private mode */ }
     const l = t === "light" || (t === "auto" && matchMedia("(prefers-color-scheme: light)").matches); document.documentElement.setAttribute("data-theme", l ? "light" : "dark");
     const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = l ? "#f6f3ec" : "#0a101c";
-    $$("[data-th]").forEach(b => { const on = b.dataset.th === t; b.classList.toggle("on", on); b.setAttribute("aria-checked", on); }); }
+    $$("[data-th]").forEach(b => { const on = b.dataset.th === t; b.classList.toggle("on", on); b.setAttribute("aria-checked", on); });
+    // header quick switch: one tap between light and dark (More → Look still has "Match phone")
+    $$("[data-othb]").forEach(b => { b.innerHTML = l ? '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg>' : '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>'; b.setAttribute("aria-label", l ? "Switch to dark" : "Switch to light"); }); }
   try { matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => { if (themePref() === "auto") applyTheme("auto"); }); } catch { /* old Safari */ }
   // v5.3: tell him when the app updated, with the headline of what's new
   function updNote() {
@@ -111,7 +114,7 @@
   }
   function sub(k) {
     $$("[data-psub]").forEach(b => b.classList.toggle("on", b.dataset.psub === k));
-    $("[data-pm]").hidden = k !== "catalog"; $("[data-stock]").hidden = k !== "stock"; $("[data-reorder]").hidden = k !== "reorder";
+    $("[data-pm]").hidden = k !== "catalog"; $("[data-whs]").hidden = k !== "wholesale"; if (k === "wholesale") whsPane(); $("[data-stock]").hidden = k !== "stock"; $("[data-reorder]").hidden = k !== "reorder";
     history.replaceState(null, "", "#" + (k === "catalog" ? "products" : k));
     if (k === "stock") stockList(); if (k === "reorder") PSTOps3.reorderPane($("[data-reorder]"));
   }
@@ -233,7 +236,8 @@ ${g.map(p => { const c = cyc[p.product_key]; return `<div class="trow"><div><b>$
     const [c, i, r] = await Promise.all([P.client().from("product_catalog").select("*").order("display_name"), P.client().from("product_inventory").select("product_key,current_inventory,cost_per_unit,is_active"),
       P.client().from("product_availability_requests").select("product_key,customer_email,requested_quantity").eq("status", "pending").limit(2000)]);
     await loadProtos().catch(() => {});
-    if (c.error) throw c.error; pmRows = (c.data || []).sort(P.cmpProduct); // v5.10 (report #3): name A–Z, then smallest dose first (5000iu before 10000iu) pmInv = Object.fromEntries((i.data || []).map(x => [x.product_key, x]));
+    if (c.error) throw c.error; pmRows = (c.data || []).sort(P.cmpProduct); // v5.10 (report #3): name A–Z, then smallest dose first (5000iu before 10000iu)
+    pmInv = Object.fromEntries((i.data || []).map(x => [x.product_key, x]));
     pmAsk = {}; (r.data || []).forEach(x => { const a = pmAsk[x.product_key] ||= { people: new Set(), vials: 0 }; a.people.add(String(x.customer_email || "").toLowerCase()); a.vials += Number(x.requested_quantity || 0); });
   }
   async function pmList() {
@@ -244,6 +248,38 @@ ${g.map(p => { const c = cyc[p.product_key]; return `<div class="trow"><div><b>$
 <div class="pmlist">${pmRows.map(p => { const on = p.is_active !== false, n = Number(pmInv[p.product_key]?.current_inventory ?? p.current_inventory ?? 0);
   return `<div class="pmrow" data-pmname="${esc(`${p.display_name} ${p.strength || ""} ${p.product_key}`.toLowerCase())}"><button type="button" class="pmmain" data-pmedit="${esc(p.product_key)}">${P.vial(p, 34)}<span><b>${protoDot(p)}${esc(p.display_name)} ${esc(p.strength || "")}</b><small>${money(P.unitPrice(p))} · ${n} on hand${p.coming_soon && n <= 0 ? " · Coming soon" : ""} · ${esc(P.vialColorName(p))}</small>${pmAsk[p.product_key] ? `<em class="pmask">${pmAsk[p.product_key].people.size} ${pmAsk[p.product_key].people.size === 1 ? "person" : "people"} asked · ${pmAsk[p.product_key].vials} vial${pmAsk[p.product_key].vials === 1 ? "" : "s"}</em>` : ""}</span></button>
 <button type="button" class="pmlive" role="switch" aria-checked="${on}" data-pmlive="${esc(p.product_key)}" aria-label="Live on site"><i></i><span>${on ? "Live" : "Hidden"}</span></button></div>`; }).join("")}</div>`;
+  }
+  /* ---- Wholesale kits: Jeff offers up to 4 ten-vial kits at a time (the most is set in ppu_store_settings) ---- */
+  async function whsPane() {
+    const el = $("[data-whs]"); el.innerHTML = `<p class="muted small">Loading…</p>`;
+    try { await pmLoad(); } catch (err) { el.innerHTML = `<p class="notice err">${esc(err.message)}</p>`; return; }
+    const set = (await P.client().from("ppu_store_settings").select("wholesale_max").eq("id", 1).maybeSingle()).data || {}, max = Number(set.wholesale_max) || 4;
+    const kits = pmRows.filter(p => /wholesale/i.test(p.category || "")), on = kits.filter(k => k.is_active !== false);
+    const bases = P.groups(pmRows.filter(p => !/wholesale|^suppl/i.test(p.category || "")));
+    const kitFor = g => kits.find(k => g.some(p => p.product_key === k.wholesale_base_key)) || kits.find(k => String(k.display_name).trim().toLowerCase() === String(g[0].display_name).trim().toLowerCase());
+    const row = g => { const k = kitFor(g), live = k && k.is_active !== false, base = g.find(p => p.product_key === k?.wholesale_base_key) || g[0];
+      return `<div class="whrow${live ? " on" : ""}" data-whname="${esc(String(g[0].display_name).toLowerCase())}">${P.vial(base, 30)}<div class="whtx"><b>${esc(g[0].display_name)}</b>
+<label class="whsel">Kit of 10 × <select data-whbase>${g.map(p => `<option value="${esc(p.product_key)}"${p.product_key === base.product_key ? " selected" : ""}>${esc(p.strength || "vial")} (${money(P.unitPrice(p))} each)</option>`).join("")}</select></label></div>
+<label class="whpr">Kit price<input type="number" min="1" step="1" inputmode="decimal" data-whprice value="${k ? Number(k.price) : ""}" placeholder="${Math.round(P.unitPrice(base) * 10 * 0.75)}"></label>
+<button type="button" class="pmlive" role="switch" aria-checked="${!!live}" data-whon aria-label="Offer ${esc(g[0].display_name)} wholesale"><i></i><span>${live ? "For sale" : "Off"}</span></button></div>`; };
+    const list = [...bases.filter(g => kitFor(g)?.is_active !== false && kitFor(g)), ...bases.filter(g => !(kitFor(g) && kitFor(g).is_active !== false))];
+    el.innerHTML = `<div class="whhead"><b class="serif">Wholesale kits</b><span class="whcount${on.length > max ? " over" : ""}">${on.length} of ${max} for sale</span></div>
+<p class="muted small">Pick up to ${max} products to sell as 10-vial kits on the Wholesale page. Turn one off to make room for another. Stock never runs out: you don't track inventory, so kits are always for sale.</p>
+${on.length > max ? `<p class="notice err small">${on.length} kits are on right now. Turn ${on.length - max} off; you can't add more until you're at ${max} or fewer.</p>` : ""}
+<input class="psearch" type="search" data-whsearch placeholder="Search products" aria-label="Search products" style="margin:8px 0">
+<div class="whlist">${list.map(row).join("")}</div><p class="status" data-whst role="status"></p>`;
+    el.oninput = e => { if (e.target.matches("[data-whsearch]")) { const q = e.target.value.trim().toLowerCase(); $$("[data-whname]", el).forEach(r => r.hidden = !!q && !r.dataset.whname.includes(q)); } };
+    el.onclick = async e => { const b = e.target.closest("[data-whon]"); if (!b) return; const r = b.closest(".whrow"), st = $("[data-whst]", el);
+      const want = b.getAttribute("aria-checked") !== "true", baseKey = $("[data-whbase]", r).value, price = Number($("[data-whprice]", r).value) || null;
+      if (want && !price) { st.textContent = "Enter the kit price first."; st.className = "status bad"; $("[data-whprice]", r).focus(); return; }
+      b.disabled = true; st.textContent = "Saving…"; st.className = "status";
+      const { error } = await P.client().rpc("ppu_wholesale_set", { p_base_key: baseKey, p_on: want, p_price: price });
+      b.disabled = false; if (error) { st.textContent = error.message; st.className = "status bad"; return; }
+      P.toast(want ? `${r.querySelector("b").textContent} is for sale wholesale` : `${r.querySelector("b").textContent} wholesale is off`); whsPane(); };
+    el.onchange = async e => { const r = e.target.closest(".whrow"); if (!r || !e.target.matches("[data-whprice]") || r.querySelector("[data-whon]").getAttribute("aria-checked") !== "true") return;
+      const price = Number(e.target.value) || 0; if (price <= 0) return; const st = $("[data-whst]", el);
+      const { error } = await P.client().rpc("ppu_wholesale_set", { p_base_key: $("[data-whbase]", r).value, p_on: true, p_price: price });
+      st.textContent = error ? error.message : "Kit price saved"; st.className = error ? "status bad" : "status good"; };
   }
   async function pmBakeAll(btn) {
     const st = $("[data-pmbakest]"); btn.disabled = true; let done = 0, skipped = 0, failed = 0;
@@ -491,6 +527,7 @@ ${stale.length ? `<div class="notice">${stale.length} protocol${stale.length ===
     if (t.closest("[data-psync]")) { let n = 0; for (const name in protos) if (protoOn({ display_name: name })) n += await protoSync(name, protos[name]); P.toast(`Reminder timing set on ${n} product${n === 1 ? "" : "s"}`); protoPage(); return; }
     if (t.closest("[data-go-help]")) { P.closeSheet(); go("more"); moreSub("help"); return; }
     if (t.closest("[data-cheerx]")) { $("[data-cheer]").innerHTML = ""; return; }
+    if (t.closest("[data-othb]")) { applyTheme(document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light"); return; }
     const th = t.closest("[data-th]"); if (th) { applyTheme(th.dataset.th); return; }
     const pe = t.closest("[data-pmedit]"); if (pe) { pmEdit(pe.dataset.pmedit); return; }
     const pn = t.closest("[data-pmnew]"); if (pn) { pmEdit(null); return; }
