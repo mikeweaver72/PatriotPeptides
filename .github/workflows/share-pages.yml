@@ -3,6 +3,9 @@
 # product's share page + picture and publishes them. Nothing to do by hand. Run it any time from the Actions tab.
 name: Product share pages
 on:
+  push:
+    branches: [main]
+    paths: ["tools/make_share_pages.js", "tools/share_pages_needed.js", "img/share/index.json", ".github/workflows/share-pages.yml"]
   schedule:
     - cron: "17 * * * *"
   workflow_dispatch:
