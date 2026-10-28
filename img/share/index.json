@@ -222,5 +222,9 @@
  "PP-WLV-20MG": {
   "sig": "PP-WLV-20MG|PP-WLV|20mg",
   "slug": "pp-wlv-pp-wlv-20mg"
+ },
+ "PP-KPV-5MG": {
+  "sig": "PP-KPV-5MG|PP-KPV|5mg",
+  "slug": "pp-kpv-pp-kpv-5mg"
  }
 }
