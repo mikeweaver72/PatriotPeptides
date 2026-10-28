@@ -285,3 +285,15 @@ html[data-theme=light] body .ft .pays span{color:#C9CFDC}
 .coachips a{display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border:1px solid var(--line2);border-radius:999px;font-size:13px;font-weight:700;color:var(--ink);text-decoration:none;background:transparent;transition:border-color .15s,background .15s}
 .coachips a:hover,.coachips a:focus-visible{border-color:#C8102E;background:rgba(200,16,46,.08)}.coachips svg{opacity:.7}
 .coasum{margin:4px 0 0}
+/* v42 sign in with an email code */
+.authcard .codehint{margin:-2px 0 0;text-align:center}
+.authcard .codeto{margin:0;color:var(--muted)}.authcard .codeto b{color:var(--ink);word-break:break-all}
+.authcard .codein{font-size:28px!important;letter-spacing:.4em;text-align:center;font-weight:700;font-variant-numeric:tabular-nums;padding:14px 10px!important}
+.authcard .codealt{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0}
+.authcard .codealt .linkish{font-size:14px}
+.pwalt{margin-top:18px;border-top:1px solid var(--line);padding-top:14px}
+.pwalt>summary{cursor:pointer;color:var(--muted);font-size:14px;list-style:none;text-align:center;padding:6px 0}
+.pwalt>summary::-webkit-details-marker{display:none}
+.pwalt>summary::after{content:" ›"}.pwalt[open]>summary{color:var(--ink);margin-bottom:10px}.pwalt[open]>summary::after{content:""}
+.setpw{text-align:left}.setpw>summary{text-align:left}
+.authcard .notice a{color:inherit;text-decoration:underline}
