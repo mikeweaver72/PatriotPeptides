@@ -882,10 +882,9 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
     // applies itself the moment he's done (form closed, nothing focused) or the app goes to the background. No tap needed.
     const busy = () => /input|textarea|select/i.test(document.activeElement?.tagName || "") || !!document.querySelector("#sheet:not([hidden])");
     const go = () => { pending = false; try { sessionStorage.setItem("pst_updated", "1"); } catch {} location.reload(); };
-    const reload = () => { if (document.hidden || !busy()) go(); else pending = true; };
-    let idleT = 0; const whenIdle = () => { if (!pending) return; clearTimeout(idleT); idleT = setTimeout(() => { if (pending && (document.hidden || !busy())) go(); }, 1500); };
-    ["focusout", "click", "touchend", "keyup"].forEach(ev => document.addEventListener(ev, whenIdle, { passive: true }));
-    setInterval(() => { if (pending && !busy()) go(); }, 5000);
+    // v1.6: never reload in front of him. A new version takes over quietly: it is used from the next page he opens,
+    // or applied while the app is in the background (switching apps, locking the phone). Nothing flashes on screen.
+    const reload = () => { try { sessionStorage.setItem("pst_updated", "1"); } catch {} if (document.hidden) go(); else pending = true; };
     sw.addEventListener("controllerchange", () => { if (hadController) reload(); hadController = true; }); // first-ever install just takes over quietly; every later one applies
     sw.register("sw.js", { updateViaCache: "none" }).then(reg => {
       const check = (force) => { if (force || Date.now() - last > 15000) { last = Date.now(); reg.update().catch(() => {}); } };
