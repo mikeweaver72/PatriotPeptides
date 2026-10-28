@@ -270,7 +270,14 @@ ${admin ? `<div class="setrow"><div><b>Store owner</b><span>The owner app (order
     const el = $("[data-coas]"); if (!el) return;
     try {
       const all = await P.products(), w = all.filter(p => P.coaHref(p));
-      el.innerHTML = w.length ? w.map(p => `<a class="coac" href="${esc(P.coaHref(p))}" target="_blank" rel="noopener">${P.vial(p, 34)}<div><b>${esc(p.display_name)} ${esc(p.strength || "")}</b><span>${esc(p.coa_label || "Certificate of analysis")} · PDF</span></div></a>`).join("") : `<p class="muted">Reports are being uploaded.</p>`;
+      // Patriot: one card per compound. Lab, lot and purity once; each strength is a chip that opens its PDF.
+      const parse = l => { const parts = String(l || "").split(/\s*·\s*/).filter(Boolean); return { lab: parts.find(x => !/^lot\b|%$/i.test(x)) || "Independent lab", lot: (parts.find(x => /^lot\b/i.test(x)) || "").replace(/^lot\s*/i, ""), purity: parts.find(x => /%$/.test(x)) || "" }; };
+      const groups = P.groups(w).sort((a, b) => String(a[0].display_name).localeCompare(String(b[0].display_name)));
+      el.innerHTML = groups.length ? groups.map(g => { const p0 = g[0], meta = g.map(x => parse(x.coa_label)), lots = [...new Set(meta.map(m => m.lot).filter(Boolean))], pur = [...new Set(meta.map(m => m.purity).filter(Boolean))], lab = meta[0].lab;
+        return `<article class="coac2"><div class="coahd">${P.vial(p0, 30)}<div><b>${esc(P.titleParts(p0).main)}</b><span>${esc(lab)}</span></div>${pur.length ? `<span class="coapur">${esc(pur.join(" / "))}</span>` : ""}</div>
+${lots.length ? `<p class="coalot">Lot ${esc(lots.join(", "))}</p>` : ""}<div class="coachips">${g.map(x => `<a href="${esc(P.coaHref(x))}" target="_blank" rel="noopener" aria-label="${esc(p0.display_name)} ${esc(x.strength || "")} lab report (PDF)">${esc(x.strength || "Report")}<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>`).join("")}</div></article>`; }).join("")
+        : `<p class="muted">Reports are being uploaded.</p>`;
+      const nc = $("[data-coacompounds]"); if (nc) nc.textContent = groups.length;
       const n = $("[data-coacount]"); if (n) n.textContent = w.length;
     } catch { el.innerHTML = `<p class="muted">Couldn't load reports right now.</p>`; }
   }

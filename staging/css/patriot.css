@@ -274,3 +274,14 @@ html[data-theme=light] body .ft .news b,html[data-theme=light] body .ft .news .s
 html[data-theme=light] body .hd .mfcard{background:radial-gradient(circle at 20% 50%,#1d2a45,#0d1424 70%)}
 html[data-theme=light] body .hd .mfcard :is(b,span,small,.kick){color:#F3F1EC}html[data-theme=light] body .hd .mfcard .kick{color:#E8475F}
 html[data-theme=light] body .ft .pays span{color:#C9CFDC}
+/* Lab reports page: one tidy card per compound, strengths as PDF chips */
+.coagrid{grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.coac2{display:flex;flex-direction:column;gap:10px;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+.coahd{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:12px;align-items:center}
+.coahd b{display:block;font-size:17px;line-height:1.2}.coahd span{display:block;font-size:12.5px;color:var(--muted)}
+.coahd .coapur{font-size:12px;font-weight:800;color:#fff;background:#1E7A45;border-radius:999px;padding:4px 9px;white-space:nowrap}
+.coalot{margin:0;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.coachips{display:flex;flex-wrap:wrap;gap:8px}
+.coachips a{display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border:1px solid var(--line2);border-radius:999px;font-size:13px;font-weight:700;color:var(--ink);text-decoration:none;background:transparent;transition:border-color .15s,background .15s}
+.coachips a:hover,.coachips a:focus-visible{border-color:#C8102E;background:rgba(200,16,46,.08)}.coachips svg{opacity:.7}
+.coasum{margin:4px 0 0}
