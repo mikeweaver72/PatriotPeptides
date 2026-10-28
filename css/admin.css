@@ -1,22 +1,24 @@
+@import url("https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700;800&display=swap");
 /* Patriot Peptides USA — shared admin design system
    Shared admin colors, typography, forms, actions, statuses, header, and footer.
    Page-specific card geometry remains owned by each page. */
 
 :root {
-  --pst-admin-navy: #102a43;
-  --pst-admin-navy-deep: #0b2037;
-  --pst-admin-gold: #b79a63;
-  --pst-admin-gold-soft: #d8c8a4;
-  --pst-admin-ink: #24303b;
-  --pst-admin-muted: #6f7782;
-  --pst-admin-line: #e8e3da;
-  --pst-admin-soft: #faf9f6;
+  /* Patriot Peptides USA brand (was Pep Shop Texas navy + gold) */
+  --pst-admin-navy: #12266E;
+  --pst-admin-navy-deep: #0A1020;
+  --pst-admin-gold: #C8102E;
+  --pst-admin-gold-soft: #F4C7CE;
+  --pst-admin-ink: #141B2D;
+  --pst-admin-muted: #5E6678;
+  --pst-admin-line: #E3E6EC;
+  --pst-admin-soft: #F5F6F9;
   --pst-admin-white: #ffffff;
   --pst-admin-green: #0f8a3b;
   --pst-admin-warn: #b7791f;
   --pst-admin-danger: #b42318;
-  --pst-admin-font: "Avenir Next", "Segoe UI", Arial, Helvetica, sans-serif;
-  --pst-admin-heading: Georgia, "Times New Roman", serif;
+  --pst-admin-font: Inter, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  --pst-admin-heading: "Archivo Black", "Arial Black", Impact, sans-serif;
 }
 
 *,*::before,*::after{box-sizing:border-box}
@@ -310,3 +312,20 @@ html body button#newProductBtn:focus-visible {
   background:var(--pst-admin-gold)!important;
   border-color:var(--pst-admin-gold)!important;
 }
+
+
+/* ===== Patriot Peptides USA admin look (red / white / navy) ===== */
+.pst-admin-header,body>header.pst-admin-header{border-bottom:0!important;box-shadow:0 1px 0 var(--pst-admin-line)!important}
+.pst-admin-header::after{content:""!important;display:block!important;height:4px!important;background:linear-gradient(90deg,#C8102E 0 33.33%,#F3F1EC 33.33% 66.66%,#12266E 66.66% 100%)!important}
+.pst-admin-nav a{letter-spacing:.08em!important}
+.pst-admin-nav a:hover,.pst-admin-nav a:focus-visible{color:#C8102E!important}
+.pst-admin-nav a.active::after,.pst-admin-nav a[aria-current="page"]::after{background:#C8102E!important}
+h1,h2,.section-title,.pst-admin-footer h2,.pst-admin-footer .brand,.card h2,.panel h2{font-family:var(--pst-admin-heading)!important;letter-spacing:.01em!important}
+.btn.primary,button.primary,.btn-primary{background:#C8102E!important;border-color:#C8102E!important;color:#fff!important}
+.btn.primary:hover,button.primary:hover,.btn-primary:hover{background:#A50D26!important;border-color:#A50D26!important}
+.pst-admin-footer,footer.pst-admin-footer{background:#0A1020!important;border-top:4px solid #C8102E!important}
+.site-footer.pst-admin-footer{background:#0A1020!important;border-top:4px solid #C8102E!important}
+.pst-admin-footer-column strong{color:#F3F1EC!important;opacity:.7}
+.pst-global-lookup,#pstGlobalLookup{background:#fff!important;border:1px solid var(--pst-admin-line)!important;border-top:4px solid #C8102E!important;border-radius:12px!important;box-shadow:0 2px 10px rgba(10,16,32,.06)!important}
+.pst-global-lookup h2{color:#0A1020!important}
+.pst-admin-nav a.active,.pst-admin-nav a[aria-current="page"]{color:#C8102E!important}

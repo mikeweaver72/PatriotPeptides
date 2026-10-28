@@ -63,7 +63,7 @@ select.stsel{width:100%;min-height:48px;font-size:16px;background:var(--card);co
 html.okb .otabbar{display:none}
 
 /* pull-to-refresh, iOS style (owner app): page slides down, 12-spoke activity indicator in the gap */
-body.oapp #main{will-change:transform}
+/* (no permanent will-change on #main: it turned the fixed tab bar into one that scrolls away and covered Send report) */
 .iosptr{--p:0;position:fixed;top:calc(env(safe-area-inset-top) + 14px);left:50%;transform:translateX(-50%) scale(calc(.6 + .4 * var(--p)));opacity:0;transition:opacity .12s;z-index:9998;pointer-events:none;color:var(--muted)}
 .iosptr svg rect{fill:currentColor;opacity:calc(.15 + .85 * clamp(0, (var(--p) * 12 - var(--i)), 1))}
 .iosptr.armed{color:var(--ink)}

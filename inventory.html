@@ -2505,7 +2505,7 @@ button:not(.secondary):not(.danger):not(.success):not(.warning).btn {
     }
   }
 </style>
-<link rel="stylesheet" href="css/admin.css?v=12">
+<link rel="stylesheet" href="css/admin.css?v=13">
 <style id="pst-incoming-form-layout-v2">
 .incoming-form-grid{display:flex!important;flex-direction:column!important;gap:20px!important;align-items:stretch!important;padding:22px!important;background:#f8fafc!important}
 .incoming-form-grid .field{display:flex!important;flex-direction:column!important;gap:7px!important;min-width:0!important}
@@ -2514,7 +2514,7 @@ button:not(.secondary):not(.danger):not(.success):not(.warning).btn {
 .incoming-form-grid>.po-vendor-date-row{display:grid;grid-template-columns:minmax(0,560px) minmax(180px,245px);gap:16px;align-items:start;width:100%}.incoming-form-grid>.po-vendor-date-row>.field{min-width:0}.incoming-form-grid>.po-vendor-date-row>.po-order-date input{width:100%!important}
 
 .incoming-form-grid .vendor-inline-note,.incoming-form-grid #incomingVendorPriceNote{font-size:12px!important;line-height:1.35!important}
-.incoming-form-grid a.po-vendor-import-link{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:8px!important;width:fit-content!important;max-width:100%!important;padding:11px 15px!important;margin-top:8px!important;border:1px solid #19324d!important;border-radius:6px!important;background:#19324d!important;color:#fff!important;font-size:12px!important;font-weight:800!important;line-height:1.3!important;letter-spacing:.02em!important;text-decoration:none!important;box-sizing:border-box!important;white-space:normal!important}.incoming-form-grid a.po-vendor-import-link:hover,.incoming-form-grid a.po-vendor-import-link:focus-visible{background:#294c71!important;color:#fff!important;outline:2px solid #8ea9c4;outline-offset:2px}
+.incoming-form-grid a.po-vendor-import-link{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:8px!important;width:fit-content!important;max-width:100%!important;padding:11px 15px!important;margin-top:8px!important;border:1px solid #12266E!important;border-radius:6px!important;background:#12266E!important;color:#fff!important;font-size:12px!important;font-weight:800!important;line-height:1.3!important;letter-spacing:.02em!important;text-decoration:none!important;box-sizing:border-box!important;white-space:normal!important}.incoming-form-grid a.po-vendor-import-link:hover,.incoming-form-grid a.po-vendor-import-link:focus-visible{background:#294c71!important;color:#fff!important;outline:2px solid #8ea9c4;outline-offset:2px}
 .incoming-form-grid>.po-entry-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(140px,190px) 160px;gap:14px;align-items:start;width:100%}
 .incoming-form-grid>.po-entry-divider{height:1px;background:#cbd5e1;width:100%}
 .incoming-form-grid>.po-summary-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) minmax(140px,175px);gap:14px;align-items:start;width:100%}
@@ -4687,7 +4687,7 @@ async function exportIncomingPurchaseOrderPDF(poNumber) {
       doc.addImage(canvas.toDataURL("image/png"),"PNG",L,32,logo.naturalWidth*ratio,logo.naturalHeight*ratio);
     } catch(e) { txt("PATRIOT PEPTIDES USA",L,52,16,true); }
     txt("PURCHASE ORDER",R,51,16,true,"right");
-    const contact=["Jeff Weaver","2313 Starr Dr","Waco, TX 76710 USA","owner@patriotpeptides-usa.com","254-498-7249","patriotpeptides-usa.com"];
+    const contact=["Patriot Peptides USA","info@patriotpeptides-usa.com","patriotpeptides-usa.com"]; // (was Pep Shop Texas's Waco address and phone)
     contact.forEach((t,i)=>txt(t,L,94+i*12,9));
     doc.setDrawColor(25,50,77);doc.setLineWidth(1.3);doc.line(L,173,R,173);
     txt("Supplier",L,192,9,true);txt(vendorName,L,206,9);
