@@ -267,3 +267,10 @@ html[data-theme=light] .pmlive[aria-checked=true] i{background:#2EA043}html[data
 /* wholesale rows on phones: the strength picker gets its own full-width line */
 @media (max-width:699px){.whsel{flex-wrap:wrap}.whsel select{flex:1 1 100%;width:100%}.whsel{white-space:nowrap}}
 html[data-theme=light] .kitbox{background:rgba(255,255,255,.97);box-shadow:0 8px 24px rgba(10,16,32,.08)}
+/* light mode: the last PST light rules that landed inside the navy bands (menu links, mega menu, footer sign-up) */
+html[data-theme=light] body .drawer details a,html[data-theme=light] body .hd .mgrid a{color:#D8DCE6}
+html[data-theme=light] body .ft .news{background:linear-gradient(135deg,#141F38,#0E1838);border-color:#243050}
+html[data-theme=light] body .ft .news b,html[data-theme=light] body .ft .news .serif{color:#F3F1EC}html[data-theme=light] body .ft .news span{color:#C9CFDC}
+html[data-theme=light] body .hd .mfcard{background:radial-gradient(circle at 20% 50%,#1d2a45,#0d1424 70%)}
+html[data-theme=light] body .hd .mfcard :is(b,span,small,.kick){color:#F3F1EC}html[data-theme=light] body .hd .mfcard .kick{color:#E8475F}
+html[data-theme=light] body .ft .pays span{color:#C9CFDC}
