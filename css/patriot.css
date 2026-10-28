@@ -297,3 +297,91 @@ html[data-theme=light] body .ft .pays span{color:#C9CFDC}
 .pwalt>summary::after{content:" ›"}.pwalt[open]>summary{color:var(--ink);margin-bottom:10px}.pwalt[open]>summary::after{content:""}
 .setpw{text-align:left}.setpw>summary{text-align:left}
 .authcard .notice a{color:inherit;text-decoration:underline}
+/* v43 old-site orders on the account page */
+.legacy{margin-top:26px}.legacy h3{font-size:1.4rem;margin:0 0 2px}.legacy>p{margin:0 0 10px}
+.ocard.lgc>summary{list-style:none;cursor:pointer}.ocard.lgc>summary::-webkit-details-marker{display:none}
+.ocard.lgc .ob{display:block}.empty.slim{padding:18px}
+
+/* ===== v44: ported from Pep Shop Texas ===== */
+/* v5.12: live deals get real space (home card under the hero, note on product pages) */
+.deals{display:grid;gap:12px;margin-top:22px}
+@media(min-width:800px){.deals{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}}
+.dealc{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:center;padding:16px 18px;border:1px solid rgba(201,164,92,.55);background:linear-gradient(135deg,rgba(201,164,92,.14),rgba(201,164,92,.03) 60%),var(--card);color:inherit;text-decoration:none;transition:border-color .2s,transform .2s}
+.dealc:hover{border-color:var(--gold);transform:translateY(-2px)}
+.dealimg{position:relative;display:grid;place-items:center;width:64px}.dealimg i{position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);font-style:normal;font-size:10px;font-weight:800;letter-spacing:.12em;background:var(--gold);color:#111;padding:2px 7px;border-radius:999px}
+.dealic{display:grid;place-items:center;width:56px;height:56px;border-radius:50%;background:rgba(201,164,92,.16);color:var(--gold)}
+.dealtx{display:flex;flex-direction:column;gap:3px;min-width:0}.dealtx .kick{margin:0}.dealtx b.serif{font-size:1.35rem;line-height:1.15}.dealtx .muted{font-size:13.5px}.dealtx .lnk{font-size:12px;margin-top:3px}
+.pdeal{display:flex;gap:10px;align-items:flex-start;margin:12px 0 4px;padding:10px 12px;border:1px dashed rgba(201,164,92,.6);background:rgba(201,164,92,.07);font-size:13.5px;line-height:1.45}.pdeal svg{flex:none;color:var(--gold);margin-top:2px}.pdeal small{color:var(--muted)}
+html[data-theme=light] .dealc{background:linear-gradient(135deg,rgba(154,122,47,.12),rgba(154,122,47,.02) 60%),#fff}
+/* v513 printable purchase order */
+.osheet .poprintb{margin-top:2px}
+#poprint{display:none}
+@media print{
+@page{size:letter;margin:14mm}
+body>*:not(#poprint){display:none!important}
+html,body,body.noscroll{background:#fff!important;overflow:visible!important;height:auto!important;position:static!important;top:auto!important;transform:none!important;min-height:0!important}
+#poprint{position:static!important;margin:0!important}
+#poprint{display:block!important;color:#111;font:12px/1.45 -apple-system,"Segoe UI",Helvetica,Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+#poprint .pph{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #C8102E;padding-bottom:12px;margin-bottom:16px}
+#poprint .pph>div:first-child{display:flex;gap:10px;align-items:center}
+#poprint .pph img{width:46px;height:46px;border-radius:50%}
+#poprint .pph b{display:block;font-size:17px;letter-spacing:.04em}
+#poprint .pph span{color:#666;font-size:11px}
+#poprint .ppt{text-align:right}
+#poprint .ppt h1{margin:0;font-size:20px;font-weight:600;text-transform:uppercase;letter-spacing:.12em;color:#12266E}
+#poprint .ppt b{font-size:14px}
+#poprint .ppm{display:flex;flex-wrap:wrap;gap:8px 28px;margin-bottom:16px}
+#poprint .ppm small{display:block;color:#777;font-size:10px;text-transform:uppercase;letter-spacing:.1em}
+#poprint .ppm b{font-size:13px}
+#poprint table{width:100%;border-collapse:collapse}
+#poprint .ppl th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#555;border-bottom:1px solid #999;padding:6px 6px}
+#poprint .ppl td{border-bottom:1px solid #ddd;padding:7px 6px;vertical-align:top}
+#poprint .ppl th:not(:first-child),#poprint .ppl td:not(:first-child){text-align:right;white-space:nowrap}
+#poprint .ppl td small{display:block;color:#777;font-size:10px}
+#poprint .ppl tr.cx td{color:#999;text-decoration:line-through}#poprint .ppl tr.cx small{text-decoration:none}
+#poprint .ppl tr{break-inside:avoid}
+#poprint .ppx{width:auto;margin:12px 0 0 auto;min-width:240px}
+#poprint .ppx td{padding:4px 6px}#poprint .ppx td:last-child{text-align:right}
+#poprint .ppx tr.g td{border-top:2px solid #111;font-weight:700;font-size:14px;padding-top:7px}
+#poprint .ppf{margin-top:28px;color:#888;font-size:10px;border-top:1px solid #ddd;padding-top:8px}
+}
+/* v514 More: drag handles to arrange cards */
+.mcards .mrow{display:flex;align-items:stretch;gap:8px;position:relative;touch-action:pan-y}
+.mcards .mrow>.mcard{flex:1;min-width:0}
+.mgrip{flex:none;width:34px;display:grid;place-items:center;border:1px dashed var(--line);border-radius:12px;background:transparent;color:var(--dim);cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none;padding:0}
+.mgrip:hover,.mgrip:focus-visible{color:var(--gold);border-color:var(--gold);outline:none}
+.mcards.sorting{-webkit-user-select:none;user-select:none}.mcards.sorting .mrow:not(.dragging){transition:transform .15s}
+.mrow.dragging{z-index:5}.mrow.dragging .mgrip{cursor:grabbing;color:var(--gold);border-color:var(--gold);border-style:solid}
+.mrow.dragging .mcard{box-shadow:0 14px 34px rgba(0,0,0,.45);border-color:var(--gold);transform:scale(1.02)}
+.mresetp{text-align:center;margin:10px 0 0}
+/* v516 COA peek: badge on the vial, hover preview (computer), full-screen sheet (phone) */
+.spot>.vstick{position:relative;display:grid;place-items:center}
+.coapeek{position:absolute;right:-92px;top:46%;display:flex;align-items:center;gap:8px;padding:8px 12px 8px 10px;border-radius:999px;border:1px solid var(--gold);background:rgba(10,16,28,.82);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:var(--gold2,var(--gold));text-decoration:none;box-shadow:0 6px 18px rgba(0,0,0,.35);cursor:help;z-index:3}
+.coapeek span{display:grid;line-height:1.05}.coapeek b{font-size:13px;letter-spacing:.12em}.coapeek small{font-size:10.5px;color:var(--muted);letter-spacing:.04em}
+.coapeek:hover,.coapeek:focus-visible{background:var(--gold);color:#fff;outline:none}.coapeek:hover small,.coapeek:focus-visible small{color:#fff}
+@media(max-width:899px){.coapeek{padding:8px 11px;right:-58px;top:60%}.coapeek small{display:none}}
+@media(max-width:380px){.coapeek{right:-44px}}
+@media(min-width:900px){.spot>.vstick{position:sticky;top:140px;margin-top:70px}.spot>.vstick>.zoomb,.spot>.vstick>svg.vial{position:static;margin-top:0}.coapeek{right:-118px;bottom:auto;top:44%}}
+@media(min-width:900px) and (max-width:1100px){.coapeek{right:-70px}}
+.coapop{position:fixed;z-index:9000;display:flex;flex-direction:column;background:#fff;border:1px solid var(--gold);border-radius:12px;box-shadow:0 24px 70px rgba(0,0,0,.55);overflow:hidden;opacity:0;visibility:hidden;transform:translateY(6px) scale(.985);transition:opacity .14s,transform .14s,visibility 0s .14s}
+.coapop.on{opacity:1;visibility:visible;transform:none;transition:opacity .14s,transform .14s}
+.coapop header,.coasheet header{display:flex;align-items:center;gap:12px;padding:10px 14px;background:#0a101c;color:#fff;border-bottom:1px solid var(--gold)}
+.coapop header b,.coasheet header b{flex:1;min-width:0;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.coapop header a,.coasheet header a{color:var(--gold2,var(--gold));font-size:13px;text-decoration:none;white-space:nowrap}
+.coaview{flex:1;min-height:0;background:#525659;display:flex;overflow:auto}.coapages{flex:1;display:grid;gap:8px;align-content:start;justify-items:center;padding:8px}.coapages canvas{display:block;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.35)}.coaload,.coaerr{color:#fff;margin:auto;padding:30px;text-align:center}.coaerr a{color:var(--gold2,var(--gold))}.coaview iframe{flex:1;width:100%;height:100%;border:0;background:#fff}.coaview img{display:block;margin:auto;max-width:100%;height:auto;background:#fff}
+.coasheet{position:fixed;inset:0;z-index:9500;display:flex;flex-direction:column;background:#0a101c;padding-top:env(safe-area-inset-top)}
+.coasheet header{padding:12px 14px}.coasheet header button{border:1px solid var(--gold);background:var(--gold);color:#0a101c;font-weight:700;border-radius:999px;padding:9px 18px;font-size:15px}
+.coasheet .coaview{-webkit-overflow-scrolling:touch;padding-bottom:env(safe-area-inset-bottom)}
+html.coalock,html.coalock body{overflow:hidden}
+/* v516 Shop | Owner switch (owner only) */
+.flip{display:inline-flex;border:1px solid var(--gold);border-radius:999px;padding:2px;background:rgba(0,0,0,.25);flex:none}
+.flip a{padding:5px 13px;border-radius:999px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gold2,var(--gold));text-decoration:none;line-height:1.3}
+.flip a.on{background:var(--gold);color:#fff}.flip a:not(.on):hover{background:rgba(200,16,46,.16)}
+.flipbar{display:flex;align-items:center;justify-content:center;gap:12px;padding:6px 14px;background:#05080f;border-bottom:1px solid rgba(200,16,46,.45);font-size:12.5px;color:var(--muted)}
+.flipbar>span{letter-spacing:.04em}
+@media(max-width:420px){.flipbar>span{display:none}}
+
+
+html[data-theme=light] .flipbar{background:#0A1020}
+.oapp>.flipbar,[data-oroot]>.flipbar{margin:0 -18px;padding-top:calc(6px + env(safe-area-inset-top,0px))}.oapp>.flipbar+.ohd{padding-top:10px}
+

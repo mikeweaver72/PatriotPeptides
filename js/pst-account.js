@@ -40,6 +40,7 @@
       if (ir.error) ir = await P.client().from("order_items").select("id,order_id,product_id,product_name,product_strength,product_category,quantity,unit_price,line_total").in("order_id", ids);
       (ir.data || []).forEach(i => (items[i.order_id] ||= []).push(i));
     }
+    legacy = await P.client().from("ppu_legacy_orders").select("woo_order,ordered_at,status,total,shipping,payment_method,items").order("ordered_at", { ascending: false }).then(r => r.data || [], () => []); // orders from the old WooCommerce store
     mine = await P.myProducts(await P.myHistory(user)).catch(() => []);
     const due = mine.filter(m => !m.inProgress && m.left <= 7).map(m => ({ days: m.left }));
     root.innerHTML = `<div class="hello"><img src="img/pst-emblem-96.webp" width="52" height="52" alt=""><div><small>${esc(profile?.customer_number ? "Customer PP-C" + profile.customer_number : "My account")}</small><h1 class="serif" style="font-size:2.2rem;margin:0">Hi, ${esc(P.firstName(profile, user))}</h1></div><button class="btn ghost sm hsign" type="button" data-signout>Sign out</button></div>${admin ? `<a class="ownercta" href="owner.html"><span class="oc-ic">${P.icon("box", 20)}</span><span><b>Open the owner app</b><small>Orders, payments, customers, products</small></span><span class="oc-go">›</span></a>` : ""}
@@ -54,9 +55,17 @@
     const pane = $("[data-pane]");
     ({ orders: paneOrders, "running-low": paneDue, rewards: paneRewards, profile: paneProfile, alerts: paneAlerts })[k](pane);
   }
+  let legacy = [];
+  function legacyHtml() {
+    if (!legacy.length) return "";
+    const find = n => "catalog.html?search=" + encodeURIComponent(String(n || "").split(/\s+-\s+|\s+\d/)[0].trim());
+    return `<section class="legacy"><h3 class="serif">From our old website</h3><p class="muted small">Orders you placed before the new site. Totals as charged then.</p>${legacy.map(o => `<details class="ocard lgc"><summary class="oh"><div><b>Order #${esc(o.woo_order)}</b><span>${P.fmtDate(o.ordered_at)} · ${money(o.total)} · ${(o.items || []).reduce((s, x) => s + Number(x.qty || 0), 0)} item${(o.items || []).length > 1 || (o.items?.[0]?.qty > 1) ? "s" : ""}</span></div><span class="opill ok">${o.status === "completed" ? "Delivered" : esc(o.status || "")}</span></summary>
+<div class="ob"><div class="oitems">${(o.items || []).map(x => `<div class="oline"><span>${esc(x.name)} × ${Number(x.qty || 0)}</span><b>${money(x.total)}</b><a class="btn ghost xs oadd" href="${find(x.name)}">Find it</a></div>`).join("")}
+<div><span class="muted">Shipping</span><span>${Number(o.shipping) ? money(o.shipping) : "Free"}</span></div><div><b>Total</b><b>${money(o.total)}</b></div>${o.payment_method ? `<div><span class="muted">Paid with</span><span>${esc(String(o.payment_method).replace(/^Pay with /i, ""))}</span></div>` : ""}</div></div></details>`).join("")}</section>`;
+  }
   function paneOrders(el) {
     const on = P.params.get("on"), want = P.params.get("o") || (on ? String((orders.find(o => String(o.order_number || "").toLowerCase() === on.toLowerCase()) || {}).id || "") : "") || null, wantItem = P.params.get("item"), openIdx = Math.max(0, orders.findIndex(o => String(o.id) === want));
-    if (!orders.length) { el.innerHTML = `<div class="empty">${P.icon("box", 32)}<p>No orders yet. When you check out, your orders show up here with live status.</p><a class="btn primary" href="catalog.html">Browse the collection</a></div>`; return; }
+    if (!orders.length) { el.innerHTML = (legacy.length ? `<div class="empty slim"><p>No orders on the new site yet. Your earlier orders are below.</p><a class="btn primary" href="catalog.html">Browse the collection</a></div>` : `<div class="empty">${P.icon("box", 32)}<p>No orders yet. When you check out, your orders show up here with live status.</p><a class="btn primary" href="catalog.html">Browse the collection</a></div>`) + legacyHtml(); return; }
     el.innerHTML = orders.map((o, i) => {
       const st = stageOf(o), its = items[o.id] || [], unpaid = st.n === 0 && !st.bad, venmo = /venmo/i.test(o.payment_method || "");
       const isOpen = i === openIdx, done = !st.bad && st.n >= 1;
@@ -65,7 +74,7 @@
 <div class="oitems">${its.map(x => `<div class="oline${wantItem && x.product_key === wantItem && isOpen ? " hit" : ""}"><span>${esc(x.product_name)} ${esc(x.product_strength || "")} × ${Number(x.quantity || 0)}</span><b>${money(x.line_total)}</b>${x.product_key ? `<button class="btn ${wantItem && x.product_key === wantItem && isOpen ? "primary" : "ghost"} xs oadd" type="button" data-again="${esc(x.product_key)}" data-pid="${esc(x.product_id || "")}" data-q="${Number(x.quantity || 1)}">${P.icon("plus", 14)} Add to bag</button>` : ""}</div>`).join("") || "<div><span class='muted'>No item details.</span></div>"}
 <div><span class="muted">Shipping</span><span>${o.shipping ? money(o.shipping) : "Free"}</span></div><div><b>Total</b><b>${money(o.total)}</b></div></div>
 ${unpaid ? `<div data-howpay="${o.id}" data-m="${esc(o.payment_method || "")}" data-t="${Number(o.total || 0)}" data-n="${esc(o.order_number || "")}"></div>` : ""}<div class="oacts">${unpaid && !P.isOtherPay(o.payment_method) ? `<button class="btn ghost sm" type="button" data-sent="${o.id}"${P.store.get("pst_paid_sent", {})[o.id] ? " disabled>✓ Payment sent" : ">I've sent payment"}</button>` : ""}<button class="btn ${done ? "primary" : "ghost"} sm" type="button" data-reorder="${o.id}">${P.icon("bag", 15)} Reorder all</button><a class="btn ghost sm" href="mailto:${P.CFG.support}?subject=${encodeURIComponent("Order " + (o.order_number || ""))}">Get help</a></div></div></article>`;
-    }).join("") + `<p class="status" data-ostat role="status"></p>`;
+    }).join("") + `<p class="status" data-ostat role="status"></p>` + legacyHtml();
     $$("[data-howpay]", el).forEach(h => P.payCard(h.dataset.m, Number(h.dataset.t), h.dataset.n, null).then(x => { h.innerHTML = x; }).catch(() => {}));
     if (want) setTimeout(() => { const c = el.querySelector(`[data-ocard="${CSS.escape(want)}"]`); c?.scrollIntoView({ block: "start", behavior: "smooth" }); }, 120);
     // the "Add to bag" button on a running-low alert (Android / computer) lands here with add=1: add it once
@@ -229,7 +238,8 @@ ${admin ? `<div class="setrow"><div><b>Store owner</b><span>The owner app (order
       busy = false; b.disabled = false; b.textContent = "Sign in";
       notice(vmsg, /expired|invalid/i.test(error.message) ? "That code didn't work. It may be mistyped or expired. Check the newest email, or send a new code." : error.message, "err");
     };
-    vf.code.addEventListener("input", () => { vf.code.value = vf.code.value.replace(/\D/g, "").slice(0, 8); if (vf.code.value.length === 6) verify(); });
+    let vt = 0; // sign in once the code is typed or pasted (6 or 8 digits, depending on the project)
+    vf.code.addEventListener("input", () => { vf.code.value = vf.code.value.replace(/\D/g, "").slice(0, 8); clearTimeout(vt); const n = vf.code.value.length; if (n === 8) verify(); else if (n === 6) vt = setTimeout(verify, 700); });
     vf.addEventListener("submit", e => { e.preventDefault(); verify(); });
     loginPw(to);
   }

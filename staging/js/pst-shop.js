@@ -80,6 +80,20 @@ ${mine.length ? `<div class="mylist">${mine.map(productRow).join("")}</div><p cl
     for (const g of [...pool.filter(g => g.some(p => p.featured || p.hot_peptide)), ...pool]) { if (out.length >= n) break; const k = P.gkey(g[0]); if (!seen.has(k)) { seen.add(k); out.push(g); } }
     return out; }
   /* ---------------- HOME ---------------- */
+  /* v5.12: live promotions get real space (ported from Pep Shop Texas) */
+  let DEALS = null;
+  const dealsP = () => DEALS ? Promise.resolve(DEALS) : P.getUser().then(u => P.activePromotions(u)).then(d => (DEALS = d || []), () => (DEALS = []));
+  const endsTxt = p => p.ends_at ? "Ends " + new Date(p.ends_at).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" }) : "";
+  function dealNote() { const d = (DEALS || [])[0]; if (!d) return "";
+    return `<div class="pdeal">${P.icon("tag", 16)}<span><b>${esc(d.title)}</b>${d.body ? ` · ${esc(d.body)}` : ""}${endsTxt(d) ? ` <small>${esc(endsTxt(d))}</small>` : ""}</span></div>`; }
+  async function dealsHome(all) {
+    const ds = await dealsP(); if (!ds.length) return;
+    const hero = document.querySelector(".hero"); if (!hero || document.querySelector("[data-deals]")) return;
+    const card = d => { const r = d.promotion_type === "free_product" && d.reward_product_key ? all.find(x => x.product_key === d.reward_product_key) : null;
+      return `<a class="dealc" href="${esc(d.button_link || "catalog.html")}">${r ? `<span class="dealimg">${P.vial(r, 70)}<i>FREE</i></span>` : `<span class="dealic">${P.icon("tag", 26)}</span>`}
+<span class="dealtx"><span class="kick">${esc(d.badge || "Live deal")}${endsTxt(d) ? ` · ${esc(endsTxt(d))}` : ""}</span><b class="serif">${esc(d.title)}</b>${d.body ? `<span class="muted">${esc(d.body)}</span>` : ""}<span class="lnk">${esc(d.button_text || "Shop the deal")} →</span></span></a>`; };
+    hero.insertAdjacentHTML("afterend", `<section class="wrap deals" data-deals aria-label="Current deals">${ds.slice(0, 3).map(card).join("")}</section>`);
+  }
   async function home() {
     shelf();
     const avail = $("[data-avail-grid]"), ed = $("[data-editorial]"), marq = $("[data-marquee]"), ads = $("[data-ads]");
@@ -87,6 +101,7 @@ ${mine.length ? `<div class="mylist">${mine.map(productRow).join("")}</div><p cl
     loadAds(ads);
     try {
       const all = await P.products(), gs = P.groups(all), inS = sortStockFirst(gs).filter(P.gIn);
+      dealsHome(all).catch(() => {});
       const st = $("[data-hstats]"); if (st) st.innerHTML = `<div><b>${gs.length}</b>Compounds</div>${P.CFG.showStock ? `<div><b>${inS.length}</b>In stock</div>` : ""}<div><b>${all.filter(p => P.coaHref(p)).length}</b>Lab reports</div>`;
       if (marq) { const items = inS.map(g => `<a href="${P.productUrl(P.gBest(g))}">${esc(P.titleParts(g[0]).main)}</a>`).join("<i>✦</i>"); marq.innerHTML = `<div aria-hidden="true">${items}<i>✦</i>${items}<i>✦</i></div>`; }
       if (avail) avail.innerHTML = inS.slice(0, 8).map(g => card(g)).join("") || `<p class="empty">Restocking now. Check back soon.</p>`;
@@ -162,6 +177,7 @@ ${mine.length ? `<div class="mylist">${mine.map(productRow).join("")}</div><p cl
 
   /* ---------------- PRODUCT ---------------- */
   async function product() {
+    dealsP().then(() => { const el = document.querySelector("[data-pdeal]"); if (el && !el.innerHTML) el.innerHTML = dealNote(); });
     const host = $("[data-pdp]"), key = P.params.get("key") || P.params.get("id") || "";
     if (!key) { host.innerHTML = `<div class="wrap pad empty"><p>No product selected.</p><a class="btn ghost" href="catalog.html">Browse the collection</a></div>`; return; }
     let all;
@@ -186,14 +202,14 @@ ${mine.length ? `<div class="mylist">${mine.map(productRow).join("")}</div><p cl
       P.track("product_view", { key: cur.product_key });
       document.title = `${cur.display_name} ${cur.strength || ""} | Patriot Peptides USA`;
       host.innerHTML = `<div class="pdp">
-<div class="spot"><a class="back" href="catalog.html">${P.icon("back", 16)} Collection</a><div class="pacts">${P.heart(cur)}<button type="button" class="heartb" data-act2="share" aria-label="Share">${P.icon("share", 18)}</button></div>${P.photo(cur) ? `<button type="button" class="zoomb" data-act2="zoom" aria-label="View larger photo">${P.vial(cur, 210)}<span class="zhint">${P.icon("search", 14)} Tap to enlarge</span></button>` : P.vial(cur, 170)}</div>
+<div class="spot"><a class="back" href="catalog.html">${P.icon("back", 16)} Collection</a><div class="pacts">${P.heart(cur)}<button type="button" class="heartb" data-act2="share" aria-label="Share">${P.icon("share", 18)}</button></div><div class="vstick">${P.photo(cur) ? `<button type="button" class="zoomb" data-act2="zoom" aria-label="View larger photo">${P.vial(cur, 210)}<span class="zhint">${P.icon("search", 14)} Tap to enlarge</span></button>` : P.vial(cur, 170)}${coa ? `<a class="coapeek" href="${esc(coa)}" target="_blank" rel="noopener" data-coapeek="${esc(coa)}" data-coatitle="${esc(`${cur.display_name} ${cur.strength || ""} · lab report`)}" aria-label="Lab report for ${esc(cur.display_name)} ${esc(cur.strength || "")}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13l2 2 4-4"/></svg><span><b>COA</b><small>Lab report</small></span></a>` : ""}</div></div>
 <div class="pinfo"><nav class="crumbs" aria-label="Breadcrumb"><a href="index.html">Home</a><span>/</span><a href="catalog.html">Collection</a>${P.focuses(cur)[0] ? `<span>/</span><a href="catalog.html?focus=${P.focuses(cur)[0]}">${P.FOCUS[P.focuses(cur)[0]]}</a>` : P.isBlend(cur) ? `<span>/</span><a href="catalog.html?category=Multi-Peptide%20Product">Blends</a>` : ""}<span>/</span><span aria-current="page">${esc(t.main)}</span></nav>
 ${P.badges(group).length ? `<div class="pbadges">${P.badges(group).map(b => `<span>${esc(b)}</span>`).join("")}</div>` : ""}<span class="kick">${esc(P.focuses(cur).map(f => P.FOCUS[f]).join(" · ") || (P.isBlend(cur) ? "Research blend" : cur.category || "Research product"))}</span>
 <h1 class="serif">${esc(t.main)}</h1>${t.sub ? `<p class="sub">${esc(t.sub)}</p>` : ""}<div class="rule"></div>
 <div class="pp"><b>${money(P.unitPrice(cur))}</b>${sale ? `<s class="was">${money(cur.price)}</s><span class="sale">${esc(cur.sale_label || "Sale")}</span>` : ""}<span class="stk stk-${st.k}">${st.t}</span></div>
 ${st.sub ? `<p class="muted small">${esc(st.sub)}</p>` : ""}
 ${group.length > 1 ? `<p class="kick" style="margin-top:14px">Strength ${P.CFG.showStock ? `<span class="muted" style="letter-spacing:.06em;text-transform:none">· ${inCount} of ${group.length} in stock</span>` : ""}</p><div class="strengths" role="group" aria-label="Choose a strength">${group.map(p => `<button type="button" class="sopt${P.qty(p) <= 0 ? " out" : ""}" data-key="${esc(p.product_key)}" aria-pressed="${p === cur}"><b>${esc(p.strength || "Standard")}</b><span>${money(P.unitPrice(p))}</span>${P.qty(p) > 0 ? (P.CFG.showStock ? `<small>${P.stock(p).t}</small>` : "") : "<small>Sold out</small>"}</button>`).join("")}</div>` : `<p class="muted">${esc(cur.strength || "")} vial</p>`}
-<div class="buy">${out ? "" : `<div class="qty"><button type="button" data-q="-1" aria-label="Fewer">−</button><input id="pq" value="${qty}" inputmode="numeric" aria-label="Quantity"><button type="button" data-q="1" aria-label="More">+</button></div>`}
+<div data-pdeal>${dealNote()}</div><div class="buy">${out ? "" : `<div class="qty"><button type="button" data-q="-1" aria-label="Fewer">−</button><input id="pq" value="${qty}" inputmode="numeric" aria-label="Quantity"><button type="button" data-q="1" aria-label="More">+</button></div>`}
 ${out ? `<button class="btn ghost wide" type="button" data-act2="avail">Request availability</button>` : `<button class="btn primary wide" type="button" data-act2="add">Add to bag · ${money(P.unitPrice(cur) * qty)}</button>`}</div>
 <div class="facts"><div>${P.icon("flask", 18)}<b>${coa ? "Lab report" : "COA pending"}</b>${coa ? `<a href="${esc(coa)}" target="_blank" rel="noopener">${esc(cur.coa_label || "View COA")}</a>` : "<span>At the lab</span>"}</div><div>${P.icon("truck", 18)}<b>Ships from the USA</b><span>USPS Priority</span></div><div>${P.icon("pin", 18)}<b>Free shipping</b><span>Over ${money(P.CFG.freeShip)} · else ${money(P.CFG.shipRate)}</span></div></div>
 ${addons()}

@@ -513,6 +513,20 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
     } catch {}
     return [{ id: "venmo", label: "Venmo", pct: 0 }];
   }
+  // v5.12: every live promotion this shopper can see (the top bar shows only the first; the home page lists them all)
+  async function activePromotions(user) {
+    const { data, error } = await client().from("site_promotions").select("id,title,body,badge,button_text,button_link,starts_at,ends_at,sort_order,audience,promotion_type,reward_product_key,minimum_paid_quantity,reward_quantity").eq("is_active", true).order("sort_order", { ascending: true, nullsFirst: false });
+    if (error) return [];
+    const now = Date.now(), out = [];
+    for (const p of data || []) {
+      if ((p.starts_at && Date.parse(p.starts_at) > now) || (p.ends_at && Date.parse(p.ends_at) < now)) continue;
+      const href = String(p.button_link || "").toLowerCase(), acct = href.includes("register.html") || /create account/i.test(p.button_text || "") || /welcome/i.test(p.title || "");
+      if (user && acct) continue;
+      if (p.audience === "selected_customers") { const r = await client().rpc("pst_promotion_visible_to_current_customer", { p_id: p.id }); if (r.error || !r.data) continue; }
+      out.push(p);
+    }
+    return out;
+  }
   async function activePromotion(user) {
     const { data, error } = await client().from("site_promotions").select("id,title,body,badge,button_text,button_link,is_active,starts_at,ends_at,sort_order,accent_color,audience,promotion_type").eq("is_active", true).order("sort_order", { ascending: true, nullsFirst: false });
     if (error) return null;
@@ -732,6 +746,9 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
         $("#drawer nav")?.insertAdjacentHTML("afterend", `<div class="dsign"><span>Signed in as <b>${esc(u.email || "")}</b></span><button type="button" class="btn ghost wide" data-signout-g>Sign out</button></div>`);
         if (await isAdmin(u)) { // same as his old header: staff see an Admin link (plus the order inbox)
           a.insertAdjacentHTML("beforebegin", `<details class="ownmenu" data-adminlink><summary>Owner</summary><div><a href="owner.html">Owner app</a><a href="admin.html">Admin dashboard</a></div></details>`);
+          // owner-only bar with the Shop | Owner switch (phones too), and remember this page so the owner app's "Shop" comes back here
+          try { sessionStorage.setItem("pst-last-shop", (location.pathname.split("/").pop() || "index.html") + location.search); } catch {}
+          if (!$(".flipbar")) document.body.insertAdjacentHTML("afterbegin", `<div class="flipbar" role="region" aria-label="Store owner"><span>You're viewing the shop</span>${flipper("shop")}</div>`);
           document.addEventListener("click", e => { const d = document.querySelector(".ownmenu[open]"); if (d && !d.contains(e.target)) d.open = false; });
           $("#drawer nav")?.insertAdjacentHTML("afterbegin", `<details open><summary>Store owner</summary><a href="owner.html">Owner app (phone)</a><a href="admin.html">Admin dashboard</a></details>`);
         } }
@@ -742,6 +759,11 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
     });
   }
 
+  /* ---------- Shop | Owner switch (store owner only) ---------- */
+  function flipper(on) {
+    let back = "index.html"; try { back = sessionStorage.getItem("pst-last-shop") || back; } catch {}
+    return `<nav class="flip" aria-label="Switch between the shop and the owner app"><a href="${esc(back)}"${on === "shop" ? ' aria-current="page" class="on"' : ""}>Shop</a><a href="owner.html"${on === "owner" ? ' aria-current="page" class="on"' : ""}>Owner</a></nav>`;
+  }
   /* ---------- UI helpers ---------- */
   // Patriot: light/dark for shoppers (header ☀/☾ and in the menu). Dark is the default; the choice is remembered per device.
   const SUN = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>`;
@@ -1115,7 +1137,7 @@ ${rows.length ? `<div class="mbl">${rows.map(r => `<div class="mbr${r.key === ad
   }
   document.addEventListener("DOMContentLoaded", ownerChip);
   document.addEventListener("click", async e => { if (!e.target.closest("[data-signout-g]")) return; e.preventDefault(); try { await client().auth.signOut(); } catch {} location.href = "index.html"; });
-  window.PST = { vialCanvas, US_STATES, stateCode, stateSelect, kitInfo, SMS_CONSENT, usPhone, fmtPhone, PREVIEW, lockScroll, CFG, FOCUS, REMIND, $, $$, esc, money, round, params, store, fmtDate, isStandalone, isIOS, client, getUser, getProfile, isAdmin, customerName, firstName,
+  window.PST = { flipper, activePromotions, vialCanvas, US_STATES, stateCode, stateSelect, kitInfo, SMS_CONSENT, usPhone, fmtPhone, PREVIEW, lockScroll, CFG, FOCUS, REMIND, $, $$, esc, money, round, params, store, fmtDate, isStandalone, isIOS, client, getUser, getProfile, isAdmin, customerName, firstName,
     products, groups, cycles, suggestDays, myHistory, myProducts, isDone, handedOff, stageOf, vialLiquid, paidNotice, gIn, gBest, gMin, unitPrice, onSale, qty, stock, focuses, isBlend, titleParts, productUrl, coaHref, vial, cmpProduct,
     readCart, writeCart, addToCart, setQty, count, refreshCount, cartRows, reminders, setReminder,
     photo: () => VIAL_ON, vialStudio, bakeBottle, vialSig, vialColorName, LABEL_COLORS, track, validateDiscount, discountAmount, payDiscount, payLabel, OTHER_PAY, isOtherPay, backordersOn, creditBalance, freeVials, choiceRewards, paymentMethods, payCard, submitOrder, venmoLink, openAvailability,

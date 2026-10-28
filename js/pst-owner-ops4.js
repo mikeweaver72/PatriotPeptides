@@ -135,6 +135,14 @@
   /* ================= WHAT'S NEW ================= */
   const L = (t, h) => ({ t, h });
   const RELEASES = [
+    { v: "1.5", d: "Oct 28, 2026", title: "Old customers moved over, easier sign-in, COA preview", items: [
+      L("Your old website's customers are here (39 people, 27 past orders). They sign in with an emailed code, no password", "#customers"),
+      L("Customers sign in with a 6-digit email code. No password to forget", ""),
+      L("COA badge on every product with a lab report: hover to preview it, tap on a phone to open it", ""),
+      L("Shop | Owner switch at the top, to flip between your shop and this app", ""),
+      L("Arrange More your way: drag the handle on any card", "#more"),
+      L("Print or save a purchase order as a PDF", "#stock"),
+      L("Live deals show on the home page and product pages", "#promos")] },
     { v: "1.4", d: "Oct 27, 2026", title: "Wholesale picks and light mode", items: [
       L("Products → Wholesale: choose up to 4 products to sell as 10-vial kits, set each kit's price, flip it on or off", "#products"),
       L("Stock never runs out: you don't track inventory, so every product and kit can always be bought"),
