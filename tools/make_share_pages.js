@@ -13,7 +13,10 @@ const esc = s => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").re
   const b = await chromium.launch({ proxy: process.env.HTTPS_PROXY ? { server: process.env.HTTPS_PROXY } : undefined });
   const c = await b.newContext({ viewport: { width: 1200, height: 630 } });
   await c.addInitScript(() => { try { localStorage.setItem("ppu_gate_v1", "1"); } catch {} });
-  const p = await c.newPage(); await p.goto(SITE + "/catalog.html", { waitUntil: "networkidle" }); await p.waitForTimeout(1500);
+  const p = await c.newPage(); p.on("pageerror", e => console.error("page error:", e.message));
+  await p.goto(SITE + "/catalog.html", { waitUntil: "load", timeout: 90000 });
+  await p.waitForFunction(() => window.PST && typeof window.PST.products === "function" && typeof window.PST.vialCanvas === "function", null, { timeout: 90000 });
+  await p.waitForTimeout(1000);
   const list = await p.evaluate(async (skip) => {
     const P = window.PST, all = (await P.products()).filter(x => x.product_key && !skip.includes(x.product_key + "|" + (x.display_name || "") + "|" + (x.strength || "")));
     const out = [];
