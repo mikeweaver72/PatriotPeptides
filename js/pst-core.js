@@ -905,7 +905,7 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
     // Patriot v1.2: updates apply on their own. Never mid-form: if he's typing or has a sheet open, the update waits and
     // applies itself the moment he's done (form closed, nothing focused) or the app goes to the background. No tap needed.
     const busy = () => /input|textarea|select/i.test(document.activeElement?.tagName || "") || !!document.querySelector("#sheet:not([hidden])");
-    const go = () => { pending = false; try { sessionStorage.setItem("pst_updated", "1"); } catch {} location.reload(); };
+    const go = () => { if (window.__holdReload) return; pending = false; try { sessionStorage.setItem("pst_updated", "1"); } catch {} location.reload(); };
     // v1.6: never reload in front of him. A new version takes over quietly: it is used from the next page he opens,
     // or applied while the app is in the background (switching apps, locking the phone). Nothing flashes on screen.
     const reload = () => { try { sessionStorage.setItem("pst_updated", "1"); } catch {} if (document.hidden) go(); else pending = true; };
