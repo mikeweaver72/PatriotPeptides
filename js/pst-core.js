@@ -78,6 +78,16 @@ if (location.protocol === "http:" && /(^|\.)patriotpeptides-usa\.com$/i.test(loc
     return e ? e.charAt(0).toUpperCase() + e.slice(1).toLowerCase() : "there"; };
 
   /* ---------- products (same query + incoming status as app.js) ---------- */
+  // Lab reports uploaded in the owner app (coa_records + coa-pdfs) show on the product they were uploaded for.
+  // Matched by product_key; a 10-vial kit uses its single vial's report. Newest published upload wins; others keep their typed coa_url.
+  const coaPk = k => String(k || "").toUpperCase().replace(/-?10-?VIAL$/, "").replace(/[^A-Z0-9]/g, "");
+  async function linkUploadedCoas(rows) {
+    const { data, error } = await client().from("coa_records").select("product_key,lot_number,storage_path,created_at").eq("is_published", true).not("product_key", "is", null).order("created_at", { ascending: false }).limit(500);
+    if (error || !data || !data.length) return;
+    const by = new Map(); for (const r of data) { const k = coaPk(r.product_key); if (r.storage_path && !by.has(k)) by.set(k, r); }
+    for (const p of rows) { const r = by.get(coaPk(p.product_key)); if (!r) continue;
+      p.coa_url = client().storage.from("coa-pdfs").getPublicUrl(r.storage_path).data.publicUrl; p.coa_label = r.lot_number ? `View COA · Lot ${r.lot_number}` : "View COA"; }
+  }
   let productsP = null;
   // Saved copy of the product list: pages draw products instantly from it while a fresh copy loads for next time.
   // The bag/checkout always use the fresh list, and a saved copy older than 12 hours is ignored.
@@ -113,6 +123,7 @@ if (location.protocol === "http:" && /(^|\.)patriotpeptides-usa\.com$/i.test(loc
         const by = new Map((r.data || []).map(x => [String(x.product_key || "").trim(), x]));
         rows.forEach(p => { const x = by.get(p.product_key); if (x && Number(x.incoming_quantity || 0) > 0) { p.incoming_quantity = Number(x.incoming_quantity); p.incoming_status = String(x.incoming_status || "ordered").toLowerCase(); p.incoming_date = x.incoming_expected_arrival_date || ""; } });
       } catch {}
+      try { await linkUploadedCoas(rows); } catch {}
       return rows.sort(cmpProduct);
     })();
   }
