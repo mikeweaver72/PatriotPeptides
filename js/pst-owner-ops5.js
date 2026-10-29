@@ -36,8 +36,10 @@
       body.innerHTML = `<p class="muted small">Loading…</p>`;
       try { await loadSaved(); } catch (e) { body.innerHTML = `<p class="notice err">${esc(e.message)}</p>`; return; }
       const m = saved.filter(r => r.product_key).length, byKey = Object.fromEntries(products.map(x => [x.product_key, x]));
+      // matched items show and sort by the owner's product name; the vendor's own name stays in the small line
+      const sname = r => r.product_key && byKey[r.product_key] ? plabel(byKey[r.product_key]) : `${r.product_name} ${r.strength || ""}`.trim();
       body.innerHTML = `<input class="psearch" type="search" data-vpq placeholder="Search this vendor's list" aria-label="Search vendor list"><p class="muted small">${saved.length} item${saved.length === 1 ? "" : "s"} · ${m} matched to your products · ${saved.length - m} not</p>
-<div class="shelf">${saved.map(r => `<div class="shrow vprow${r.product_key ? "" : " low"}" data-vpk="${esc(`${r.product_name} ${r.strength} ${r.vendor_item_number} ${r.product_key || ""}`.toLowerCase())}"><span></span><span><b>${esc(r.product_name)} ${esc(r.strength || "")}</b><small>${esc(r.vendor_item_number || "no SKU")} · ${r.product_key ? `→ ${esc(byKey[r.product_key] ? plabel(byKey[r.product_key]) : r.product_key)}` : "not one of your products"}</small>
+<div class="shelf">${[...saved].sort((a, b) => sname(a).localeCompare(sname(b), undefined, { numeric: true, sensitivity: "base" })).map(r => `<div class="shrow vprow${r.product_key ? "" : " low"}" data-vpk="${esc(`${r.product_name} ${r.strength} ${r.vendor_item_number} ${r.product_key || ""} ${sname(r)}`.toLowerCase())}"><span></span><span><b>${esc(sname(r))}</b><small>${r.product_key ? `${esc(`Vendor: ${r.product_name} ${r.strength || ""}`.trim())} · ` : ""}${esc(r.vendor_item_number || "no SKU")}${r.product_key ? "" : " · not one of your products"}</small>
 <span class="vpact"><button type="button" class="linkish" data-vpe="${r.id}">Change price</button>${r.product_key ? "" : ` · <button type="button" class="linkish" data-vpo="${r.id}">Order it</button>`}</span></span><em>${usd(r.kit_cost)}</em></div>`).join("") || `<p class="muted small">No price list for this vendor yet.</p>`}</div>`;
     };
     const review = () => {
