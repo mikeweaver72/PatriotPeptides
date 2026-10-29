@@ -449,3 +449,10 @@ body.app-home .shelf{padding-bottom:4px}
 .cline.gift .giftwhy{margin:4px 0 0}
 .cline.gift .lt{white-space:nowrap}.cline.gift .lt s{color:var(--muted);font-weight:400;margin-right:4px}
 
+
+/* PepKeep opt-in at checkout */
+.pkopt{margin:10px 0 0;padding:12px;border:1px solid var(--line2);border-radius:8px;background:var(--bg)}
+.pkopt .chk{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.4;color:var(--ink)}.pkopt .chk input{margin-top:2px;width:18px;height:18px;flex:none}
+.pkwhat{margin:8px 0 0 28px;font-size:13px;color:var(--muted)}.pkwhat summary{cursor:pointer;color:var(--red,#C8102E);font-weight:600}.pkwhat p{margin:6px 0 0;line-height:1.5}
+.pkchip{display:inline-block;padding:3px 9px;border-radius:999px;background:rgba(18,38,110,.1);color:#12266E;font-size:12px;font-weight:700;white-space:nowrap}
+.pknote{margin:10px 0 0;font-size:13px;line-height:1.45;color:var(--muted)}
