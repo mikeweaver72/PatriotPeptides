@@ -16,7 +16,7 @@ if (location.protocol === "http:" && /(^|\.)patriotpeptides-usa\.com$/i.test(loc
     adminEmails: ["patriotpepps@gmail.com", "owner@patriotpeptides-usa.com", "mike.weaver2013@gmail.com"], // order alert emails (same as app.js)
     shipRate: 20.00, freeShip: 200.00,     // Jeff's WooCommerce zone: flat $20, free over $200
     emailFn: "send-order-email",
-    pepkeep: false, // checkout "Send this order to my PepKeep" box: switch on once pepkeep.io can receive shop orders (add ?pk=1 to cart.html to preview)
+    pepkeep: true, // checkout "Send this order to my PepKeep" box: switch on once pepkeep.io can receive shop orders (add ?pk=1 to cart.html to preview)
     pushFn: "pst-push",
     minAge: 21,                            // Jeff's site gate is 21+
     cartKey: "ppu_cart_v1", remindKey: "ppu_remind_v1", gateKey: "ppu_gate_v1",
