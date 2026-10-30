@@ -226,5 +226,29 @@
  "PP-KPV-5MG": {
   "sig": "PP-KPV-5MG|PP-KPV|5mg",
   "slug": "pp-kpv-pp-kpv-5mg"
+ },
+ "PSTP100004": {
+  "sig": "PSTP100004|DSIP|5mg",
+  "slug": "dsip-pstp100004"
+ },
+ "PSTP100003": {
+  "sig": "PSTP100003|DSIP|10mg",
+  "slug": "dsip-pstp100003"
+ },
+ "PSTP100002": {
+  "sig": "PSTP100002|Glutathione|600",
+  "slug": "glutathione-pstp100002"
+ },
+ "PSTP100001": {
+  "sig": "PSTP100001|Glutathione|1500",
+  "slug": "glutathione-pstp100001"
+ },
+ "PSTP100006": {
+  "sig": "PSTP100006|Selank|5mg",
+  "slug": "selank-pstp100006"
+ },
+ "PSTP100005": {
+  "sig": "PSTP100005|Selank|10mg",
+  "slug": "selank-pstp100005"
  }
 }
