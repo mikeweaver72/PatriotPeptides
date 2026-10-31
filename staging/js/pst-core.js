@@ -1160,7 +1160,7 @@ ${rows.length ? `<div class="mbl">${rows.map(r => `<div class="mbr${r.key === ad
 <div class="sum"><div class="r tot"><span>Subtotal</span><b>${money(sub)}</b></div></div>
 <a class="btn primary wide" href="cart.html">Check out</a><button class="btn ghost wide" type="button" data-act="close-sheet" style="margin-top:8px">Keep shopping</button>`
       : `<p class="muted">Nothing in your bag yet.</p><a class="btn primary wide" href="catalog.html">Browse the collection</a>`}</div>`, { label: "Bag" });
-    w.classList.add("side");
+    w.classList.add("side", "bagpop"); // Patriot: red-and-white bag popup so it stands out from the navy site
     // v39: change quantity or remove right from the bag sheet
     w.addEventListener("click", e => {
       const q = e.target.closest("[data-mbq]"), rm = e.target.closest("[data-mbrm]"); if (!q && !rm) return;
