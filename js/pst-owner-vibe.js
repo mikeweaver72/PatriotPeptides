@@ -28,7 +28,11 @@
     evening: ["Evening{n}. Here's the wrap-up.", "Hey{n}, winding down? Here's where things landed.", "Evening{n}. Good day's work.", "Evening{n}. Let's tie up loose ends.", "Evening{n}. Almost time to put your feet up.", "Hey{n}. One last look before you call it?"],
     late: ["Burning the midnight oil{n}?", "Late one{n}. Don't stay up too long.", "Night owl mode{n}.", "Still at it{n}. Respect.", "Late shift{n}. The shop never sleeps, but you should.", "After hours{n}. Quick look and then rest up.", "Midnight check-in{n}. Here's the scoop."]
   };
+  // TEMPORARY (Mike, Oct 31 2026): a joke for Jeff. Shows through Sun Nov 2, then the normal greetings come back on their own.
+  const JOKE_UNTIL = Date.parse("2026-11-03T00:00:00-08:00");
   function greeting(me) {
+    if (Date.now() < JOKE_UNTIL) { const h = new Date().getHours(), part = h < 12 ? "morning" : h < 17 ? "afternoon" : "evening";
+      return `Good ${part} ${nameOf(me) || "Jeff"}, your testosterone levels must be elevated, 'cause your prices are jacked!`; }
     const h = new Date().getHours(), n = N(nameOf(me)), slot = h < 6 ? "late" : h < 9 ? "early" : h < 12 ? "morning" : h < 17 ? "afternoon" : h < 22 ? "evening" : "late";
     return tidy(pick("g-" + slot, GREET[slot], { n }));
   }
