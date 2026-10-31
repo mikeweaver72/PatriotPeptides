@@ -757,6 +757,7 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
   <details><summary>Research focus</summary><a href="catalog.html?focus=performance">Performance</a><a href="catalog.html?focus=recovery">Recovery</a><a href="catalog.html?focus=longevity">Longevity</a></details>
   <details><summary>My account</summary><a href="index.html">My products</a><a href="account.html#orders">Orders &amp; tracking</a><a href="saved.html">Saved items</a><a href="account.html#rewards">Rewards &amp; credit</a><a href="account.html#alerts">Notifications</a></details>
   <details><summary>Help</summary><a href="testing.html">Lab reports</a><a href="shipping.html">Shipping &amp; returns</a><a href="faq.html">FAQ</a><a href="contact.html">Contact</a><a href="about.html">About us</a><a href="kit.html">Build a kit</a><a href="wholesale.html">Wholesale</a><a href="bulk-request.html">Bulk requests</a></details>
+  <a href="https://www.starnstone.com" class="dlink" target="_blank" rel="noopener">Skin care <span aria-hidden="true">↗</span><span class="sr"> (Star N Stone, opens in a new tab)</span></a>
   </nav>
   <button type="button" class="dtheme" data-act="theme">${themeIcon()}<span data-themelabel>${themeLabel()}</span></button>
   <a class="btn ghost wide" href="install.html" data-installlink>${icon("plus", 16)} Get the app</a>
@@ -777,7 +778,7 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
     <nav aria-label="Shop"><b>Shop</b><a href="catalog.html">All products</a><a href="catalog.html?stock=1">Available now</a><a href="catalog.html?sort=new">New arrivals</a><a href="catalog.html?category=Multi-Peptide%20Product">Research blends</a><a href="kit.html">Build a kit</a><a href="wholesale.html">Wholesale</a><a href="bulk-request.html">Bulk requests</a></nav>
     <nav aria-label="Help"><b>Help</b><a href="shipping.html">Shipping &amp; returns</a><a href="faq.html">FAQ</a><a href="testing.html">Lab reports</a><a href="contact.html">Contact</a><a href="mailto:${CFG.support}">${CFG.support}</a></nav>
     <nav aria-label="Account"><b>Account</b><a href="account.html">My account</a><a href="account.html#orders">Track an order</a><a href="saved.html">Saved items</a><a href="rewards.html">Researcher rewards</a><a href="install.html">Get the app</a><a href="account.html#alerts">Notifications</a></nav>
-    <nav aria-label="Company"><b>Company</b><a href="about.html">About us</a><a href="terms.html">Terms</a><a href="privacy.html">Privacy</a></nav>
+    <nav aria-label="Company"><b>Company</b><a href="about.html">About us</a><a href="https://www.starnstone.com" target="_blank" rel="noopener">Skin care <span aria-hidden="true">↗</span><span class="sr"> (Star N Stone, opens in a new tab)</span></a><a href="terms.html">Terms</a><a href="privacy.html">Privacy</a></nav>
   </div>
   <div class="pays" aria-label="Ways to pay">${pay.map(x => `<span>${x}</span>`).join("")}</div>
   <p class="ruof">Research use only <span>·</span> Not for human or veterinary use <span>·</span> Not evaluated by the FDA <span>·</span> ${CFG.minAge}+</p>

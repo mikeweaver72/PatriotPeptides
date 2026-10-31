@@ -501,3 +501,5 @@ body.app-home .shelf{padding-bottom:4px}
 .sheetwrap.bagpop .btn.primary{background:#C8102E;border-color:#C8102E;color:#fff}
 .sheetwrap.bagpop .btn.ghost{background:#fff;color:#0A1020;border:1px solid #0A1020}
 @media(min-width:700px){.sheetwrap.bagpop .sheet{border-top:0;border-left:6px solid #C8102E}}
+/* Skin care link (Star N Stone) in the mobile menu, styled like a menu group heading */
+#drawer nav>a.dlink{display:block;padding:14px 0;border-top:1px solid var(--line);font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink)}
