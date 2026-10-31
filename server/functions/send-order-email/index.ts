@@ -1,5 +1,5 @@
 // PST_EDGE_FUNCTION_PATCH_V7_EMAIL_BRAND_REFRESH
-// v63 (Oct 31, 2026, Patriot): merch photos in order emails; partner-portal lines show no vial picture.
+// v63 (Oct 31, 2026, Patriot): merch photos in order emails; partner-portal lines show no vial picture; optional shippingLabel ("Billed later") for partner orders.
 // v62 (Oct 27, 2026, Patriot): "Other method" payment for customers the owner turns it on for: no pay instructions, "a team member will contact you".
 // v61 (Oct 27, 2026, Patriot): branded look: navy header with the eagle, vial photos per item, dot progress, navy footer.
 // v60 (Oct 27, 2026, Patriot): short phone-first emails (status, progress bar, only the needed action, one button); hard-coded SMS gateway removed.
@@ -155,7 +155,7 @@ const isMerchKey=(k:string)=>/^PPM\d+$/i.test(k);
 function vialSrc(i:Rec){const k=first(i.product_key,i.productKey); if(!k||/^PTR-/i.test(k))return ""; if(isMerchKey(k))return SUPABASE_URL?`${SUPABASE_URL}/storage/v1/object/public/merch-photos/email/${encodeURIComponent(k)}.jpg`:""; return `${ASSET_URL}/img/email/vials/${encodeURIComponent(k)}.png`;}
 function itemList(rows:Rec[], prices:boolean){if(!rows.length)return ""; return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:18px 0 0;border-top:1px solid ${LINE}">${rows.map(i=>{const img=vialSrc(i); return `<tr><td width="40" style="width:40px;padding:10px 12px 10px 0;border-bottom:1px solid ${LINE};vertical-align:middle">${img?(isMerchKey(first(i.product_key,i.productKey))?`<img src="${esc(img)}" alt="" width="40" height="40" style="display:block;width:40px;height:40px;border:0;border-radius:6px">`:`<img src="${esc(img)}" alt="" width="28" height="64" style="display:block;width:28px;height:64px;border:0">`):""}</td><td style="padding:10px 0;border-bottom:1px solid ${LINE};vertical-align:middle;font-size:15px;line-height:1.35;color:${INK}"><b style="font-weight:700">${esc(lineName(i))}</b><br><span style="font-size:13px;color:#6b7385">Qty ${esc(itemQty(i))}</span></td>${prices?`<td align="right" style="padding:10px 0 10px 8px;border-bottom:1px solid ${LINE};vertical-align:middle;font-size:15px;font-weight:600;white-space:nowrap">${money(itemTotal(i))}</td>`:""}</tr>`;}).join("")}</table>`;}
 function totalRows(a:any){const r=(l:string,v:string,st="")=>`<tr><td style="padding:4px 0;font-size:14px;color:#6b7385;${st}">${l}</td><td align="right" style="padding:4px 0;font-size:14px;white-space:nowrap;${st}">${v}</td></tr>`;
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:12px 0 0">${r("Subtotal",money(a.subtotal))}${a.discount?r("Kit savings","&minus;"+money(a.discount),`color:${SUCCESS}`):""}${r("Shipping",a.shipping?money(a.shipping):"Free")}${a.tax?r("Tax",money(a.tax)):""}<tr><td style="padding:10px 0 0;border-top:1px solid ${LINE};font-size:17px;font-weight:800;color:${NAVY_DEEP}">Total</td><td align="right" style="padding:10px 0 0;border-top:1px solid ${LINE};font-size:17px;font-weight:800;color:${NAVY_DEEP};white-space:nowrap">${money(a.total)}</td></tr></table>`;}
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:12px 0 0">${r("Subtotal",money(a.subtotal))}${a.discount?r("Kit savings","&minus;"+money(a.discount),`color:${SUCCESS}`):""}${r("Shipping",a.shippingLabel?esc(a.shippingLabel):a.shipping?money(a.shipping):"Free")}${a.tax?r("Tax",money(a.tax)):""}<tr><td style="padding:10px 0 0;border-top:1px solid ${LINE};font-size:17px;font-weight:800;color:${NAVY_DEEP}">Total</td><td align="right" style="padding:10px 0 0;border-top:1px solid ${LINE};font-size:17px;font-weight:800;color:${NAVY_DEEP};white-space:nowrap">${money(a.total)}</td></tr></table>`;}
 function card(inner:string,bg="#f6f8fb",bd="#e3e8ef"){return `<div style="margin:20px 0 0;padding:18px;border-radius:12px;background:${bg};border:1px solid ${bd}">${inner}</div>`;}
 // "Other method": the owner turned it on for this customer. No pay instructions; the team reaches out.
 const isOtherPay=(m:any)=>/^other( method)?$/i.test(String(m||"").trim());
@@ -240,7 +240,8 @@ serve(async(req)=>{
       paymentAccountLabel:selectedMethod.accountLabel||"Send payment to"
     }:{})});
     const promos=await loadPromos(String(type),preview&&Array.isArray(payload.promos_override)?payload.promos_override:null);
-    const built=customerEmail({promoHtml:promoHtml(promos,String(type)),promoText:promoText(promos,String(type)),type,name,email,customerNumber,orderNo,items:its,subtotal,discount,shipping,tax,total,payment:pay,carrier,trackingNumber,trackingUrl:turl,remainingItems:Array.isArray(payload.remainingItems)?payload.remainingItems:[],rejectionReason:first(payload.rejectionReason,payload.rejection_reason,order.rejection_reason)});
+    const shippingLabel=first(payload.shippingLabel,payload.shipping_label);
+    const built=customerEmail({shippingLabel,promoHtml:promoHtml(promos,String(type)),promoText:promoText(promos,String(type)),type,name,email,customerNumber,orderNo,items:its,subtotal,discount,shipping,tax,total,payment:pay,carrier,trackingNumber,trackingUrl:turl,remainingItems:Array.isArray(payload.remainingItems)?payload.remainingItems:[],rejectionReason:first(payload.rejectionReason,payload.rejection_reason,order.rejection_reason)});
     if(preview)return new Response(JSON.stringify({ok:true,preview_only:true,preview:{type,label:built.label,to:email,subject:built.subject,html:built.html,text:built.text}}),{status:200,headers:{...corsHeaders,"Content-Type":"application/json"}});
     const result=await sendMail([email],built.subject,built.html,built.text);
     if(!result.ok)return new Response(JSON.stringify({ok:false,error:result.data?.message||result.data?.error||"Customer email failed.",resend:result.data}),{status:result.status,headers:{...corsHeaders,"Content-Type":"application/json"}});
@@ -250,7 +251,7 @@ serve(async(req)=>{
       recipients=await adminEmails();
       if(recipients.length){
         const inquiry=String(type)==="inquiry_received";
-        const html=adminHtml({orderNo,name,email,items:its,subtotal,discount,shipping,tax,total,payment:pay,inquiry});
+        const html=adminHtml({shippingLabel,orderNo,name,email,items:its,subtotal,discount,shipping,tax,total,payment:pay,inquiry});
         const subject=inquiry?`New request${orderNo?` · ${orderNo}`:""}`:`New order${orderNo?` · ${orderNo}`:""} · ${money(total)} · ${name||email}`;
         const textParts=[subject,`Customer: ${name}`,`Email: ${email}`];
         if(!inquiry)textParts.push(`Total: ${money(total)}`);

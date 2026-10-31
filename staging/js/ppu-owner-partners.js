@@ -6,7 +6,7 @@
   const P = window.PST, esc = P.esc, money = P.money;
   const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const PORTAL = "https://www.patriotpeptides-usa.com/vendor.html";
-  let host = null, tab = "people", tiers = [], people = [], prices = [], tierPick = 2, tierFilter = 0, q = "";
+  let host = null, tab = "people", tiers = [], people = [], prices = [], stats = {}, tierPick = 2, tierFilter = 0, q = "";
   const tierName = id => tiers.find(t => t.id === id)?.name || `Tier ${id}`;
   const db = () => P.client();
 
@@ -15,6 +15,7 @@
       db().from("ppu_partner_prices").select("*").order("sort").order("name")]);
     const err = t.error || p.error || s.error; if (err) throw err;
     tiers = t.data || []; people = p.data || []; prices = s.data || [];
+    const st = await db().rpc("ppu_partner_stats"); stats = Object.fromEntries((st.data || []).map(x => [x.partner_id, x]));
     if (!tiers.some(x => x.id === tierPick && x.has_prices)) tierPick = (tiers.find(x => x.has_prices) || {}).id || 2;
   }
 
@@ -30,12 +31,25 @@
   }
 
   /* ---------- partners ---------- */
+  const MONTH = () => new Date().toLocaleString("en-US", { month: "short", timeZone: "America/Los_Angeles" });
+  const lastStart = () => { const d = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" })); return new Date(d.getFullYear(), d.getMonth() - 1, 1); };
+  const countsLast = p => new Date(p.joined_at || p.created_at) < lastStart(); // only judge last month if they were around for it
+  function line(p) {
+    const s = stats[p.id]; if (!s) return "";
+    if (p.tier === 1) return Number(s.balance) > 0 ? ` · owed ${money(s.balance)}` : Number(s.earned) > 0 ? " · paid up" : "";
+    const have = p.tier === 2 ? `${s.kits_month}/5 kits` : `${money(s.spend_month)}/${money(1000)}`;
+    return ` · ${MONTH()} ${have}`;
+  }
+  const short = p => { const s = stats[p.id]; return !!s && p.status === "active" && p.user_id && (p.tier === 2 || p.tier === 3) && s.short_last && countsLast(p); };
   const statusOf = p => p.status === "paused" ? ["Paused", "warn"] : p.user_id ? ["Signed in", "ok"] : ["Invited", "pend"];
   function drawPeople() {
     const list = people.filter(p => !tierFilter || p.tier === tierFilter);
+    const shorts = people.filter(short), owed = people.filter(p => p.tier === 1).reduce((s, p) => s + Math.max(0, Number(stats[p.id]?.balance || 0)), 0);
     $("[data-pbody]", host).innerHTML = `<div class="pmtop"><p class="muted small" style="margin:0;flex:1">${people.length} partner${people.length === 1 ? "" : "s"}. Their tier sets what they see when they sign in at the vendor portal.</p><button class="btn primary sm" type="button" data-padd>+ Add partner</button></div>
+${shorts.length ? `<p class="notice err small">${shorts.length} partner${shorts.length === 1 ? " was" : "s were"} short of the monthly minimum last month: ${shorts.map(p => esc(p.name || p.email)).join(", ")}. Nothing changes on its own; move them to another tier if you decide to.</p>` : ""}
+${owed > 0 ? `<p class="notice small">You owe promoters ${money(owed)} in all. Open a promoter to record a payout.</p>` : ""}
 <div class="schips" role="tablist">${[[0, "All"], ...tiers.map(t => [t.id, t.name])].map(([id, n]) => `<button type="button" class="${tierFilter === id ? "on" : ""}" data-pfilter="${id}">${esc(n)} <small>${id ? people.filter(p => p.tier === id).length : people.length}</small></button>`).join("")}</div>
-${list.length ? `<div class="pmlist">${list.map(p => { const [s, k] = statusOf(p); return `<div class="pmrow"><button type="button" class="pmmain" data-pedit="${esc(p.id)}"><span class="ptier t${p.tier}">${p.tier}</span><span><b>${esc(p.name || p.email)}${p.company ? ` <span class="muted">· ${esc(p.company)}</span>` : ""}</b><small>${esc(tierName(p.tier))} · ${esc(p.email)}${p.tier === 1 && p.discount_code ? ` · code ${esc(p.discount_code)}` : ""}</small></span></button><span class="opill ${k}">${s}</span></div>`; }).join("")}</div>`
+${list.length ? `<div class="pmlist">${list.map(p => { const [s, k] = statusOf(p); return `<div class="pmrow"><button type="button" class="pmmain" data-pedit="${esc(p.id)}"><span class="ptier t${p.tier}">${p.tier}</span><span><b>${esc(p.name || p.email)}${p.company ? ` <span class="muted">· ${esc(p.company)}</span>` : ""}</b><small>${esc(tierName(p.tier))}${p.tier === 1 && p.discount_code ? ` · code ${esc(p.discount_code)}` : ""}${line(p)}</small></span></button><span class="opill ${short(p) ? "bad" : k}">${short(p) ? "Short" : s}</span></div>`; }).join("")}</div>`
   : `<div class="nalbox"><p class="muted small" style="margin:0">${people.length ? "No partners in this tier yet." : "No partners yet. Add one, then send them the invite: they sign in with the same email and their tier's pricing is waiting."}</p></div>`}`;
   }
 
@@ -46,6 +60,20 @@ ${list.length ? `<div class="pmlist">${list.map(p => { const [s, k] = statusOf(p
       : `Hi${first ? " " + first : ""}, you're set up as a Patriot Peptides USA ${t}. Sign in with ${p.email} at ${PORTAL} to see your pricing and place orders.`;
   }
 
+  function statsBox(p) {
+    const s = stats[p.id]; if (!s) return "";
+    if (p.tier === 1) return `<div class="nalbox pearn"><p class="kick" style="margin:0 0 6px">Earnings from code ${esc(p.discount_code || "")}</p><div class="pstats"><div><small>Earned</small><b>${money(s.earned)}</b></div><div><small>Paid out</small><b>${money(s.paid_out)}</b></div><div><small>Owed</small><b>${money(s.balance)}</b></div></div>
+<p class="muted small">${s.code_orders} paid order${s.code_orders === 1 ? "" : "s"} used the code. They earn the 10% the shopper saved.</p>
+<div class="pm2"><label>Pay out ($)<input name="pay_amt" type="number" min="0.01" step="0.01" inputmode="decimal" value="${Number(s.balance) > 0 ? Number(s.balance).toFixed(2) : ""}"></label><label>As<select name="pay_kind"><option value="cash">Cash</option><option value="product">Product</option></select></label></div>
+<label>Note <span class="muted small">(optional)</span><input name="pay_note" maxlength="120" placeholder="e.g. Venmo, or 2 vials BPC-157"></label><button class="btn ghost wide" type="button" data-ppay>Record payout</button><div data-payhist></div></div>`;
+    const kit = p.tier === 2, need = kit ? 5 : 1000, m = kit ? s.kits_month : s.spend_month, l = kit ? s.kits_last : s.spend_last, fmt = x => kit ? `${x} kit${Number(x) === 1 ? "" : "s"}` : money(x);
+    return `<div class="nalbox"><p class="kick" style="margin:0 0 6px">Monthly minimum · ${kit ? "5 kits (water doesn't count)" : money(1000)}</p><p class="small" style="margin:0">This month: <b>${fmt(m)}</b> of ${fmt(need)}${Number(m) >= need ? " ✓" : ""}<br>Last month: <b>${fmt(l)}</b>${countsLast(p) ? (Number(l) >= need ? " ✓ met" : ` <span style="color:var(--bad)">· short</span>`) : " · joined this month"}</p><p class="muted small" style="margin:6px 0 0">Paid partner orders only. Nothing changes on its own.</p></div>`;
+  }
+  async function payHist(w, p) {
+    const box = $("[data-payhist]", w); if (!box) return;
+    const { data } = await db().from("ppu_partner_payouts").select("*").eq("partner_id", p.id).order("paid_at", { ascending: false }).limit(20);
+    box.innerHTML = (data || []).length ? `<div class="vrl" style="margin-top:10px">${data.map(x => `<div class="r"><span>${P.fmtDate(x.paid_at)} · ${x.kind === "product" ? "Product" : "Cash"}${x.note ? ` · <span class="muted">${esc(x.note)}</span>` : ""}</span><b>${money(x.amount)}</b><button type="button" class="prm" data-unpay="${esc(x.id)}" aria-label="Delete this payout">${P.icon("x", 14)}</button></div>`).join("")}</div>` : "";
+  }
   function editPerson(id) {
     const p = people.find(x => x.id === id), isNew = !p, v = p || { tier: 2, status: "active" };
     const w = P.sheet(`<form class="pmform" data-pform novalidate><h2 class="serif">${isNew ? "Add a partner" : esc(v.name || v.email)}</h2>
@@ -53,6 +81,7 @@ ${list.length ? `<div class="pmlist">${list.map(p => { const [s, k] = statusOf(p
 <div class="pm2"><label>Email<input name="email" type="email" required autocomplete="off" autocapitalize="off" value="${esc(v.email || "")}" placeholder="They sign in with this"></label><label>Phone <span class="muted small">(optional)</span><input name="phone" type="tel" inputmode="tel" value="${esc(v.phone || "")}"></label></div>
 <p class="kick" style="margin:12px 0 6px">Tier</p><div class="oseg three" role="radiogroup" aria-label="Tier" data-tierpick>${tiers.map(t => `<button type="button" role="radio" aria-checked="${t.id === v.tier}" class="${t.id === v.tier ? "on" : ""}" data-tier="${t.id}">${t.id} · ${esc(t.name)}</button>`).join("")}</div>
 <div data-codebox${v.tier === 1 ? "" : " hidden"}><label>Their 10% discount code<input name="code" maxlength="30" autocapitalize="characters" value="${esc(v.discount_code || "")}" placeholder="e.g. MIKE10"></label><p class="muted small" style="margin:-4px 0 8px">If the code doesn't exist yet, it's created as 10% off for anyone who uses it.</p></div>
+${isNew ? "" : statsBox(v)}
 <label>Notes <span class="muted small">(only you see these)</span><textarea name="notes" rows="2">${esc(v.notes || "")}</textarea></label>
 <label class="toggle"><input type="checkbox" name="active"${v.status !== "paused" ? " checked" : ""}> Active <span class="muted small">(off = paused: they can't see pricing or order)</span></label>
 <button class="btn primary wide" type="submit">${isNew ? "Add partner" : "Save"}</button>
@@ -60,8 +89,14 @@ ${isNew ? "" : `<div class="pinv"><p class="kick" style="margin:14px 0 6px">Invi
 <button class="btn ghost wide danger" type="button" data-pdel style="margin-top:16px">Remove partner</button>`}
 <p class="status" data-pst role="status"></p></form>`, { label: isNew ? "Add a partner" : "Edit partner" });
     const f = $("form", w), st = $("[data-pst]", w); let tier = v.tier;
+    if (!isNew && v.tier === 1) payHist(w, v);
     w.addEventListener("click", async e => {
-      const tb = e.target.closest("[data-tier]"), cp = e.target.closest("[data-pcopy]"), del = e.target.closest("[data-pdel]");
+      const tb = e.target.closest("[data-tier]"), cp = e.target.closest("[data-pcopy]"), del = e.target.closest("[data-pdel]"), pay = e.target.closest("[data-ppay]"), un = e.target.closest("[data-unpay]");
+      if (pay) { const amt = Math.round(Number(f.pay_amt.value) * 100) / 100; if (!(amt > 0)) { st.textContent = "Enter the payout amount."; st.className = "status bad"; return; }
+        pay.disabled = true; const { error } = await db().from("ppu_partner_payouts").insert({ partner_id: v.id, amount: amt, kind: f.pay_kind.value, note: f.pay_note.value.trim() || null }); pay.disabled = false;
+        if (error) { st.textContent = error.message; st.className = "status bad"; return; }
+        P.toast(`${money(amt)} payout recorded`); await load(); P.closeSheet(); draw(); editPerson(v.id); return; }
+      if (un) { if (!confirm("Delete this payout record?")) return; const { error } = await db().from("ppu_partner_payouts").delete().eq("id", un.dataset.unpay); if (error) { st.textContent = error.message; st.className = "status bad"; return; } await load(); P.closeSheet(); draw(); editPerson(v.id); return; }
       if (tb) { tier = Number(tb.dataset.tier); $$("[data-tier]", w).forEach(b => { const on = Number(b.dataset.tier) === tier; b.classList.toggle("on", on); b.setAttribute("aria-checked", on); }); $("[data-codebox]", w).hidden = tier !== 1; }
       if (cp) { try { await navigator.clipboard.writeText(invite({ ...v, tier })); P.toast("Invite copied"); } catch { P.toast("Couldn't copy. Press and hold the text instead."); } }
       if (del) { if (!confirm(`Remove ${v.name || v.email} from the partner program? Their past orders stay.`)) return;
@@ -96,7 +131,7 @@ ${isNew ? "" : `<div class="pinv"><p class="kick" style="margin:14px 0 6px">Invi
     const pt = tiers.filter(t => t.has_prices), list = prices.filter(x => x.tier === tierPick), shown = list.filter(x => !q || `${x.name} ${x.amount} ${x.sku}`.toLowerCase().includes(q));
     const on = list.filter(x => x.active).length;
     $("[data-pbody]", host).innerHTML = `<div class="oseg ${pt.length === 2 ? "two" : "three"}" role="tablist" aria-label="Which price sheet">${pt.map(t => `<button type="button" class="${t.id === tierPick ? "on" : ""}" data-psheet="${t.id}">Tier ${t.id} · ${esc(t.name)}</button>`).join("")}</div>
-<div class="pmtop"><p class="muted small" style="margin:0;flex:1">${on} of ${list.length} items showing to ${esc(tierName(tierPick))}s. Changes save as you go.</p><button class="btn primary sm" type="button" data-pnew>+ Add item</button></div>
+<div class="pmtop"><p class="muted small" style="margin:0;flex:1">${on} of ${list.length} items showing to ${esc(tierName(tierPick))}s. Prices are per 10-vial kit. Changes save as you go.</p><button class="btn primary sm" type="button" data-pnew>+ Add item</button></div>
 <div class="pmtop"><input class="psearch" type="search" data-psearch placeholder="Search this sheet" value="${esc(q)}" aria-label="Search price sheet"><button class="btn ghost sm" type="button" data-pbulk>Adjust all</button></div>
 <div class="psheet">${shown.map(x => `<div class="prow${x.active ? "" : " off"}" data-prow="${esc(x.id)}"><span class="ptx"><b>${esc(x.name)}</b><small>${esc(x.amount || "")}${x.sku ? ` · ${esc(x.sku)}` : ""}</small></span>
 <label class="pprice"><span class="sr">Price for ${esc(x.name)} ${esc(x.amount || "")}</span>$<input type="number" step="0.01" min="0" inputmode="decimal" value="${Number(x.price).toFixed(2)}" data-pprice="${esc(x.id)}"></label>
