@@ -43,8 +43,10 @@
 <span class="vpact"><button type="button" class="linkish" data-vpe="${r.id}">Change price</button>${r.product_key ? "" : ` · <button type="button" class="linkish" data-vpo="${r.id}">Order it</button>`}</span></span><em>${usd(r.kit_cost)}</em></div>`).join("") || `<p class="muted small">No price list for this vendor yet.</p>`}</div>`;
     };
     const review = () => {
-      const claimed = new Map(staged.filter(r => r.key).map(r => [r.key, r])), savedOther = k => saved.find(s => s.product_key === k);
-      const opts = r => `<option value="">Not one of my products</option>${products.map(x => { const other = savedOther(x.product_key), lock = (claimed.has(x.product_key) && claimed.get(x.product_key) !== r) || (other && (norm(other.vendor_item_number) + "|" + normStrength(other.strength)) !== (norm(r.sku) + "|" + normStrength(r.strength))); return `<option value="${esc(x.product_key)}"${x.product_key === r.key ? " selected" : ""}${lock ? " disabled" : ""}>${esc(plabel(x))}</option>`; }).join("")}`;
+      // Oct 31: nothing is greyed out. A match saved from an older upload never blocks this one (saving moves it here),
+      // and picking a product another row in this sheet already has moves it to this row.
+      const claimed = new Map(staged.filter(r => r.key).map(r => [r.key, r]));
+      const opts = r => `<option value="">Not one of my products</option>${products.map(x => { const o = claimed.get(x.product_key), elsewhere = o && o !== r; return `<option value="${esc(x.product_key)}"${x.product_key === r.key ? " selected" : ""}>${esc(plabel(x))}${elsewhere ? ` (on row ${o.row}, picking moves it)` : ""}</option>`; }).join("")}`;
       const m = staged.filter(r => r.key).length;
       body.innerHTML = `<h2 class="serif osec">Check before saving</h2><p class="muted small">${staged.length} rows · ${m} matched · ${staged.length - m} not. Fix any match or price, then save.</p>
 <div class="vprev">${staged.map((r, i) => `<div class="vpr${r.key ? "" : " un"}${r.bad ? " bad" : ""}"><b>${esc(r.name)} ${esc(r.strength)}</b><small>row ${r.row}${r.sku ? ` · ${esc(r.sku)}` : ""}${r.bad ? ` · ${esc(r.bad)}` : ""}</small>
@@ -53,7 +55,9 @@
     };
     el.onchange = async e => {
       if (e.target.matches("[data-vpv]")) { vendorId = e.target.value; staged = []; st.textContent = ""; showSaved(); return; } // his bug: kept the old review
-      if (e.target.matches("[data-vpm]")) { const r = staged[+e.target.dataset.vpm]; r.key = e.target.value || null; review(); return; }
+      if (e.target.matches("[data-vpm]")) { const r = staged[+e.target.dataset.vpm], k = e.target.value || null, o = k && staged.find(x => x !== r && x.key === k);
+        if (o) { o.key = null; st.textContent = `Moved ${plabel(products.find(p => p.product_key === k) || { display_name: k })} from row ${o.row} to row ${r.row}.`; } else st.textContent = "";
+        r.key = k; review(); return; }
       if (e.target.matches("[data-vpf]")) {
         const file = e.target.files?.[0]; e.target.value = ""; if (!file) return; st.textContent = "Reading…";
         try {
@@ -62,8 +66,10 @@
           if (rows.length >= 5000) throw new Error("That sheet has more than 5,000 rows. Split it and upload in parts.");
           await loadSaved();
           const map = new Map(saved.filter(s => s.vendor_item_number && s.product_key).map(s => [norm(s.vendor_item_number) + "|" + normStrength(s.strength), s.product_key]));
+          // Oct 31: the same SKU with only the strength wording changed ("(10mg+10mg)/vial*10 vials" → "20mg") keeps its match
+          const bySku = new Map(); saved.filter(s => s.vendor_item_number && s.product_key).forEach(s => { const k = norm(s.vendor_item_number); bySku.set(k, bySku.has(k) && bySku.get(k) !== s.product_key ? "" : s.product_key); });
           staged = rows.map((r, i) => { const name = get(r, "Product Name", "Product", "Name", "Peptide"), strength = get(r, "Strength", "Specification", "Specification per kit", "Size", "Vial Strength"), sku = get(r, "Vendor Item Number", "Vendor SKU", "Item Number", "Item #", "Item", "SKU", "Code"), key0 = get(r, "PST Product Key", "Product Key", "PST SKU"), costStr = get(r, "Kit Cost", "Price per Kit", "Kit Price", "Cost per Kit", "Price", "USD");
-            let key = products.find(p => norm(p.product_key) === norm(key0))?.product_key || (sku ? map.get(norm(sku) + "|" + normStrength(strength)) : "") || "";
+            let key = products.find(p => norm(p.product_key) === norm(key0))?.product_key || (sku ? map.get(norm(sku) + "|" + normStrength(strength)) || bySku.get(norm(sku)) : "") || "";
             if (!key) { const c = products.filter(p => p.display_name && matchName(p.display_name) === matchName(name) && normStrength(p.strength) === normStrength(strength)); if (c.length === 1) key = c[0].product_key; }
             return { row: i + 2, name, strength, sku, key: key || null, costStr, cost: Number(String(costStr).replace(/[$,]/g, "")) };
           }).filter(r => r.name || r.sku || r.key);
