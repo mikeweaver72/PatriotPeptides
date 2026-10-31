@@ -506,3 +506,8 @@ body.app-home .shelf{padding-bottom:4px}
 /* Shop | Owner switch: same white-on-navy look in light and dark mode (Oct 31) */
 .flipfloat,html[data-theme=light] .flipfloat,.oapp .flipfloat{--gold:#C8102E;--gold2:#F3F1EC;--muted:#C9CFDC;background:rgba(10,16,32,.94);color:#F3F1EC}
 .flipfloat .flip a:not(.on){color:#F3F1EC}
+/* supplier price list: the save bar is a solid card so the list never shows through it (Oct 31) */
+.rrbar.vpbar{background:var(--card);border:1px solid var(--line2);border-radius:14px;padding:12px 12px calc(12px + env(safe-area-inset-bottom,0px) * 0);margin-top:14px;box-shadow:0 -12px 28px rgba(0,0,0,.35);z-index:5}
+.vprepl{display:flex;gap:10px;align-items:flex-start;margin:0 0 10px;font-size:14px}.vprepl input{margin-top:3px;flex:none}
+.vprepl span{display:flex;flex-direction:column;gap:2px;min-width:0}.vprepl b{font-size:14px;line-height:1.3}.vprepl small{font-size:12.5px;line-height:1.35}
+.vpbar .status:empty{display:none}.vpbar .status{font-size:13px}
