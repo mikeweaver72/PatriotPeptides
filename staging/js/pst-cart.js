@@ -9,7 +9,7 @@
   /* new bag items default to an Auto reminder seeded from the product's typical reorder time */
   async function primeReminders() {
     const rem = P.reminders();
-    for (const r of rows) { if (!r.product) continue; suggest[r.key] = await P.suggestDays(r.product); if (!(r.key in rem)) P.setReminder(r.key, suggest[r.key].d, true, !!suggest[r.key].perVial); }
+    for (const r of rows) { if (!r.product || P.isMerch(r.product)) continue; suggest[r.key] = await P.suggestDays(r.product); if (!(r.key in rem)) P.setReminder(r.key, suggest[r.key].d, true, !!suggest[r.key].perVial); }
   }
   let bo = false, rows = [], user = null, profile = null, methods = [], credit = 0, frees = [], choices = [], gifts = [], busy = false;
   const host = () => $("[data-cart]");
@@ -25,20 +25,20 @@
     return { q, sub, ship, kit, kd, disc, pd, pm, total, cr, due: Math.max(0, round(total - cr)) };
   }
   // with backorders on, only a fully sold-out item blocks checkout; extra quantity goes on backorder
-  const blocked = () => rows.some(r => !r.product || P.qty(r.product) <= 0 || (!bo && P.qty(r.product) < r.quantity));
+  const blocked = () => rows.some(r => !r.product || P.qty(r.product) <= 0 || ((!bo || P.isMerch(r.product)) && P.qty(r.product) < r.quantity));
 
   function lineHtml(r) {
     const p = r.product, rem = P.reminders()[r.key] || { d: 0, a: false }, sg = suggest[r.key] || { d: 28 }, autoD = sg.perVial ? Math.min(365, sg.d * Math.max(1, r.quantity)) : sg.d;
     if (!p) return `<div class="cline"><div class="ci"></div><div><h3>Item no longer listed</h3><p class="warn">This product isn't in the catalog anymore.</p><div class="row"><button class="rm" type="button" data-rm="${esc(r.key)}">Remove</button></div></div><span></span></div>`;
-    const n = P.qty(p), t = P.titleParts(p);
-    const warn = n <= 0 ? `<p class="warn">Sold out${p.incoming_quantity ? " · restock on the way" : ""}. Remove it to check out.</p>` : r.quantity > n ? (bo ? `<p class="warn bo">${n} ready now · ${r.quantity - n} on backorder. Backordered vials go out as soon as they arrive.</p>` : `<p class="warn">Only ${n} available. Lower the quantity to check out.</p>`) : "";
+    const n = P.qty(p), t = P.titleParts(p), mer = P.isMerch(p), boL = bo && !mer;
+    const warn = n <= 0 ? `<p class="warn">Sold out${p.incoming_quantity ? " · restock on the way" : ""}. Remove it to check out.</p>` : r.quantity > n ? (boL ? `<p class="warn bo">${n} ready now · ${r.quantity - n} on backorder. Backordered vials go out as soon as they arrive.</p>` : `<p class="warn">Only ${n} available. Lower the quantity to check out.</p>`) : "";
     return `<div class="cline"><a class="ci" href="${P.productUrl(p)}" aria-hidden="true" tabindex="-1">${P.vial(p, 40)}</a>
 <div><a href="${P.productUrl(p)}"><h3>${esc(t.main)}</h3></a><span class="meta">${esc(p.strength || "")} · ${money(P.unitPrice(p))} each</span>${warn}
-<div class="row"><div class="qty sm"><button type="button" data-cq="${esc(r.key)}" data-d="-1" aria-label="Fewer">−</button><span>${r.quantity}</span><button type="button" data-cq="${esc(r.key)}" data-d="1" aria-label="More"${!bo && r.quantity >= n ? " disabled" : ""}>+</button></div><button class="rm" type="button" data-rm="${esc(r.key)}">Remove</button></div></div>
+<div class="row"><div class="qty sm"><button type="button" data-cq="${esc(r.key)}" data-d="-1" aria-label="Fewer">−</button><span>${r.quantity}</span><button type="button" data-cq="${esc(r.key)}" data-d="1" aria-label="More"${!boL && r.quantity >= n ? " disabled" : ""}>+</button></div><button class="rm" type="button" data-rm="${esc(r.key)}">Remove</button></div></div>
 <b class="lt">${money(P.unitPrice(p) * r.quantity)}</b>
-<div class="remind"><span>${P.icon("bell", 14)} Running-low reminder</span><div class="chips" role="group" aria-label="Reorder reminder for ${esc(p.display_name)}">
+${mer ? "" : `<div class="remind"><span>${P.icon("bell", 14)} Running-low reminder</span><div class="chips" role="group" aria-label="Reorder reminder for ${esc(p.display_name)}">
 <button type="button" class="auto" data-rem="${esc(r.key)}" data-days="${sg.d}" data-auto="1"${sg.perVial ? ' data-pv="1"' : ""} aria-pressed="${rem.a}" title="Starts at ${Math.max(1, Math.round(autoD / 7))} week${Math.max(1, Math.round(autoD / 7)) === 1 ? "" : "s"}${sg.perVial ? " (how long this many vials usually last)" : sg.basis === "typical" ? " (typical for this item)" : ""}, then learns from your reorders">Auto · ~${Math.max(1, Math.round(autoD / 7))} wks</button>
-${P.REMIND.slice(1).map(([d, l]) => `<button type="button" data-rem="${esc(r.key)}" data-days="${d}" aria-pressed="${!rem.a && rem.d === d}">${l}</button>`).join("")}<button type="button" data-rem="${esc(r.key)}" data-days="0" aria-pressed="${!rem.d}">Off</button></div></div></div>`;
+${P.REMIND.slice(1).map(([d, l]) => `<button type="button" data-rem="${esc(r.key)}" data-days="${d}" aria-pressed="${!rem.a && rem.d === d}">${l}</button>`).join("")}<button type="button" data-rem="${esc(r.key)}" data-days="0" aria-pressed="${!rem.d}">Off</button></div></div>`}</div>`;
   }
 
   function sideHtml() {
