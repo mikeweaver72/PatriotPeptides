@@ -503,3 +503,6 @@ body.app-home .shelf{padding-bottom:4px}
 @media(min-width:700px){.sheetwrap.bagpop .sheet{border-top:0;border-left:6px solid #C8102E}}
 /* Skin care link (Star N Stone) in the mobile menu, styled like a menu group heading */
 #drawer nav>a.dlink{display:block;padding:14px 0;border-top:1px solid var(--line);font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink)}
+/* Shop | Owner switch: same white-on-navy look in light and dark mode (Oct 31) */
+.flipfloat,html[data-theme=light] .flipfloat,.oapp .flipfloat{--gold:#C8102E;--gold2:#F3F1EC;--muted:#C9CFDC;background:rgba(10,16,32,.94);color:#F3F1EC}
+.flipfloat .flip a:not(.on){color:#F3F1EC}
