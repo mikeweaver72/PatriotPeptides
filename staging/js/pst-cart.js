@@ -11,7 +11,7 @@
     const rem = P.reminders();
     for (const r of rows) { if (!r.product || P.isMerch(r.product)) continue; suggest[r.key] = await P.suggestDays(r.product); if (!(r.key in rem)) P.setReminder(r.key, suggest[r.key].d, true, !!suggest[r.key].perVial); }
   }
-  let bo = false, rows = [], user = null, profile = null, methods = [], credit = 0, frees = [], choices = [], gifts = [], busy = false;
+  let removedN = 0, bo = false, rows = [], user = null, profile = null, methods = [], credit = 0, frees = [], choices = [], gifts = [], busy = false;
   const host = () => $("[data-cart]");
 
   function totals() {
@@ -29,7 +29,7 @@
 
   function lineHtml(r) {
     const p = r.product, rem = P.reminders()[r.key] || { d: 0, a: false }, sg = suggest[r.key] || { d: 28 }, autoD = sg.perVial ? Math.min(365, sg.d * Math.max(1, r.quantity)) : sg.d;
-    if (!p) return `<div class="cline"><div class="ci"></div><div><h3>Item no longer listed</h3><p class="warn">This product isn't in the catalog anymore.</p><div class="row"><button class="rm" type="button" data-rm="${esc(r.key)}">Remove</button></div></div><span></span></div>`;
+    if (!p) return `<div class="cline cgone"><div class="ci">${P.icon("bag", 22)}</div><div><h3>No longer available</h3><p class="muted small">This item was taken off the shop. Remove it to check out.</p><div class="row"><button class="rm" type="button" data-rm="${esc(r.key)}">Remove</button></div></div><span></span></div>`;
     const n = P.qty(p), t = P.titleParts(p), mer = P.isMerch(p), boL = bo && !mer;
     const warn = n <= 0 ? `<p class="warn">Sold out${p.incoming_quantity ? " · restock on the way" : ""}. Remove it to check out.</p>` : r.quantity > n ? (boL ? `<p class="warn bo">${n} ready now · ${r.quantity - n} on backorder. Backordered vials go out as soon as they arrive.</p>` : `<p class="warn">Only ${n} available. Lower the quantity to check out.</p>`) : "";
     return `<div class="cline"><a class="ci" href="${P.productUrl(p)}" aria-hidden="true" tabindex="-1">${P.vial(p, 40)}</a>
@@ -80,8 +80,9 @@ ${pkBox()}
 
   async function draw() {
     const el = host();
+    const gonenote = removedN ? `<div class="cnote" role="status">${P.icon("bell", 18)}<div><b>${removedN === 1 ? "An item in your bag is no longer available" : `${removedN} items in your bag are no longer available`}</b><span>${removedN === 1 ? "It was taken off the shop, so we removed it for you." : "They were taken off the shop, so we removed them for you."} Everything else is just as you left it.</span></div></div>` : "";
     if (!rows.length) {
-      el.innerHTML = `<div class="empty">${P.icon("bag", 34)}<h2 class="serif" style="font-size:2rem;color:var(--ink)">Your bag is empty</h2><p>Browse the collection and add what you need.</p><a class="btn primary" href="catalog.html">Browse the collection</a>${user ? ` <a class="btn ghost" href="account.html">Reorder from past orders</a>` : ""}</div>`;
+      el.innerHTML = `${gonenote}<div class="empty">${P.icon("bag", 34)}<h2 class="serif" style="font-size:2rem;color:var(--ink)">Your bag is empty</h2><p>Browse the collection and add what you need.</p><a class="btn primary" href="catalog.html">Browse the collection</a>${user ? ` <a class="btn ghost" href="account.html">Reorder from past orders</a>` : ""}</div>`;
       return;
     }
     let notice = sessionStorage.getItem("pst_reorder_notice_v1"); if (notice) sessionStorage.removeItem("pst_reorder_notice_v1");
@@ -91,7 +92,7 @@ ${pkBox()}
     const giftHtml = gifts.map(g => { const t = P.titleParts(g.p), val = P.unitPrice(g.p) * g.qty; return `<div class="cline gift" aria-label="Free gift: ${esc(t.main)} ${esc(g.p.strength || "")}, quantity ${g.qty}"><span class="ci">${P.vial(g.p, 40)}<i class="giftb">FREE</i></span>
 <div><h3>${esc(t.main)} <span class="gifttag">${P.icon("tag", 13)} Free gift</span></h3><span class="meta">${esc(g.p.strength || "")} · qty ${g.qty} · added automatically</span><p class="muted small giftwhy">${esc(g.title)}${g.body ? ` ${esc(g.body)}` : ""}</p></div>
 <b class="lt"><s>${money(val)}</s> $0.00</b></div>`; }).join("");
-    el.innerHTML = `${notice ? `<p class="notice ok" style="margin-bottom:14px">${esc(notice)}</p>` : ""}<div class="cartgrid"><div><div data-lines>${rows.map(lineHtml).join("")}${giftHtml}</div>
+    el.innerHTML = `${gonenote}${notice ? `<p class="notice ok" style="margin-bottom:14px">${esc(notice)}</p>` : ""}<div class="cartgrid"><div><div data-lines>${rows.map(lineHtml).join("")}${giftHtml}</div>
 <p class="muted small" style="margin-top:12px">${P.icon("bell", 14)} One alert when a vial is likely running low. Auto starts with a typical time and learns from how often you reorder. No dosing info is ever asked.</p>${addMore()}</div><aside class="side" data-side>${sideHtml()}</aside></div>`;
   }
   /* "add to this order" strip: in-stock items not already in the bag, closest research focus first */
@@ -122,6 +123,8 @@ ${smsOn ? (has && !smsCustom ? `<p class="muted small">Texts go to ${esc(P.fmtPh
     el.innerHTML = `<div class="cartgrid"><div>${[1, 2].map(() => `<div class="cline"><div class="ci skel" style="height:70px"></div><div><div class="skel" style="height:18px;width:60%"></div><div class="skel" style="height:12px;width:40%;margin-top:8px"></div></div><span></span></div>`).join("")}</div></div>`;
     try {
       [rows, user, allP] = await Promise.all([P.cartRows(), P.getUser(), P.products()]);
+      const gone = rows.filter(r => !r.product);
+      if (gone.length && allP.length) { gone.forEach(r => P.setQty(r.key, 0)); rows = rows.filter(r => r.product); removedN = gone.length; }
       await primeReminders();
       if (user) {
         [profile, methods] = await Promise.all([P.getProfile(user), P.paymentMethods()]);

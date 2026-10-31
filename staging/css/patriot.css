@@ -578,3 +578,8 @@ body.app-home .shelf{padding-bottom:4px}
 .pmint b{display:block}.pmint small{color:var(--muted)}.pmin .shipbar{margin:8px 0 0}
 .vpr small{font-weight:500;color:var(--muted);font-size:12px;margin-left:2px}
 .opill.bad{color:var(--bad)}
+/* bag: friendly note when sold-out-for-good items were cleared (Oct 31) */
+.cnote{display:flex;gap:12px;align-items:flex-start;margin:0 0 18px;padding:14px 16px;border:1px solid var(--line);border-left:4px solid #C8102E;border-radius:10px;background:var(--card)}
+.cnote svg{flex:none;color:#C8102E;margin-top:2px}.cnote b{display:block;font-size:15px;color:var(--ink)}.cnote span{display:block;font-size:14px;color:var(--muted);margin-top:2px}
+.cline.cgone .ci{display:grid;place-items:center;background:var(--card2);border:1px dashed var(--line2);border-radius:8px;color:var(--dim);min-height:56px}.cline.cgone h3{color:var(--ink)}
+.mgate.msoon{max-width:520px}.mgate.msoon svg{color:#C8102E}
