@@ -13,7 +13,7 @@
   let XL = null;
   const loadXLSX = () => XL || (XL = new Promise((res, rej) => { if (window.XLSX) return res(window.XLSX); const s = document.createElement("script"); s.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"; s.onload = () => res(window.XLSX); s.onerror = () => { XL = null; rej(new Error("Couldn't load the spreadsheet reader. Check the connection and try again.")); }; document.head.appendChild(s); }));
 
-  let products = [], vendors = [], saved = [], vendorId = "", staged = [];
+  let products = [], vendors = [], saved = [], vendorId = "", staged = [], replaceAll = true;
   const plabel = p => `${p.display_name || p.product_key}${p.strength ? ` ${p.strength}` : ""}`;
   async function loadSaved() {
     const { data, error } = await P.client().from("pst_vendor_catalog_items").select("id,product_key,product_name,strength,vendor_item_number,kit_cost").eq("vendor_id", vendorId).order("product_name");
@@ -50,12 +50,13 @@
       const opts = r => `<option value="">Not one of my products</option>${products.map(x => { const o = claimed.get(x.product_key), elsewhere = o && o !== r; return `<option value="${esc(x.product_key)}"${x.product_key === r.key ? " selected" : ""}>${esc(plabel(x))}${elsewhere ? ` (on row ${o.row}, picking moves it)` : ""}</option>`; }).join("")}`;
       const m = staged.filter(r => r.key).length;
       body.innerHTML = `<h2 class="serif osec">Check before saving</h2><p class="muted small">${staged.length} rows · ${m} matched · ${staged.length - m} not. Fix any match or price, then save.</p>
-<div class="vprev">${staged.map((r, i) => `<div class="vpr${r.key ? "" : " un"}${r.bad ? " bad" : ""}"><b>${esc(r.name)} ${esc(r.strength)}</b><small>row ${r.row}${r.sku ? ` · ${esc(r.sku)}` : ""}${r.bad ? ` · ${esc(r.bad)}` : ""}</small>
+<div class="vprev">${staged.map((r, i) => `<div class="vpr${r.key ? "" : " un"}${r.bad ? " bad" : ""}"><b>${esc(r.name)} ${esc(r.strength)}</b><small>row ${r.row}${r.sku ? ` · ${esc(r.sku)}` : ""}${r.note ? ` · ${esc(r.note)}` : ""}${r.bad ? ` · ${esc(r.bad)}` : ""}</small>
 <div class="vpctl"><select data-vpm="${i}" aria-label="Match for ${esc(r.name)}">${opts(r)}</select><label class="edp">$<input type="number" min="0" step="0.01" inputmode="decimal" data-vpc="${i}" value="${r.costStr === "" ? "" : r.cost}" placeholder="kit cost" aria-label="Kit cost"></label><button type="button" class="linkish small" data-vprm="${i}" aria-label="Leave row ${r.row} out">Leave out</button></div></div>`).join("")}</div>
-<div class="rrbar"><p class="status bad" data-vpst2 role="alert" style="margin:0 0 8px"></p><button class="btn primary wide" type="button" data-vpsave>Save ${staged.length} rows to ${esc(vendors.find(x => x.id === vendorId)?.company_name || "vendor")}</button><button class="btn ghost wide" type="button" data-vpcancel style="margin-top:8px">Cancel</button></div>`;
+<div class="rrbar"><label class="toggle vprepl"><input type="checkbox" data-vprepl${replaceAll ? " checked" : ""}> <span><b>Replace ${esc(vendors.find(x => x.id === vendorId)?.company_name || "this vendor")}'s whole list</b><small class="muted">${saved.length ? `${saved.length} saved items are swapped for this sheet. Turn off to only add and update.` : "This sheet becomes the list."}</small></span></label><p class="status bad" data-vpst2 role="alert" style="margin:0 0 8px"></p><button class="btn primary wide" type="button" data-vpsave>Save ${staged.length} rows to ${esc(vendors.find(x => x.id === vendorId)?.company_name || "vendor")}</button><button class="btn ghost wide" type="button" data-vpcancel style="margin-top:8px">Cancel</button></div>`;
     };
     el.onchange = async e => {
       if (e.target.matches("[data-vpv]")) { vendorId = e.target.value; staged = []; st.textContent = ""; showSaved(); return; } // his bug: kept the old review
+      if (e.target.matches("[data-vprepl]")) { replaceAll = e.target.checked; return; }
       if (e.target.matches("[data-vpm]")) { const r = staged[+e.target.dataset.vpm], k = e.target.value || null, o = k && staged.find(x => x !== r && x.key === k);
         if (o) { o.key = null; st.textContent = `Moved ${plabel(products.find(p => p.product_key === k) || { display_name: k })} from row ${o.row} to row ${r.row}.`; } else st.textContent = "";
         r.key = k; review(); return; }
@@ -75,6 +76,14 @@
             return { row: i + 2, name, strength, sku, key: key || null, costStr, cost: Number(String(costStr).replace(/[$,]/g, "")) };
           }).filter(r => r.name || r.sku || r.key);
           const seen = new Set(); staged.forEach(r => { if (r.key) { if (seen.has(r.key)) r.key = null; else seen.add(r.key); } });
+          // Oct 31: reformatted sheets repeat things. Same item twice: keep the first. Same SKU on different items: keep the item, drop the repeated SKU.
+          const sameItem = new Set(), skuAt = new Map(); let dropped = 0;
+          staged = staged.filter(r => { const k = [norm(r.name), norm(r.sku), normStrength(r.strength)].join("|"); if (sameItem.has(k)) { dropped++; return false; } sameItem.add(k); return true; });
+          let noPrice = 0; staged = staged.filter(r => { if (r.costStr === "" || !Number.isFinite(r.cost)) { noPrice++; return false; } return true; }); // a supplier row with no price can't be ordered from
+          staged.forEach(r => { if (!r.sku) return; const k = norm(r.sku) + "|" + normStrength(r.strength); if (skuAt.has(k)) { r.note = `SKU ${r.sku} is also on row ${skuAt.get(k)}, so this one is saved without it`; r.sku = ""; } else skuAt.set(k, r.row); });
+          replaceAll = saved.length > 0;
+          const left = [dropped ? `${dropped} repeated row${dropped === 1 ? "" : "s"} (same item twice)` : "", noPrice ? `${noPrice} row${noPrice === 1 ? "" : "s"} with no price` : ""].filter(Boolean).join(" and ");
+          if (left) setTimeout(() => say(`Left out ${left}. Everything else is ready to save.`, true), 0);
           if (!staged.length) throw new Error("No product rows found. The sheet needs a Product Name (or SKU) column and a Kit Cost column.");
           st.textContent = ""; review();
         } catch (err) { st.textContent = err.message || String(err); }
@@ -90,14 +99,15 @@
       if (e.target.closest("[data-vpsave]")) { // = save(), with his checks plus: a blank cost is an error, not $0
         const firstSk = new Map();
         staged.forEach(r => { const k = r.sku ? norm(r.sku) + "|" + normStrength(r.strength) : ""; const dup = k && firstSk.has(k) ? firstSk.get(k) : null; if (k && !firstSk.has(k)) firstSk.set(k, r);
-          r.bad = !r.name ? "needs a product name" : r.costStr === "" || !Number.isFinite(r.cost) || r.cost < 0 ? "needs a kit cost" : dup ? `same SKU and size as row ${dup.row}: fix one or tap Leave out` : ""; });
+          r.bad = !r.name ? "needs a product name" : r.costStr === "" || !Number.isFinite(r.cost) || r.cost < 0 ? "needs a kit cost" : ""; });
         const bad = staged.filter(r => r.bad);
         if (bad.length) { review(); say(`Not saved yet: ${bad.length} row${bad.length === 1 ? " needs" : "s need"} a fix (outlined in red). First is spreadsheet row ${bad[0].row}: ${bad[0].bad}.`);
           const i = staged.indexOf(bad[0]); el.querySelector(`[data-vpc="${i}"]`)?.closest(".vpr")?.scrollIntoView({ block: "center", behavior: "smooth" }); return; }
         const ks = staged.filter(r => r.key).map(r => r.key); if (new Set(ks).size !== ks.length) { say("One of your products is matched twice."); return; }
         const vn = vendors.find(x => x.id === vendorId)?.company_name || "this vendor";
-        if (!(await window.PSTOps.confirmSheet(`Save ${staged.length} prices for ${vn}?`, "Matched items update the kit cost used on new purchase orders. Your shop prices don't change, and orders already placed keep their prices.", "Save prices"))) { review(); return; }
-        const { data, error } = await P.client().rpc("pst_admin_import_vendor_catalog", { p_vendor_id: vendorId, p_rows: staged.map(r => ({ product_name: r.name, strength: r.strength, vendor_item_number: r.sku, kit_cost: r.cost, product_key: r.key || null })) });
+        if (!(await window.PSTOps.confirmSheet(replaceAll ? `Replace ${vn}'s list with these ${staged.length} items?` : `Add or update ${staged.length} prices for ${vn}?`, `${replaceAll && saved.length ? `The ${saved.length} items saved now are replaced by this sheet. ` : ""}Matched items set the kit cost on new purchase orders. Your shop prices don't change, and orders already placed keep their prices.`, replaceAll ? "Replace list" : "Save prices"))) { review(); return; }
+        say("Saving…", true);
+        const { data, error } = await P.client().rpc("pst_admin_import_vendor_catalog", { p_vendor_id: vendorId, p_rows: staged.map(r => ({ product_name: r.name, strength: r.strength, vendor_item_number: r.sku, kit_cost: r.cost, product_key: r.key || null })), p_replace: !!replaceAll });
         if (error) { review(); say("Not saved: " + error.message); return; }
         staged = []; P.toast(`${data} prices saved for ${vn}`); st.textContent = ""; showSaved(); return;
       }
