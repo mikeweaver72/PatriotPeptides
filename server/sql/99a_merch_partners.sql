@@ -270,3 +270,8 @@ grant execute on function public.ppu_partner_stats() to authenticated;
 -- Partner orders use storefront 'partner_portal' (applied Oct 31 as ppu_orders_storefront_partner)
 alter table public.orders drop constraint if exists orders_storefront_allowed;
 alter table public.orders add constraint orders_storefront_allowed check (storefront = any (array['peptides'::text, 'supplies'::text, 'partner_portal'::text])) not valid;
+
+-- Oct 31: re-uploading a supplier price list moves matches. Before saving, any of this supplier's older rows matched to a
+-- product this upload matches get released, so a reformatted sheet (new strength wording) never leaves a product "taken".
+-- (applied as migration ppu_vendor_catalog_import_moves_matches: pst_admin_import_vendor_catalog now nulls this vendor's
+--  existing product_key for every product matched in the upload before upserting)
