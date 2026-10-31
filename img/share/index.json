@@ -250,5 +250,9 @@
  "PSTP100005": {
   "sig": "PSTP100005|PP-SLNK|10mg",
   "slug": "pp-slnk-pstp100005"
+ },
+ "PSTP100007": {
+  "sig": "PSTP100007|PP-ARA-290|10mg",
+  "slug": "pp-ara-290-pstp100007"
  }
 }
