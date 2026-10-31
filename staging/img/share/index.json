@@ -244,11 +244,11 @@
   "slug": "glutathione-pstp100001"
  },
  "PSTP100006": {
-  "sig": "PSTP100006|Selank|5mg",
-  "slug": "selank-pstp100006"
+  "sig": "PSTP100006|PP-SLNK|5mg",
+  "slug": "pp-slnk-pstp100006"
  },
  "PSTP100005": {
-  "sig": "PSTP100005|Selank|10mg",
-  "slug": "selank-pstp100005"
+  "sig": "PSTP100005|PP-SLNK|10mg",
+  "slug": "pp-slnk-pstp100005"
  }
 }
