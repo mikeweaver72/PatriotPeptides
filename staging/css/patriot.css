@@ -583,3 +583,6 @@ body.app-home .shelf{padding-bottom:4px}
 .cnote svg{flex:none;color:#C8102E;margin-top:2px}.cnote b{display:block;font-size:15px;color:var(--ink)}.cnote span{display:block;font-size:14px;color:var(--muted);margin-top:2px}
 .cline.cgone .ci{display:grid;place-items:center;background:var(--card2);border:1px dashed var(--line2);border-radius:8px;color:var(--dim);min-height:56px}.cline.cgone h3{color:var(--ink)}
 .mgate.msoon{max-width:520px}.mgate.msoon svg{color:#C8102E}
+/* Shop | Owner switch: same white-on-navy look in light and dark mode (Oct 31) */
+.flipfloat,html[data-theme=light] .flipfloat,.oapp .flipfloat{--gold:#C8102E;--gold2:#F3F1EC;--muted:#C9CFDC;background:rgba(10,16,32,.94);color:#F3F1EC}
+.flipfloat .flip a:not(.on){color:#F3F1EC}
