@@ -571,3 +571,9 @@ body.app-home .shelf{padding-bottom:4px}
 .vrev .pm{display:flex;flex-direction:column;gap:8px}.vrev .pm label{display:flex;gap:10px;align-items:center;padding:12px;border:1px solid var(--line2);border-radius:10px}
 .vord{border-top:1px solid var(--line)}.vord .r{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);color:var(--ink);text-decoration:none}.vord small{display:block;color:var(--muted)}
 .vdone{max-width:520px}
+.pstats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}.pstats>div{padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--card2)}.pstats small{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}.pstats b{font-size:1.15rem}
+.pearn .vrl .r{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.pmin{margin:12px 0;padding:12px 14px;border:1px solid var(--line);border-left:4px solid #C8102E;border-radius:10px;background:var(--card)}.pmin.met{border-left-color:var(--ok)}
+.pmint b{display:block}.pmint small{color:var(--muted)}.pmin .shipbar{margin:8px 0 0}
+.vpr small{font-weight:500;color:var(--muted);font-size:12px;margin-left:2px}
+.opill.bad{color:var(--bad)}

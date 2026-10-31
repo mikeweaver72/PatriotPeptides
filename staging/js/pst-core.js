@@ -676,7 +676,7 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
       status: "pending", order_status: "pending", payment_status: "pending", payment_method: paymentLabel,
       payment_instructions_snapshot: null, payment_qr_image: null,
       customer_notes: [`Delivery method: Shipping`, priced.some(i => isWholesale(i.p)) ? `Wholesale shipping: ${stQ || "state unknown"} · $${ship.toFixed(2)}` : "", kitDisc ? `Kit savings: ${kit.label} (−$${kitDisc.toFixed(2)})` : "", remindLines.length ? `Reorder reminder: ${remindLines.join("; ")}` : "", payDisc ? `Payment discount: ${payMethod.label} ${payMethod.pct}% (−$${payDisc.toFixed(2)})` : "", short.length ? `Backorder: ${short.join("; ")}` : "", notes].filter(Boolean).join("\n"),
-      subtotal: sub, discount: disc, subtotal_before_discount: sub, discount_amount: disc, discount_code_amount: codeDisc, vial_discount_amount: kitDisc, discount_percent: payDisc ? payMethod.pct : undefined, store_credit_applied: 0,
+      subtotal: sub, discount: disc, subtotal_before_discount: sub, discount_amount: disc, discount_code_amount: codeDisc, ppu_code: codeDisc > 0 && discount?.code ? String(discount.code).trim() : null, vial_discount_amount: kitDisc, discount_percent: payDisc ? payMethod.pct : undefined, store_credit_applied: 0,
       shipping: ship, tax: 0, tax_rate: 0, tax_region: "", tax_jurisdiction: "", total, source: "website_inquiry", created_at: now, updated_at: now,
       ...(sendPepkeep ? { send_pepkeep: true, send_pepkeep_at: now } : {})
     });

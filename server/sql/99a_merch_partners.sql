@@ -145,7 +145,7 @@ begin
 end $function$;
 
 -- Place a partner order. Prices, shipping and totals are worked out HERE from the partner's own tier,
--- never trusted from the browser. Shipping uses the wholesale zones: West $20, everywhere else $30.
+-- never trusted from the browser. Prices are per 10-vial kit; quantity = kits. Shipping is billed later (split with the group).
 create or replace function public.ppu_partner_place_order(p_lines jsonb, p_payment text, p_notes text default '')
 returns jsonb language plpgsql security definer set search_path to '' as $$
 declare
@@ -165,7 +165,7 @@ begin
     raise exception 'Add your shipping address to your account first.' using errcode = 'P0001';
   end if;
   v_st := upper(btrim(c.shipping_state));
-  v_ship := case when v_st in ('WA','OR','CA','NV','ID','MT','WY','UT','CO','AZ','NM','AK','HI') then 20 else 30 end;
+  v_ship := 0; -- Jeff (Oct 31): supplier shipping is split across the group buy, so it's billed after the block ships
   v_name := nullif(btrim(concat_ws(' ', c.first_name, c.last_name)), '');
 
   for l in select (e ->> 'id') as pid, (e ->> 'qty') as q from jsonb_array_elements(p_lines) e loop
@@ -184,14 +184,14 @@ begin
   values (v_id, v_uid, v_uid, 'pending', 'pending', 'pending', btrim(p_payment), v_sub, v_sub, 0, v_ship, 0, v_sub + v_ship,
     coalesce(v_name, v.name, v.email), lower(v.email), coalesce(c.phone, v.phone), c.shipping_address, c.shipping_city, v_st, c.shipping_zip,
     lower(v.email), concat_ws(E'\n', 'Partner order: Tier ' || v.tier || coalesce(' ' || (select t.name from public.ppu_partner_tiers t where t.id = v.tier), '') || coalesce(' · ' || nullif(v.company, ''), ''),
-      'Shipping: ' || v_st || ' · $' || to_char(v_ship, 'FM990.00'), nullif(btrim(coalesce(p_notes, '')), '')),
+      'Shipping: billed after the block ships (split with the group) · ' || v_st, nullif(btrim(coalesce(p_notes, '')), '')),
     'partner_portal', v_now, v_now) returning order_number into v_no;
 
   for l in select (e ->> 'id')::uuid as pid, (e ->> 'qty')::integer as q from jsonb_array_elements(p_lines) e loop
     select * into pr from public.ppu_partner_prices where id = l.pid and tier = v.tier and active;
     v_q := l.q;
     insert into public.order_items (order_id, product_id, product_key, product_name, product_strength, product_category, quantity, unit_price, line_total, created_at)
-    values (v_id, null, coalesce(pr.product_key, 'PTR-' || pr.sku), pr.name, coalesce(pr.amount, ''), 'Partner', v_q, pr.price, round(pr.price * v_q, 2), v_now);
+    values (v_id, null, coalesce(pr.product_key, 'PTR-' || pr.sku), pr.name, concat_ws(' · ', nullif(pr.amount, ''), 'kit of 10'), 'Partner', v_q, pr.price, round(pr.price * v_q, 2), v_now);
     v_n := v_n + 1;
   end loop;
 
@@ -211,3 +211,58 @@ begin
   if public.ppu_inventory_untracked() and coalesce(new.current_inventory, 0) < 1000 then new.current_inventory := 1000; end if;
   return new;
 end $function$;
+
+-- ============ PROMOTER EARNINGS + MONTHLY MINIMUMS (Jeff, Oct 31) ============
+-- Checkout records which code an order used (orders.ppu_code). A promoter earns the discount their code gave (10%),
+-- on paid orders. Jeff records payouts as cash or product; balance = earned - paid.
+alter table public.orders add column if not exists ppu_code text;
+create index if not exists orders_ppu_code_idx on public.orders (lower(ppu_code)) where ppu_code is not null;
+
+create table if not exists public.ppu_partner_payouts (
+  id uuid primary key default gen_random_uuid(),
+  partner_id uuid not null references public.ppu_partners(id) on delete cascade,
+  amount numeric(10,2) not null check (amount > 0),
+  kind text not null default 'cash' check (kind in ('cash', 'product')),
+  note text,
+  paid_at date not null default ((now() at time zone 'America/Los_Angeles')::date),
+  created_at timestamptz not null default now()
+);
+alter table public.ppu_partner_payouts enable row level security;
+drop policy if exists "owner manages payouts" on public.ppu_partner_payouts;
+create policy "owner manages payouts" on public.ppu_partner_payouts for all to authenticated using (public.ppu_is_owner()) with check (public.ppu_is_owner());
+drop policy if exists "partner reads own payouts" on public.ppu_partner_payouts;
+create policy "partner reads own payouts" on public.ppu_partner_payouts for select to authenticated using (exists (select 1 from public.ppu_partners p where p.id = partner_id and p.user_id = auth.uid()));
+revoke all on public.ppu_partner_payouts from anon;
+
+-- One row per partner: promoter earnings and this/last month's progress toward the minimum.
+-- Months are Jeff's calendar months (Pacific). Only paid, not-cancelled orders count. Water doesn't count toward kits.
+-- Owner sees everyone; a partner sees only their own row.
+create or replace function public.ppu_partner_stats()
+returns table (partner_id uuid, tier integer, earned numeric, earned_month numeric, code_orders integer, paid_out numeric, balance numeric,
+  kits_month integer, spend_month numeric, kits_last integer, spend_last numeric, minimum_kits integer, minimum_spend numeric, short_month boolean, short_last boolean)
+language sql stable security definer set search_path to '' as $$
+  with me as (select public.ppu_is_owner() as owner, auth.uid() as uid),
+  m as (select date_trunc('month', now() at time zone 'America/Los_Angeles') as cur),
+  b as (select m.cur, m.cur - interval '1 month' as prev from m),
+  pt as (select p.* from public.ppu_partners p, me where me.owner or p.user_id = me.uid),
+  ok as (select o.* from public.orders o where lower(coalesce(o.payment_status, '')) = 'paid'
+           and lower(coalesce(o.order_status, o.status, '')) not in ('cancelled', 'canceled', 'rejected', 'refunded')),
+  codes as (select pt.id, sum(coalesce(o.discount_code_amount, 0)) as earned, count(o.id)::integer as n,
+              sum(coalesce(o.discount_code_amount, 0)) filter (where (o.created_at at time zone 'America/Los_Angeles') >= (select cur from b)) as earned_month
+            from pt join ok o on pt.discount_code is not null and lower(o.ppu_code) = lower(pt.discount_code) group by pt.id),
+  paid as (select partner_id, sum(amount) as amt from public.ppu_partner_payouts where partner_id in (select id from pt) group by partner_id),
+  vol as (select pt.id,
+      coalesce(sum(i.quantity) filter (where o.created_at at time zone 'America/Los_Angeles' >= (select cur from b) and i.product_name !~* 'water'), 0)::integer as kits_m,
+      coalesce(sum(i.line_total) filter (where o.created_at at time zone 'America/Los_Angeles' >= (select cur from b)), 0) as spend_m,
+      coalesce(sum(i.quantity) filter (where o.created_at at time zone 'America/Los_Angeles' >= (select prev from b) and o.created_at at time zone 'America/Los_Angeles' < (select cur from b) and i.product_name !~* 'water'), 0)::integer as kits_l,
+      coalesce(sum(i.line_total) filter (where o.created_at at time zone 'America/Los_Angeles' >= (select prev from b) and o.created_at at time zone 'America/Los_Angeles' < (select cur from b)), 0) as spend_l
+    from pt join ok o on o.customer_id = pt.user_id and o.storefront = 'partner_portal' join public.order_items i on i.order_id = o.id group by pt.id)
+  select pt.id, pt.tier, coalesce(c.earned, 0), coalesce(c.earned_month, 0), coalesce(c.n, 0), coalesce(pd.amt, 0), coalesce(c.earned, 0) - coalesce(pd.amt, 0),
+    coalesce(v.kits_m, 0), coalesce(v.spend_m, 0), coalesce(v.kits_l, 0), coalesce(v.spend_l, 0),
+    case when pt.tier = 2 then 5 end, case when pt.tier = 3 then 1000::numeric end,
+    case pt.tier when 2 then coalesce(v.kits_m, 0) < 5 when 3 then coalesce(v.spend_m, 0) < 1000 else false end,
+    case pt.tier when 2 then coalesce(v.kits_l, 0) < 5 when 3 then coalesce(v.spend_l, 0) < 1000 else false end
+  from pt left join codes c on c.id = pt.id left join paid pd on pd.partner_id = pt.id left join vol v on v.id = pt.id;
+$$;
+revoke all on function public.ppu_partner_stats() from public, anon;
+grant execute on function public.ppu_partner_stats() to authenticated;
