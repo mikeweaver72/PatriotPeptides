@@ -20,7 +20,7 @@ if (location.protocol === "http:" && /(^|\.)patriotpeptides-usa\.com$/i.test(loc
     pushFn: "pst-push",
     minAge: 21,                            // Jeff's site gate is 21+
     cartKey: "ppu_cart_v1", remindKey: "ppu_remind_v1", gateKey: "ppu_gate_v1",
-    fields: "id,product_key,display_name,strength,category,research_focus,series,price,current_inventory,low_stock_threshold,limited_stock_threshold,is_active,featured,blend_stack,sort_name,created_at,updated_at,hot_peptide,sale_enabled,sale_price,sale_label,coa_url,coa_label,label_color,label_line_1,reorder_days_default,research_summary,home_feature_rank,coming_soon,bottle_url,bottle_sig"
+    fields: "id,product_key,display_name,strength,category,research_focus,series,price,current_inventory,low_stock_threshold,limited_stock_threshold,is_active,featured,blend_stack,sort_name,created_at,updated_at,hot_peptide,sale_enabled,sale_price,sale_label,coa_url,coa_label,label_color,label_line_1,reorder_days_default,research_summary,home_feature_rank,coming_soon,bottle_url,bottle_sig,merch_color,merch_size,merch_desc,photo_url,merch_sort"
   };
   CFG_STOCK_CLASS();
   const FOCUS = { performance: "Performance", recovery: "Recovery", longevity: "Longevity" };
@@ -93,7 +93,12 @@ if (location.protocol === "http:" && /(^|\.)patriotpeptides-usa\.com$/i.test(loc
   // The bag/checkout always use the fresh list, and a saved copy older than 12 hours is ignored.
   const PCACHE = "pst-products-cache", PMAX = 12 * 3600e3;
   try { if (/(owner|admin)[^/]*\.html$/.test(location.pathname)) localStorage.removeItem(PCACHE); } catch {} // opening the owner app or admin always forces a fresh list next time
-  function products() {
+  // Merch (category 'Merch') loads with everything else but stays out of the peptide shop: products() is peptides and supplies,
+  // merchProducts() is the merch page, allProducts() is the bag.
+  const isMerch = p => /^merch$/i.test(String(p?.category || "").trim());
+  const products = () => allProducts().then(r => r.filter(p => !isMerch(p)));
+  const merchProducts = () => allProducts().then(r => r.filter(isMerch));
+  function allProducts() {
     if (productsP) return productsP;
     const page = document.body?.dataset.page || "", ownerSide = ["owner", "admin"].includes(page) || !!document.body?.classList.contains("oapp");
     const fresh = fetchProducts();
@@ -157,7 +162,7 @@ if (location.protocol === "http:" && /(^|\.)patriotpeptides-usa\.com$/i.test(loc
     if (/^wolverine$/i.test(t)) return { main: t.charAt(0) + t.slice(1).toLowerCase(), sub: "BPC-157 · TB-500" };
     return { main: t, sub: "" };
   }
-  const productUrl = p => `product.html?key=${encodeURIComponent(p.product_key)}`;
+  const productUrl = p => isMerch(p) ? `merch.html?item=${encodeURIComponent(p.display_name || "")}` : `product.html?key=${encodeURIComponent(p.product_key)}`;
   const coaHref = p => { const u = String(p.coa_url || "").trim(); if (!u || /pending/i.test(u)) return ""; return /^https?:/.test(u) ? u : u.replace(/^\/?(a?ssets\/)/, "assets/").replace(/^ssets\//, "assets/"); };
 
   /* vial artwork from the product's label colour (no photos needed) */
@@ -301,6 +306,7 @@ if (location.protocol === "http:" && /(^|\.)patriotpeptides-usa\.com$/i.test(loc
   if (typeof MutationObserver !== "undefined") new MutationObserver(ms => { for (const m of ms) m.addedNodes.forEach(n => n.nodeType === 1 && hydrateVials(n.matches?.("img[data-vkey]") ? n.parentNode : n)); })
     .observe(document.documentElement, { childList: true, subtree: true });
   function vial(p, w = 110) {
+    if (isMerch(p)) { const s = Math.round(w * 1.25), src = p.photo_url || ""; return src ? `<img class="vial merchimg" src="${esc(src)}" width="${s}" height="${s}" alt="${esc(p.display_name)} ${esc(p.strength || "")}" loading="lazy" decoding="async">` : `<span class="vial merchimg none" style="width:${s}px;height:${s}px" aria-hidden="true">${icon("shop", Math.round(s * .45))}</span>`; }
     if (p?.product_key) vialByKey.set(p.product_key, p);
     // Patriot: the drawn bottle carries Jeff's label design; his old product photos are only the fallback when drawing is off
     if (!VIAL_ON && p?.image_file && /^img\/products\//.test(p.image_file)) { const h = Math.round(w * 200 / 120); return `<img class="vial vimg photo" src="${esc(p.image_file)}" width="${w}" height="${h}" alt="${esc(p.display_name)} ${esc(p.strength || "")} vial" loading="lazy" decoding="async">`; }
@@ -362,7 +368,7 @@ if (location.protocol === "http:" && /(^|\.)patriotpeptides-usa\.com$/i.test(loc
   }
   async function cartRows() {
     const cart = readCart(); if (!cart.length) return [];
-    const [all, al] = await Promise.all([products(), aliasMap(cart)]);
+    const [all, al] = await Promise.all([allProducts(), aliasMap(cart)]);
     return cart.map(i => ({ key: i.key, quantity: i.quantity, product: all.find(p => p.product_key === (al[i.key] || i.key)) || null }));
   }
   /* reorder reminders: {key: {d: days (0 = off), a: auto}} — auto learns from the customer's own reorder rhythm */
@@ -402,6 +408,7 @@ if (location.protocol === "http:" && /(^|\.)patriotpeptides-usa\.com$/i.test(loc
     if (!hist) return [];
     const all = await products(), by = {};
     [...hist.orders].sort((a, b) => a.created_at.localeCompare(b.created_at)).forEach(o => (hist.items[o.id] || []).forEach(i => {
+      if (/^(PPM\d|PTR-)/i.test(String(i.product_key || ""))) return; // merch and partner-sheet lines never run low
       const p = all.find(x => x.product_key === i.product_key || x.id === i.product_id); const k = p ? p.product_key : (i.product_key || i.product_name + i.product_strength);
       (by[k] ||= { key: k, p, name: i.product_name, strength: i.product_strength, buys: [] }).buys.push({ at: o.created_at, q: Number(i.quantity || 1), i, o });
     }));
@@ -478,7 +485,7 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
   const isBac = p => /^suppl/i.test(p.category || "") && /bac/i.test(`${p.display_name || ""} ${p.product_key || ""}`);
   const kitOff = (base, pct) => pct ? round(base - Math.floor(round(base * (1 - pct)) + 1e-9)) : 0;
   function kitInfo(items) { // items: [{p, q, t}]
-    const elig = items.filter(i => i.p && !/^suppl|wholesale/i.test(i.p.category || "") && !/10-vial/i.test(i.p.strength || ""));
+    const elig = items.filter(i => i.p && !isMerch(i.p) && !/^suppl|wholesale/i.test(i.p.category || "") && !/10-vial/i.test(i.p.strength || ""));
     const bac = items.filter(i => i.p && isBac(i.p));
     const vials = elig.reduce((n, i) => n + i.q, 0), base = elig.reduce((n, i) => n + i.t, 0);
     const bv = bac.reduce((n, i) => n + i.q, 0), bb = bac.reduce((n, i) => n + i.t, 0), bpct = bv >= BAC_TIER[0] ? BAC_TIER[1] : 0;
@@ -642,7 +649,7 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
     const rows = (await cartRows()).filter(r => r.product);
     if (!rows.length) throw new Error("Your cart is empty.");
     const bo = await backordersOn();
-    const bad = rows.find(r => (bo ? qty(r.product) <= 0 : qty(r.product) < r.quantity));
+    const bad = rows.find(r => (bo && !isMerch(r.product) ? qty(r.product) <= 0 : qty(r.product) < r.quantity));
     if (bad) throw new Error(qty(bad.product) <= 0 ? `${bad.product.display_name} ${bad.product.strength || ""} just sold out. Remove it to continue.` : `Only ${qty(bad.product)} of ${bad.product.display_name} ${bad.product.strength || ""} left. Lower the quantity to continue.`);
     if (rewardChoices.some(c => !c.productKey)) throw new Error("Pick your free vial for each reward before placing the order.");
     const now = new Date().toISOString(), id = crypto.randomUUID(), rem = reminders();
@@ -744,7 +751,7 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
   <div class="mobr"><button class="mobi bell" type="button" data-bell data-act="inbox" aria-label="Notifications" hidden>${icon("bell")}<i hidden>0</i></button><button class="mobi" type="button" data-act="search" aria-label="Search">${icon("search")}</button></div>
 </div>
 <div class="mega" id="mega" hidden><div class="wrap mgrid">
-  <div><b>Shop by type</b><a href="catalog.html">All products</a><a href="catalog.html?category=Peptide">Peptides</a><a href="catalog.html?category=Multi-Peptide%20Product">Research blends</a><a href="catalog.html?category=Supply">Supplies</a><a href="wholesale.html">Wholesale kits</a></div>
+  <div><b>Shop by type</b><a href="catalog.html">All products</a><a href="catalog.html?category=Peptide">Peptides</a><a href="catalog.html?category=Multi-Peptide%20Product">Research blends</a><a href="catalog.html?category=Supply">Supplies</a><a href="wholesale.html">Wholesale kits</a><a href="merch.html">Merch</a></div>
   <div><b>Research focus</b><a href="catalog.html?focus=performance">Performance</a><a href="catalog.html?focus=recovery">Recovery</a><a href="catalog.html?focus=longevity">Longevity</a></div>
   <div><b>Quick links</b><a href="catalog.html?stock=1">Available now</a><a href="catalog.html?sort=new">New arrivals</a><a href="catalog.html?sort=best">Best sellers</a><a href="testing.html">Lab reports</a><a href="kit.html">Build a kit</a><a href="wholesale.html">Wholesale</a><a href="bulk-request.html">Bulk requests</a></div>
   <div class="mfeat" data-mfeat></div>
@@ -753,7 +760,7 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
   <div class="dh"><a href="index.html" class="brand"><img src="${EMB}" alt="" width="34" height="34"><span>PATRIOT <em>PEPTIDES</em></span></a><button type="button" class="sx" data-act="drawer-close" aria-label="Close">${icon("x")}</button></div>
   <button type="button" class="dsearch" data-act="search">${icon("search", 18)} Search peptides, blends, strengths</button>
   <nav aria-label="Menu">
-  <details open><summary>Shop</summary><a href="catalog.html">All products</a><a href="catalog.html?stock=1">Available now</a><a href="catalog.html?sort=new">New arrivals</a><a href="catalog.html?sort=best">Best sellers</a><a href="catalog.html?category=Peptide">Peptides</a><a href="catalog.html?category=Multi-Peptide%20Product">Research blends</a><a href="catalog.html?category=Supply">Supplies</a></details>
+  <details open><summary>Shop</summary><a href="catalog.html">All products</a><a href="catalog.html?stock=1">Available now</a><a href="catalog.html?sort=new">New arrivals</a><a href="catalog.html?sort=best">Best sellers</a><a href="catalog.html?category=Peptide">Peptides</a><a href="catalog.html?category=Multi-Peptide%20Product">Research blends</a><a href="catalog.html?category=Supply">Supplies</a><a href="merch.html">Merch</a></details>
   <details><summary>Research focus</summary><a href="catalog.html?focus=performance">Performance</a><a href="catalog.html?focus=recovery">Recovery</a><a href="catalog.html?focus=longevity">Longevity</a></details>
   <details><summary>My account</summary><a href="index.html">My products</a><a href="account.html#orders">Orders &amp; tracking</a><a href="saved.html">Saved items</a><a href="account.html#rewards">Rewards &amp; credit</a><a href="account.html#alerts">Notifications</a></details>
   <details><summary>Help</summary><a href="testing.html">Lab reports</a><a href="shipping.html">Shipping &amp; returns</a><a href="faq.html">FAQ</a><a href="contact.html">Contact</a><a href="about.html">About us</a><a href="kit.html">Build a kit</a><a href="wholesale.html">Wholesale</a><a href="bulk-request.html">Bulk requests</a></details>
@@ -775,7 +782,7 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
   <form class="nform" action="register.html"><label class="sr" for="nem">Email</label><input id="nem" type="email" name="email" placeholder="Your email" autocomplete="email" required><input type="hidden" name="news" value="1"><button class="btn primary sm">Sign me up</button></form></section>
   <div class="fmark"><img src="${EMB2}" alt="" width="64" height="64" loading="lazy"><div class="wm">PATRIOT PEPTIDES<small>★ USA ★</small></div><p class="tagl">Quality <span>|</span> Consistency <span>|</span> Transparency</p></div>
   <div class="fcols f4">
-    <nav aria-label="Shop"><b>Shop</b><a href="catalog.html">All products</a><a href="catalog.html?stock=1">Available now</a><a href="catalog.html?sort=new">New arrivals</a><a href="catalog.html?category=Multi-Peptide%20Product">Research blends</a><a href="kit.html">Build a kit</a><a href="wholesale.html">Wholesale</a><a href="bulk-request.html">Bulk requests</a></nav>
+    <nav aria-label="Shop"><b>Shop</b><a href="catalog.html">All products</a><a href="catalog.html?stock=1">Available now</a><a href="catalog.html?sort=new">New arrivals</a><a href="catalog.html?category=Multi-Peptide%20Product">Research blends</a><a href="kit.html">Build a kit</a><a href="wholesale.html">Wholesale</a><a href="bulk-request.html">Bulk requests</a><a href="merch.html">Merch</a></nav>
     <nav aria-label="Help"><b>Help</b><a href="shipping.html">Shipping &amp; returns</a><a href="faq.html">FAQ</a><a href="testing.html">Lab reports</a><a href="contact.html">Contact</a><a href="mailto:${CFG.support}">${CFG.support}</a></nav>
     <nav aria-label="Account"><b>Account</b><a href="account.html">My account</a><a href="account.html#orders">Track an order</a><a href="saved.html">Saved items</a><a href="rewards.html">Researcher rewards</a><a href="install.html">Get the app</a><a href="account.html#alerts">Notifications</a></nav>
     <nav aria-label="Company"><b>Company</b><a href="about.html">About us</a><a href="https://www.starnstone.com" target="_blank" rel="noopener">Skin care <span aria-hidden="true">↗</span><span class="sr"> (Star N Stone, opens in a new tab)</span></a><a href="terms.html">Terms</a><a href="privacy.html">Privacy</a></nav>
@@ -1213,7 +1220,7 @@ ${rows.length ? `<div class="mbl">${rows.map(r => `<div class="mbr${r.key === ad
   }
   document.addEventListener("DOMContentLoaded", ownerChip);
   document.addEventListener("click", async e => { if (!e.target.closest("[data-signout-g]")) return; e.preventDefault(); try { (localStorage.removeItem("pst-shelf-cache"), await client().auth.signOut()); } catch {} location.href = "index.html"; });
-  window.PST = { shipQuote, isWholesale, WS_ZONES, giftLines, flipper, mountFlip, activePromotions, vialCanvas, US_STATES, stateCode, stateSelect, kitInfo, SMS_CONSENT, usPhone, fmtPhone, PREVIEW, lockScroll, CFG, FOCUS, REMIND, $, $$, esc, money, round, params, store, fmtDate, isStandalone, isIOS, client, getUser, getProfile, isAdmin, customerName, firstName,
+  window.PST = { isMerch, merchProducts, allProducts, shipQuote, isWholesale, WS_ZONES, giftLines, flipper, mountFlip, activePromotions, vialCanvas, US_STATES, stateCode, stateSelect, kitInfo, SMS_CONSENT, usPhone, fmtPhone, PREVIEW, lockScroll, CFG, FOCUS, REMIND, $, $$, esc, money, round, params, store, fmtDate, isStandalone, isIOS, client, getUser, getProfile, isAdmin, customerName, firstName,
     products, groups, cycles, suggestDays, myHistory, myProducts, isDone, handedOff, stageOf, vialLiquid, paidNotice, gIn, gBest, gMin, unitPrice, onSale, qty, stock, focuses, isBlend, titleParts, productUrl, coaHref, vial, cmpProduct,
     readCart, writeCart, addToCart, setQty, count, refreshCount, cartRows, reminders, setReminder,
     photo: () => VIAL_ON, vialStudio, bakeBottle, vialSig, vialColorName, LABEL_COLORS, track, validateDiscount, discountAmount, payDiscount, payLabel, OTHER_PAY, isOtherPay, backordersOn, creditBalance, freeVials, choiceRewards, paymentMethods, payCard, submitOrder, venmoLink, openAvailability,

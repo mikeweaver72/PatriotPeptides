@@ -168,7 +168,7 @@ ${admin ? `<div class="setrow"><div><b>Store owner</b><span>The owner app (order
   async function reorder(ids, stat) {
     const want = ids.flatMap(id => items[id] || []);
     if (!want.length) return;
-    const all = await P.products(); const cart = P.readCart(); let added = 0, skipped = 0;
+    const all = await P.allProducts(); /* merch reorders too */ const cart = P.readCart(); let added = 0, skipped = 0;
     want.forEach(x => {
       const p = all.find(q => q.id === x.product_id || q.product_key === x.product_key || q.product_key === String(x.product_id || "").replace(/^(?:product|stack):/i, ""));
       const n = p ? P.qty(p) : 0; if (!p || n <= 0) { skipped++; return; }
