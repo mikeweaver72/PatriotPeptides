@@ -275,3 +275,5 @@ alter table public.orders add constraint orders_storefront_allowed check (storef
 -- product this upload matches get released, so a reformatted sheet (new strength wording) never leaves a product "taken".
 -- (applied as migration ppu_vendor_catalog_import_moves_matches: pst_admin_import_vendor_catalog now nulls this vendor's
 --  existing product_key for every product matched in the upload before upserting)
+
+-- (applied as ppu_vendor_catalog_import_replace: pst_admin_import_vendor_catalog(p_vendor_id, p_rows, p_replace default false); replace deletes the vendor list + vendor prices first)
