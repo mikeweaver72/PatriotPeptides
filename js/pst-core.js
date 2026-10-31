@@ -488,6 +488,16 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
     const label = [pa ? `${vials} vials · ${Math.round(pct * 100)}%` : "", ba ? `${bv} BAC water · 20%` : ""].filter(Boolean).join(" + ");
     return { vials, pct, amount: round(pa + ba), peptideAmount: pa, bacAmount: ba, bacVials: bv, label, nextAt: next ? next[0] : null, nextPct: next ? next[1] : null };
   }
+  // Wholesale shipping (Jeff, Oct 30 2026): any 10-vial wholesale kit in the bag ships at a zone rate, no free-shipping threshold.
+  //   West (Pacific + Mountain states): $20, about 2 days.  Everywhere else: $30, about 3-4 days.  Unknown state: priced as East.
+  const WS_WEST = ["WA", "OR", "CA", "NV", "ID", "MT", "WY", "UT", "CO", "AZ", "NM", "AK", "HI"];
+  const WS_ZONES = { west: { rate: 20, days: "about 2 days", label: "West" }, east: { rate: 30, days: "about 3–4 days", label: "East" } };
+  const isWholesale = p => !!p && (/wholesale/i.test(p.category || "") || /10-vial/i.test(p.strength || ""));
+  function shipQuote(products, state, sub) { // products: array of product rows in the bag
+    const st = stateCode(state || "");
+    if (products.some(isWholesale)) { const zone = WS_WEST.includes(st) ? "west" : "east", z = WS_ZONES[zone]; return { ship: z.rate, wholesale: true, zone, known: !!st, ...z }; }
+    return { ship: sub >= CFG.freeShip ? 0 : CFG.shipRate, wholesale: false };
+  }
   function discountAmount(sub, d) {
     const base = Math.max(0, Number(sub || 0)); if (!d || base <= 0) return 0;
     const t = String(d.discount_type || "").toLowerCase(), pc = Math.max(0, d.percent_off || 0), am = Math.max(0, d.amount_off || 0);
@@ -638,7 +648,8 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
     const now = new Date().toISOString(), id = crypto.randomUUID(), rem = reminders();
     const priced = rows.map(r => ({ p: r.product, q: r.quantity, u: unitPrice(r.product), t: unitPrice(r.product) * r.quantity }));
     const sub = priced.reduce((s, i) => s + i.t, 0);
-    const ship = delivery === "pickup" || sub >= CFG.freeShip ? 0 : CFG.shipRate;
+    const stQ = profile?.shipping_state || profile?.state || "";
+    const ship = delivery === "pickup" ? 0 : shipQuote(priced.map(i => i.p), stQ, sub).ship;
     const kit = kitInfo(priced), kitDisc = kit.amount;
     const codeDisc = discountAmount(sub - kitDisc, discount), payDisc = payDiscount(sub - kitDisc, payMethod, discount);
     const disc = round(codeDisc + payDisc + kitDisc);
@@ -657,7 +668,7 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
       shipping_address_line1: l1, shipping_address_line2: l2, shipping_city: city, shipping_state: st, shipping_zip: zip,
       status: "pending", order_status: "pending", payment_status: "pending", payment_method: paymentLabel,
       payment_instructions_snapshot: null, payment_qr_image: null,
-      customer_notes: [`Delivery method: Shipping`, kitDisc ? `Kit savings: ${kit.label} (−$${kitDisc.toFixed(2)})` : "", remindLines.length ? `Reorder reminder: ${remindLines.join("; ")}` : "", payDisc ? `Payment discount: ${payMethod.label} ${payMethod.pct}% (−$${payDisc.toFixed(2)})` : "", short.length ? `Backorder: ${short.join("; ")}` : "", notes].filter(Boolean).join("\n"),
+      customer_notes: [`Delivery method: Shipping`, priced.some(i => isWholesale(i.p)) ? `Wholesale shipping: ${stQ || "state unknown"} · $${ship.toFixed(2)}` : "", kitDisc ? `Kit savings: ${kit.label} (−$${kitDisc.toFixed(2)})` : "", remindLines.length ? `Reorder reminder: ${remindLines.join("; ")}` : "", payDisc ? `Payment discount: ${payMethod.label} ${payMethod.pct}% (−$${payDisc.toFixed(2)})` : "", short.length ? `Backorder: ${short.join("; ")}` : "", notes].filter(Boolean).join("\n"),
       subtotal: sub, discount: disc, subtotal_before_discount: sub, discount_amount: disc, discount_code_amount: codeDisc, vial_discount_amount: kitDisc, discount_percent: payDisc ? payMethod.pct : undefined, store_credit_applied: 0,
       shipping: ship, tax: 0, tax_rate: 0, tax_region: "", tax_jurisdiction: "", total, source: "website_inquiry", created_at: now, updated_at: now,
       ...(sendPepkeep ? { send_pepkeep: true, send_pepkeep_at: now } : {})
@@ -1201,7 +1212,7 @@ ${rows.length ? `<div class="mbl">${rows.map(r => `<div class="mbr${r.key === ad
   }
   document.addEventListener("DOMContentLoaded", ownerChip);
   document.addEventListener("click", async e => { if (!e.target.closest("[data-signout-g]")) return; e.preventDefault(); try { (localStorage.removeItem("pst-shelf-cache"), await client().auth.signOut()); } catch {} location.href = "index.html"; });
-  window.PST = { giftLines, flipper, mountFlip, activePromotions, vialCanvas, US_STATES, stateCode, stateSelect, kitInfo, SMS_CONSENT, usPhone, fmtPhone, PREVIEW, lockScroll, CFG, FOCUS, REMIND, $, $$, esc, money, round, params, store, fmtDate, isStandalone, isIOS, client, getUser, getProfile, isAdmin, customerName, firstName,
+  window.PST = { shipQuote, isWholesale, WS_ZONES, giftLines, flipper, mountFlip, activePromotions, vialCanvas, US_STATES, stateCode, stateSelect, kitInfo, SMS_CONSENT, usPhone, fmtPhone, PREVIEW, lockScroll, CFG, FOCUS, REMIND, $, $$, esc, money, round, params, store, fmtDate, isStandalone, isIOS, client, getUser, getProfile, isAdmin, customerName, firstName,
     products, groups, cycles, suggestDays, myHistory, myProducts, isDone, handedOff, stageOf, vialLiquid, paidNotice, gIn, gBest, gMin, unitPrice, onSale, qty, stock, focuses, isBlend, titleParts, productUrl, coaHref, vial, cmpProduct,
     readCart, writeCart, addToCart, setQty, count, refreshCount, cartRows, reminders, setReminder,
     photo: () => VIAL_ON, vialStudio, bakeBottle, vialSig, vialColorName, LABEL_COLORS, track, validateDiscount, discountAmount, payDiscount, payLabel, OTHER_PAY, isOtherPay, backordersOn, creditBalance, freeVials, choiceRewards, paymentMethods, payCard, submitOrder, venmoLink, openAvailability,
