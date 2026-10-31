@@ -488,3 +488,16 @@ body.app-home .shelf{padding-bottom:4px}
 .slrow{display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:start;padding:9px 0;border-bottom:1px solid var(--line)}.slrow:last-child{border-bottom:0}.slrow[hidden]{display:none}
 .slrow b{display:block;font-size:14px;color:var(--ink)}.slrow small{display:block;font-size:12px;color:var(--muted)}
 .slrow.ok .omic{color:#2f9e5b}.slrow.bad .omic{color:#d9534f}.slrow .omic{font-weight:800;line-height:1.4}
+/* Add-to-bag popup: white card, red header band, red accents (Jeff, Oct 30 2026). Same look in light and dark mode. */
+.sheetwrap.bagpop .sheet{--card:#FFFFFF;--card2:#F7F5F0;--bg:#F3F1EC;--line:#E6E2DA;--line2:#CFC9BE;--ink:#0A1020;--muted:#4A5468;--dim:#6E778A;background:#fff;color:#0A1020;border:0;border-top:6px solid #C8102E;padding-top:0;box-shadow:0 -10px 40px rgba(0,0,0,.45)}
+.sheetwrap.bagpop .mbag h2{margin:0 -20px 6px;padding:18px 56px 16px 20px;background:#C8102E;color:#fff;font-size:1.55rem}
+.sheetwrap.bagpop .mbag h2 svg{color:#fff;background:rgba(255,255,255,.18);border-radius:50%;padding:3px}
+.sheetwrap.bagpop .sheet>.sx{background:transparent;color:#fff;margin-top:6px;position:absolute;right:8px;top:6px;float:none;z-index:7}
+.sheetwrap.bagpop .mbag>p.muted{margin-top:16px}
+.sheetwrap.bagpop .mbr.new{background:rgba(200,16,46,.07)}
+.sheetwrap.bagpop .mbr b,.sheetwrap.bagpop .mbr em,.sheetwrap.bagpop .sum b,.sheetwrap.bagpop .sum span{color:#0A1020}
+.sheetwrap.bagpop .mbq button{color:#0A1020;border-color:#CFC9BE}
+.sheetwrap.bagpop .shipbar{background:#ECE9E2}.sheetwrap.bagpop .shipbar i{background:#C8102E}.sheetwrap.bagpop .ship span{color:#4A5468}
+.sheetwrap.bagpop .btn.primary{background:#C8102E;border-color:#C8102E;color:#fff}
+.sheetwrap.bagpop .btn.ghost{background:#fff;color:#0A1020;border:1px solid #0A1020}
+@media(min-width:700px){.sheetwrap.bagpop .sheet{border-top:0;border-left:6px solid #C8102E}}
