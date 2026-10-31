@@ -42,6 +42,7 @@
 <div class="shelf">${[...saved].sort((a, b) => sname(a).localeCompare(sname(b), undefined, { numeric: true, sensitivity: "base" })).map(r => `<div class="shrow vprow${r.product_key ? "" : " low"}" data-vpk="${esc(`${r.product_name} ${r.strength} ${r.vendor_item_number} ${r.product_key || ""} ${sname(r)}`.toLowerCase())}"><span></span><span><b>${esc(sname(r))}</b><small>${r.product_key ? `${esc(`Vendor: ${r.product_name} ${r.strength || ""}`.trim())} · ` : ""}${esc(r.vendor_item_number || "no SKU")}${r.product_key ? "" : " · not one of your products"}</small>
 <span class="vpact"><button type="button" class="linkish" data-vpe="${r.id}">Change price</button>${r.product_key ? "" : ` · <button type="button" class="linkish" data-vpo="${r.id}">Order it</button>`}</span></span><em>${usd(r.kit_cost)}</em></div>`).join("") || `<p class="muted small">No price list for this vendor yet.</p>`}</div>`;
     };
+    const say = (m, ok) => { st.textContent = m; const b = el.querySelector("[data-vpst2]"); if (b) { b.textContent = m; b.className = `status ${ok ? "good" : "bad"}`; } };
     const review = () => {
       // Oct 31: nothing is greyed out. A match saved from an older upload never blocks this one (saving moves it here),
       // and picking a product another row in this sheet already has moves it to this row.
@@ -50,8 +51,8 @@
       const m = staged.filter(r => r.key).length;
       body.innerHTML = `<h2 class="serif osec">Check before saving</h2><p class="muted small">${staged.length} rows · ${m} matched · ${staged.length - m} not. Fix any match or price, then save.</p>
 <div class="vprev">${staged.map((r, i) => `<div class="vpr${r.key ? "" : " un"}${r.bad ? " bad" : ""}"><b>${esc(r.name)} ${esc(r.strength)}</b><small>row ${r.row}${r.sku ? ` · ${esc(r.sku)}` : ""}${r.bad ? ` · ${esc(r.bad)}` : ""}</small>
-<div class="vpctl"><select data-vpm="${i}" aria-label="Match for ${esc(r.name)}">${opts(r)}</select><label class="edp">$<input type="number" min="0" step="0.01" inputmode="decimal" data-vpc="${i}" value="${r.costStr === "" ? "" : r.cost}" placeholder="kit cost" aria-label="Kit cost"></label></div></div>`).join("")}</div>
-<div class="rrbar"><button class="btn primary wide" type="button" data-vpsave>Save ${staged.length} rows to ${esc(vendors.find(x => x.id === vendorId)?.company_name || "vendor")}</button><button class="btn ghost wide" type="button" data-vpcancel style="margin-top:8px">Cancel</button></div>`;
+<div class="vpctl"><select data-vpm="${i}" aria-label="Match for ${esc(r.name)}">${opts(r)}</select><label class="edp">$<input type="number" min="0" step="0.01" inputmode="decimal" data-vpc="${i}" value="${r.costStr === "" ? "" : r.cost}" placeholder="kit cost" aria-label="Kit cost"></label><button type="button" class="linkish small" data-vprm="${i}" aria-label="Leave row ${r.row} out">Leave out</button></div></div>`).join("")}</div>
+<div class="rrbar"><p class="status bad" data-vpst2 role="alert" style="margin:0 0 8px"></p><button class="btn primary wide" type="button" data-vpsave>Save ${staged.length} rows to ${esc(vendors.find(x => x.id === vendorId)?.company_name || "vendor")}</button><button class="btn ghost wide" type="button" data-vpcancel style="margin-top:8px">Cancel</button></div>`;
     };
     el.onchange = async e => {
       if (e.target.matches("[data-vpv]")) { vendorId = e.target.value; staged = []; st.textContent = ""; showSaved(); return; } // his bug: kept the old review
@@ -85,15 +86,19 @@
     };
     el.onclick = async e => {
       if (e.target.closest("[data-vpcancel]")) { staged = []; showSaved(); return; }
+      const rm = e.target.closest("[data-vprm]"); if (rm) { const r = staged[+rm.dataset.vprm]; staged.splice(+rm.dataset.vprm, 1); review(); say(`Row ${r.row} left out.`, true); return; }
       if (e.target.closest("[data-vpsave]")) { // = save(), with his checks plus: a blank cost is an error, not $0
-        staged.forEach(r => { r.bad = !r.name ? "needs a product name" : r.costStr === "" || !Number.isFinite(r.cost) || r.cost < 0 ? "needs a kit cost" : ""; });
-        const bad = staged.filter(r => r.bad); if (bad.length) { review(); st.textContent = `${bad.length} row${bad.length === 1 ? "" : "s"} need fixing (first: spreadsheet row ${bad[0].row}).`; return; }
-        const sk = staged.filter(r => r.sku).map(r => norm(r.sku) + "|" + normStrength(r.strength)); if (new Set(sk).size !== sk.length) { st.textContent = "The same SKU and strength appears twice. Fix the sheet and upload again."; return; }
-        const ks = staged.filter(r => r.key).map(r => r.key); if (new Set(ks).size !== ks.length) { st.textContent = "One of your products is matched twice."; return; }
+        const firstSk = new Map();
+        staged.forEach(r => { const k = r.sku ? norm(r.sku) + "|" + normStrength(r.strength) : ""; const dup = k && firstSk.has(k) ? firstSk.get(k) : null; if (k && !firstSk.has(k)) firstSk.set(k, r);
+          r.bad = !r.name ? "needs a product name" : r.costStr === "" || !Number.isFinite(r.cost) || r.cost < 0 ? "needs a kit cost" : dup ? `same SKU and size as row ${dup.row}: fix one or tap Leave out` : ""; });
+        const bad = staged.filter(r => r.bad);
+        if (bad.length) { review(); say(`Not saved yet: ${bad.length} row${bad.length === 1 ? " needs" : "s need"} a fix (outlined in red). First is spreadsheet row ${bad[0].row}: ${bad[0].bad}.`);
+          const i = staged.indexOf(bad[0]); el.querySelector(`[data-vpc="${i}"]`)?.closest(".vpr")?.scrollIntoView({ block: "center", behavior: "smooth" }); return; }
+        const ks = staged.filter(r => r.key).map(r => r.key); if (new Set(ks).size !== ks.length) { say("One of your products is matched twice."); return; }
         const vn = vendors.find(x => x.id === vendorId)?.company_name || "this vendor";
         if (!(await window.PSTOps.confirmSheet(`Save ${staged.length} prices for ${vn}?`, "Matched items update the kit cost used on new purchase orders. Your shop prices don't change, and orders already placed keep their prices.", "Save prices"))) { review(); return; }
         const { data, error } = await P.client().rpc("pst_admin_import_vendor_catalog", { p_vendor_id: vendorId, p_rows: staged.map(r => ({ product_name: r.name, strength: r.strength, vendor_item_number: r.sku, kit_cost: r.cost, product_key: r.key || null })) });
-        if (error) { review(); st.textContent = "Not saved: " + error.message; return; }
+        if (error) { review(); say("Not saved: " + error.message); return; }
         staged = []; P.toast(`${data} prices saved for ${vn}`); st.textContent = ""; showSaved(); return;
       }
       const ed = e.target.closest("[data-vpe]"); if (ed) { const r = saved.find(x => x.id === ed.dataset.vpe); // one-row import through the same RPC
