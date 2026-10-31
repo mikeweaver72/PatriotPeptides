@@ -266,3 +266,7 @@ language sql stable security definer set search_path to '' as $$
 $$;
 revoke all on function public.ppu_partner_stats() from public, anon;
 grant execute on function public.ppu_partner_stats() to authenticated;
+
+-- Partner orders use storefront 'partner_portal' (applied Oct 31 as ppu_orders_storefront_partner)
+alter table public.orders drop constraint if exists orders_storefront_allowed;
+alter table public.orders add constraint orders_storefront_allowed check (storefront = any (array['peptides'::text, 'supplies'::text, 'partner_portal'::text])) not valid;

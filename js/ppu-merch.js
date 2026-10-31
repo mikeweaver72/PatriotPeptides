@@ -34,7 +34,7 @@
     pick.q = Math.max(1, Math.min(pick.q, Math.max(1, n)));
     const ready = v && n > 0, need = cur.sizes.length && !pick.size ? "Pick a size" : cur.colors.length && !pick.color ? "Pick a color" : !v || n <= 0 ? "Sold out" : "";
     return `<div class="mdet"><div class="mbig">${pic(src, `${cur.name}${pick.color ? ` in ${pick.color}` : ""}`, "mph")}</div>
-<div class="minfo"><h2 class="serif">${esc(cur.name)}</h2><p class="mprice"><b>${money(price)}</b>${v && P.onSale(v) ? ` <s>${money(v.price)}</s>` : ""}</p>
+<div class="minfo"><h2 class="serif">${esc(cur.name)}</h2><p class="mprice"><b>${money(price)}</b>${(v ? P.onSale(v) : cur.sale) ? ` <s>${money(v ? v.price : Math.min(...cur.vs.map(x => Number(x.price) || 0)))}</s>` : ""}</p>
 ${cur.desc ? `<p class="muted">${esc(cur.desc)}</p>` : ""}
 ${cur.colors.length ? `<p class="kick">Color${pick.color ? `: <span>${esc(pick.color)}</span>` : ""}</p><div class="mchips" role="radiogroup" aria-label="Color">${cur.colors.map(c => `<button type="button" role="radio" aria-checked="${c === pick.color}" data-mcolor="${esc(c)}"${colorOk(c) ? "" : ' class="out"'}>${esc(c)}</button>`).join("")}</div>` : ""}
 ${cur.sizes.length ? `<p class="kick">Size${pick.size ? `: <span>${esc(pick.size)}</span>` : ""}</p><div class="mchips" role="radiogroup" aria-label="Size">${cur.sizes.map(s => { const ok = sizeOk(s); return `<button type="button" role="radio" aria-checked="${s === pick.size}" data-msize="${esc(s)}"${ok ? "" : ` disabled aria-disabled="true" title="Sold out"`}>${esc(s)}</button>`; }).join("")}</div>` : ""}

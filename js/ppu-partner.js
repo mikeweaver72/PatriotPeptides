@@ -60,7 +60,7 @@ ${stats ? `<div class="pstats"><div><small>Earned</small><b>${money(stats.earned
 ${progress()}<p class="muted small">Prices are per 10-vial kit and for your account only. Orders go out with the next twice-monthly block. Supplier shipping is split across the group, so your share is billed after the block ships.</p>
 <input class="psearch" type="search" data-vsearch placeholder="Search ${sheet.length} products" aria-label="Search your price sheet" value="${esc(q)}">
 <div class="vlist" data-vlist>${sheet.map(rowHtml).join("") || `<p class="muted">Your price sheet is being set up. Check back soon.</p>`}</div>
-<div data-vrecent></div><div data-vbar>${barHtml()}</div>`;
+<div data-vbar>${barHtml()}</div><div data-vrecent></div>`;
     filter();
   }
   function progress() {
