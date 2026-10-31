@@ -591,3 +591,6 @@ body.app-home .shelf{padding-bottom:4px}
 .vprepl{display:flex;gap:10px;align-items:flex-start;margin:0 0 10px;font-size:14px}.vprepl input{margin-top:3px;flex:none}
 .vprepl span{display:flex;flex-direction:column;gap:2px;min-width:0}.vprepl b{font-size:14px;line-height:1.3}.vprepl small{font-size:12.5px;line-height:1.35}
 .vpbar .status:empty{display:none}.vpbar .status{font-size:13px}
+/* merch editor: remove background (Oct 31) */
+.mphotow{display:flex;flex-direction:column;gap:4px}.mcutgo{font-size:12.5px;text-align:center}.mcutgo:disabled{opacity:.6}
+.mcutp img{outline:2px solid #C8102E;outline-offset:-2px}.mcutb{display:flex;flex-direction:column;gap:6px}.mcutb .btn{width:100%;padding:8px 6px;font-size:11.5px}
