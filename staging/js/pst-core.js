@@ -732,7 +732,7 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
   <button class="mobi" type="button" data-act="drawer" aria-label="Menu" aria-controls="drawer">${icon("menu")}</button>
   <nav class="nav l" aria-label="Shop">
     <div class="mm"><button type="button" class="mmb" data-act="mega" aria-expanded="false" aria-controls="mega">Shop <span aria-hidden="true">▾</span></button></div>
-    ${a("kit.html", "Build a kit", "kit")}${a("catalog.html?category=Multi-Peptide%20Product", "Blends", "blends")}${a("testing.html", "Lab reports", "testing")}${a("rewards.html", "Rewards", "rewards")}<a href="https://www.starnstone.com" target="_blank" rel="noopener">Skin care <span aria-hidden="true">↗</span><span class="sr"> (Star N Stone, opens in a new tab)</span></a></nav>
+    ${a("kit.html", "Build a kit", "kit")}${a("catalog.html?category=Multi-Peptide%20Product", "Blends", "blends")}${a("testing.html", "Lab reports", "testing")}${a("rewards.html", "Rewards", "rewards")}</nav>
   <a href="index.html" class="brand" aria-label="Patriot Peptides USA home"><img src="${EMB}" alt="" width="40" height="40"><span>PATRIOT <em>PEPTIDES</em></span></a>
   <nav class="nav r" aria-label="Account">
     <button type="button" class="hbtn" data-act="search" aria-label="Search">${icon("search", 18)} <span>Search</span></button>
