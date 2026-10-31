@@ -75,6 +75,6 @@ ${ready && n <= 3 ? `<p class="mlow">Only ${n} left</p>` : ""}
       items = build((await P.merchProducts()).filter(p => p.is_active !== false));
       el.innerHTML = items.length ? `<div class="mgrid2">${items.map(card).join("")}</div>` : `<div class="mgate msoon">${P.icon("star", 28)}<h2 class="serif">New gear is on the way</h2><p class="muted">Patriot Peptides USA shirts, hats and more are coming soon. We'll have them here the moment they land.</p><a class="btn primary" href="catalog.html">Shop the collection</a></div>`;
       const want = P.params.get("item"); if (want) open(want);
-    } catch (err) { el.innerHTML = `<p class="empty">Couldn't load merch. ${esc(err.message || "")}</p>`; }
+    } catch (err) { console.warn("merch", err); el.innerHTML = `<div class="mgate msoon">${P.icon("bell", 28)}<h2 class="serif">We couldn't load the gear</h2><p class="muted">Something hiccuped on our end. Give it a minute and try again.</p><button class="btn primary" type="button" onclick="location.reload()">Try again</button></div>`; }
   });
 })();
