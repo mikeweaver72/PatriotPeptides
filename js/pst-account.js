@@ -13,7 +13,7 @@
   }
 
   /* ---------------- ACCOUNT ---------------- */
-  let user, profile, orders = [], items = {}, admin = false, mine = [];
+  let user, profile, orders = [], items = {}, admin = false, mine = [], partner = null;
   const stageOf = o => {
     const s = String(o.order_status || o.status || "pending").toLowerCase(), pay = String(o.payment_status || "pending").toLowerCase();
     const pickup = /local pickup/i.test(o.customer_notes || "");
@@ -31,6 +31,7 @@
     root.innerHTML = `<p class="muted">Loading your account…</p>`;
     profile = await P.getProfile(user);
     admin = await P.isAdmin(user).catch(() => false);
+    partner = await P.client().rpc("ppu_my_partner").then(r => r.data || null, () => null); // partners get a button to their portal
     let r = await P.client().from("orders").select("id,order_number,status,order_status,total,subtotal,shipping,tax,payment_status,payment_method,tracking_number,tracking_carrier,customer_notes,created_at,updated_at,send_pepkeep").eq("customer_id", user.id).order("created_at", { ascending: false });
     if (r.error) r = await P.client().from("orders").select("id,order_number,status,total,subtotal,shipping,tax,payment_status,tracking_number,tracking_carrier,created_at").eq("customer_id", user.id).order("created_at", { ascending: false });
     orders = r.data || []; items = {};
@@ -43,7 +44,7 @@
     legacy = await P.client().from("ppu_legacy_orders").select("woo_order,ordered_at,status,total,shipping,payment_method,items").order("ordered_at", { ascending: false }).then(r => r.data || [], () => []); // orders from the old WooCommerce store
     mine = await P.myProducts(await P.myHistory(user)).catch(() => []);
     const due = mine.filter(m => !m.inProgress && m.left <= 7).map(m => ({ days: m.left }));
-    root.innerHTML = `<div class="hello"><img src="img/pst-emblem-96.webp" width="52" height="52" alt=""><div><small>${esc(profile?.customer_number ? "Customer PP-C" + profile.customer_number : "My account")}</small><h1 class="serif" style="font-size:2.2rem;margin:0">Hi, ${esc(P.firstName(profile, user))}</h1></div><button class="btn ghost sm hsign" type="button" data-signout>Sign out</button></div>${admin ? `<a class="ownercta" href="owner.html"><span class="oc-ic">${P.icon("box", 20)}</span><span><b>Open the owner app</b><small>Orders, payments, customers, products</small></span><span class="oc-go">›</span></a>` : ""}
+    root.innerHTML = `<div class="hello"><img src="img/pst-emblem-96.webp" width="52" height="52" alt=""><div><small>${esc(profile?.customer_number ? "Customer PP-C" + profile.customer_number : "My account")}</small><h1 class="serif" style="font-size:2.2rem;margin:0">Hi, ${esc(P.firstName(profile, user))}</h1></div><button class="btn ghost sm hsign" type="button" data-signout>Sign out</button></div>${admin ? `<a class="ownercta" href="owner.html"><span class="oc-ic">${P.icon("box", 20)}</span><span><b>Open the owner app</b><small>Orders, payments, customers, products</small></span><span class="oc-go">›</span></a>` : ""}${partner && partner.status !== "paused" ? `<a class="ownercta" href="vendor.html"><span class="oc-ic">${P.icon("box", 20)}</span><span><b>Open your partner portal</b><small>${esc(partner.tier_name || "Partner")} ${partner.tier === 1 ? "· your code and earnings" : "· your pricing and orders"}</small></span><span class="oc-go">›</span></a>` : ""}
 <div class="acct"><nav class="atabs" aria-label="Account sections">${[["orders", "Orders"], ["running-low", `Running low${due.filter(d => d.days <= 7).length ? ` (${due.filter(d => d.days <= 7).length})` : ""}`], ["rewards", "Rewards"], ["profile", "Profile"], ["alerts", "Notifications"]].map(([k, t]) => `<button class="tab" type="button" data-tab="${k}">${t}</button>`).join("")}</nav><div data-pane></div></div>`;
     root.addEventListener("click", accountClick);
     showTab((location.hash || "#orders").slice(1));
@@ -168,7 +169,7 @@ ${admin ? `<div class="setrow"><div><b>Store owner</b><span>The owner app (order
   async function reorder(ids, stat) {
     const want = ids.flatMap(id => items[id] || []);
     if (!want.length) return;
-    const all = await P.products(); const cart = P.readCart(); let added = 0, skipped = 0;
+    const all = await P.allProducts(); /* merch reorders too */ const cart = P.readCart(); let added = 0, skipped = 0;
     want.forEach(x => {
       const p = all.find(q => q.id === x.product_id || q.product_key === x.product_key || q.product_key === String(x.product_id || "").replace(/^(?:product|stack):/i, ""));
       const n = p ? P.qty(p) : 0; if (!p || n <= 0) { skipped++; return; }
