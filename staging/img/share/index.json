@@ -1,11 +1,11 @@
 {
  "BAC-W-3ML": {
-  "sig": "BAC-W-3ML|BAC-W|3ml",
-  "slug": "bac-w-bac-w-3ml"
+  "sig": "BAC-W-3ML|PP-BAC-W|3ml",
+  "slug": "pp-bac-w-bac-w-3ml"
  },
  "BAC-W-10ML": {
-  "sig": "BAC-W-10ML|BAC-W|10ml",
-  "slug": "bac-w-bac-w-10ml"
+  "sig": "BAC-W-10ML|PP-BAC-W|10ml",
+  "slug": "pp-bac-w-bac-w-10ml"
  },
  "PP-2-TZ-10MG": {
   "sig": "PP-2-TZ-10MG|PP-2-TZ|10mg",
@@ -172,11 +172,11 @@
   "slug": "pp-pt-141-pp-pt-141-10mg"
  },
  "PP-SERM-10MG": {
-  "sig": "PP-SERM-10MG|PP-Serm|10mg",
+  "sig": "PP-SERM-10MG|PP-SERM|10mg",
   "slug": "pp-serm-pp-serm-10mg"
  },
  "PP-SERM-20MG": {
-  "sig": "PP-SERM-20MG|PP-Serm|20mg",
+  "sig": "PP-SERM-20MG|PP-SERM|20mg",
   "slug": "pp-serm-pp-serm-20mg"
  },
  "PP-SLU-332-10MG": {
@@ -208,11 +208,11 @@
   "slug": "pp-tesa-pp-tesa-10-mg-10vial"
  },
  "PP-TESA-10MG": {
-  "sig": "PP-TESA-10MG|PP-Tesa|10mg",
+  "sig": "PP-TESA-10MG|PP-TESA|10mg",
   "slug": "pp-tesa-pp-tesa-10mg"
  },
  "PP-TESA-20MG": {
-  "sig": "PP-TESA-20MG|PP-Tesa|20mg",
+  "sig": "PP-TESA-20MG|PP-TESA|20mg",
   "slug": "pp-tesa-pp-tesa-20mg"
  },
  "PP-WLV-10MG": {
@@ -228,27 +228,31 @@
   "slug": "pp-kpv-pp-kpv-5mg"
  },
  "PSTP100004": {
-  "sig": "PSTP100004|DSIP|5mg",
-  "slug": "dsip-pstp100004"
+  "sig": "PSTP100004|PP-DSIP|5mg",
+  "slug": "pp-dsip-pstp100004"
  },
  "PSTP100003": {
-  "sig": "PSTP100003|DSIP|10mg",
-  "slug": "dsip-pstp100003"
+  "sig": "PSTP100003|PP-DSIP|10mg",
+  "slug": "pp-dsip-pstp100003"
  },
  "PSTP100002": {
-  "sig": "PSTP100002|Glutathione|600",
-  "slug": "glutathione-pstp100002"
+  "sig": "PSTP100002|PP-Gluta|600",
+  "slug": "pp-gluta-pstp100002"
  },
  "PSTP100001": {
-  "sig": "PSTP100001|Glutathione|1500",
-  "slug": "glutathione-pstp100001"
+  "sig": "PSTP100001|PP-Gluta|1500",
+  "slug": "pp-gluta-pstp100001"
  },
  "PSTP100006": {
-  "sig": "PSTP100006|Selank|5mg",
-  "slug": "selank-pstp100006"
+  "sig": "PSTP100006|PP-SLNK|5mg",
+  "slug": "pp-slnk-pstp100006"
  },
  "PSTP100005": {
-  "sig": "PSTP100005|Selank|10mg",
-  "slug": "selank-pstp100005"
+  "sig": "PSTP100005|PP-SLNK|10mg",
+  "slug": "pp-slnk-pstp100005"
+ },
+ "PSTP100007": {
+  "sig": "PSTP100007|PP-ARA-290|10mg",
+  "slug": "pp-ara-290-pstp100007"
  }
 }

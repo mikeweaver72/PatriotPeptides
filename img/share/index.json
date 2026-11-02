@@ -236,12 +236,12 @@
   "slug": "pp-dsip-pstp100003"
  },
  "PSTP100002": {
-  "sig": "PSTP100002|PP-Glutathione|600",
-  "slug": "pp-glutathione-pstp100002"
+  "sig": "PSTP100002|PP-Gluta|600",
+  "slug": "pp-gluta-pstp100002"
  },
  "PSTP100001": {
-  "sig": "PSTP100001|PP-Glutathione|1500",
-  "slug": "pp-glutathione-pstp100001"
+  "sig": "PSTP100001|PP-Gluta|1500",
+  "slug": "pp-gluta-pstp100001"
  },
  "PSTP100006": {
   "sig": "PSTP100006|PP-SLNK|5mg",
