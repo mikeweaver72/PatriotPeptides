@@ -366,14 +366,14 @@ html,body,body.noscroll{background:#fff!important;overflow:visible!important;hei
 #poprint .ppf{display:flex;justify-content:space-between;margin-top:26px;padding-top:8px;border-top:2px solid #12266E;color:#777;font-size:9.5px}
 }
 /* v514 More: drag handles to arrange cards */
-.mcards .mrow{display:flex;align-items:stretch;gap:8px;position:relative;touch-action:pan-y}
-.mcards .mrow>.mcard{flex:1;min-width:0}
-.mgrip{flex:none;width:34px;display:grid;place-items:center;border:1px dashed var(--line);border-radius:12px;background:transparent;color:var(--dim);cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none;padding:0}
-.mgrip:hover,.mgrip:focus-visible{color:var(--gold);border-color:var(--gold);outline:none}
+.mcards .mrow{position:relative;display:block}
+.mcards .mrow>.mcard{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;transition:transform .18s,box-shadow .18s,border-color .18s}
+.mcards .mrow.pressing>.mcard{transform:scale(.98);transition-duration:.45s}
 .mcards.sorting{-webkit-user-select:none;user-select:none}.mcards.sorting .mrow:not(.dragging){transition:transform .15s}
-.mrow.dragging{z-index:5}.mrow.dragging .mgrip{cursor:grabbing;color:var(--gold);border-color:var(--gold);border-style:solid}
-.mrow.dragging .mcard{box-shadow:0 14px 34px rgba(0,0,0,.45);border-color:var(--gold);transform:scale(1.02)}
-.mresetp{text-align:center;margin:10px 0 0}
+.mrow.dragging{z-index:5}
+.mrow.dragging .mcard{box-shadow:0 14px 34px rgba(0,0,0,.45);border-color:var(--gold);transform:scale(1.03);transition:none}
+.mtopbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px;font-size:12px;color:var(--muted)}
+.mtopbar .btn[disabled]{opacity:.45;pointer-events:none}
 /* v516 COA peek: badge on the vial, hover preview (computer), full-screen sheet (phone) */
 .spot>.vstick{position:relative;display:grid;place-items:center}
 .coapeek{position:absolute;right:-92px;top:46%;display:flex;align-items:center;gap:8px;padding:8px 12px 8px 10px;border-radius:999px;border:1px solid var(--gold);background:rgba(10,16,28,.82);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:var(--gold2,var(--gold));text-decoration:none;box-shadow:0 6px 18px rgba(0,0,0,.35);cursor:help;z-index:3}
