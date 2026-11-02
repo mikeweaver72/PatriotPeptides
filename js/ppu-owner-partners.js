@@ -5,7 +5,7 @@
 (() => {
   const P = window.PST, esc = P.esc, money = P.money;
   const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
-  const PORTAL = "https://www.patriotpeptides-usa.com/vendor.html";
+  const PORTAL = new URL("vendor.html", location.href).href; // same site the owner is on (staging links to staging)
   let host = null, tab = "people", tiers = [], people = [], prices = [], stats = {}, tierPick = 2, tierFilter = 0, q = "";
   const tierName = id => tiers.find(t => t.id === id)?.name || `Tier ${id}`;
   const db = () => P.client();

@@ -33,7 +33,12 @@
     const root = $("[data-owner]");
     me = await P.getUser();
     if (!me) { root.innerHTML = `<div class="empty"><h1 class="serif">Owner sign in</h1><p>Sign in with your admin account.</p><a class="btn primary" href="login.html?redirect=owner.html">Sign in</a></div>`; return; }
-    if (!(await P.isAdmin(me))) { root.innerHTML = `<div class="empty"><h1 class="serif">Owners only</h1><p>This page is for Patriot Peptides USA staff.</p><a class="btn ghost" href="index.html">Go to the shop</a></div>`; return; }
+    if (!(await P.isAdmin(me))) {
+      const pt = await P.client().rpc("ppu_my_partner").then(r => r.data || null, () => null); // a partner who lands here gets sent to their own portal
+      root.innerHTML = pt ? `<div class="empty"><h1 class="serif">Partner portal</h1><p>You're signed in as ${esc(me.email || "")}. This page is the owner side; your ${esc(pt.tier_name || "partner")} pricing and orders are in the partner portal.</p><a class="btn primary" href="vendor.html">Open my partner portal</a></div>`
+        : `<div class="empty"><h1 class="serif">Owners only</h1><p>This page is for Patriot Peptides USA staff. You're signed in as ${esc(me.email || "")}.</p><a class="btn ghost" href="index.html">Go to the shop</a></div>`;
+      return;
+    }
     document.body.classList.add("oapp");
     P.mountFlip?.("owner");
     root.innerHTML = `<header class="ohd"><div><small>Patriot Peptides USA</small><h1 class="serif" data-otitle>Today</h1></div><div class="ohr"><button class="btn ghost sm othb" type="button" data-othb aria-label="Switch light or dark"></button><button class="btn ghost sm" type="button" data-q="lookup" aria-label="Look up anything">${P.icon("search", 18)}</button><button class="btn ghost sm bell" type="button" data-bell data-act="inbox" aria-label="Notifications">${P.icon("bell", 18)}<i hidden>0</i></button><a class="btn ghost sm shopsw" href="index.html?from=owner" aria-label="Open the shop as a customer">${P.icon("shop", 18)}<span>Shop</span></a></div></header>
