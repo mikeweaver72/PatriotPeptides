@@ -254,5 +254,17 @@
  "PSTP100007": {
   "sig": "PSTP100007|PP-ARA-290|10mg",
   "slug": "pp-ara-290-pstp100007"
+ },
+ "PP-2-TZ-20MG-10VIAL": {
+  "sig": "PP-2-TZ-20MG-10VIAL|PP-2-TZ|10-vial kit · 20mg",
+  "slug": "pp-2-tz-pp-2-tz-20mg-10vial"
+ },
+ "PP-GHK-CU-50MG-10VIAL": {
+  "sig": "PP-GHK-CU-50MG-10VIAL|PP-GHK-Cu|10-vial kit · 50mg",
+  "slug": "pp-ghk-cu-pp-ghk-cu-50mg-10vial"
+ },
+ "PP-MLTN-I-10MG-10VIAL": {
+  "sig": "PP-MLTN-I-10MG-10VIAL|PP-MLTN-I|10-vial kit · 10mg",
+  "slug": "pp-mltn-i-pp-mltn-i-10mg-10vial"
  }
 }
