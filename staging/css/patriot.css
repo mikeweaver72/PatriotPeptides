@@ -613,3 +613,8 @@ body.app-home .shelf{padding-bottom:4px}
 /* merch editor: remove background (Oct 31) */
 .mphotow{display:flex;flex-direction:column;gap:4px}.mcutgo{font-size:12.5px;text-align:center}.mcutgo:disabled{opacity:.6}
 .mcutp img{outline:2px solid #C8102E;outline-offset:-2px}.mcutb{display:flex;flex-direction:column;gap:6px}.mcutb .btn{width:100%;padding:8px 6px;font-size:11.5px}
+/* Gold Standard lab screen (owner, More → Gold Standard lab; Nov 6 2026) */
+[data-gsa2] .pmtop{display:flex;flex-wrap:wrap;gap:8px}[data-gsa2] .pmtop .btn{flex:1 1 160px}
+[data-gsa2] .emhd{display:flex;justify-content:space-between;align-items:center;gap:10px}[data-gsa2] .emhd b{min-width:0;overflow-wrap:anywhere}
+[data-gsa2] .osheet{margin-bottom:10px}[data-gsa2] .notice{padding:10px 12px;border:1px solid var(--line);font-size:13px}
+.gord .chips{display:flex;flex-wrap:wrap;gap:6px}.gord .glot select,.gord .glot input{min-width:0;width:100%}
