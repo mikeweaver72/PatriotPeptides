@@ -16,7 +16,8 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
 const SB_URL = Deno.env.get("SUPABASE_URL")!, SRK = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-let KEY = Deno.env.get("GSA_API_KEY") || ""; // or pst_app_secrets.gsa_api_key (read on first use)
+const ENV_KEY = Deno.env.get("GSA_API_KEY") || ""; // else pst_app_secrets.gsa_api_key, read on every call so a new key works right away
+const apiKey = async () => ENV_KEY || await secret("gsa_api_key");
 const GSA = "https://www.goldstandardanalytics.com", API = `${GSA}/api/v1/agent`;
 const SELF = `${SB_URL}/functions/v1/pst-gsa`;
 const db = createClient(SB_URL, SRK, { auth: { persistSession: false } });
@@ -29,7 +30,7 @@ const idem = (p: string) => `pst-${p}-${crypto.randomUUID()}`;
 /* ---------- Gold Standard API ---------- */
 class GsaError extends Error { status = 0; code = ""; details: unknown = null; }
 async function gsa(path: string, init: RequestInit & { idemKey?: string } = {}) {
-  if (!KEY) KEY = await secret("gsa_api_key");
+  const KEY = await apiKey();
   if (!KEY) { const e = new GsaError("The Gold Standard key (GSA_API_KEY) isn't set on the server yet."); e.status = 500; throw e; }
   const headers: Record<string, string> = { Authorization: `Bearer ${KEY}`, Accept: "application/json", "Content-Type": "application/json" };
   if (init.idemKey) headers["Idempotency-Key"] = init.idemKey;
@@ -161,8 +162,7 @@ async function action(req: Request, body: any) {
   if (act === "status") {
     const [hook, coas, orders] = await Promise.all([secret("gsa_webhook_id"), db.from("pst_gsa_coas").select("*").order("updated_at", { ascending: false }).limit(60), db.from("pst_gsa_orders").select("*").order("created_at", { ascending: false }).limit(30)]);
     let account: any = null, accountError = ""; try { account = unwrap(await gsa("/account")); } catch (e) { accountError = (e as Error).message; }
-    if (!KEY) KEY = await secret("gsa_api_key");
-    return out({ connected: !!hook, keySet: !!KEY, account, accountError, coas: coas.data || [], orders: orders.data || [] });
+    return out({ connected: !!hook, keySet: !!(await apiKey()), account, accountError, coas: coas.data || [], orders: orders.data || [] });
   }
   if (act === "connect") {
     const have = await secret("gsa_webhook_id"); if (have && !body.force) return out({ connected: true, id: have });
