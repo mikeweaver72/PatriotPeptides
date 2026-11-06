@@ -9,14 +9,14 @@
 // 2) Owner actions (owner app → here, signed-in owner only): connect, status, attach, dismiss, and
 //    ordering tests (catalog, quote + shipping price, order with the item # on each sample's lot).
 //
-// Secrets: GSA_API_KEY (Edge Function secret). The webhook signing secret Gold Standard returns when we
+// Secrets: GSA_API_KEY (Edge Function secret) or, if that isn't set, pst_app_secrets 'gsa_api_key' (RLS on, service role only). The webhook signing secret Gold Standard returns when we
 // connect is kept in public.pst_app_secrets (key 'gsa_webhook_secret'), like the existing hook key.
 // Deploy with "Verify JWT" OFF: Gold Standard can't send a Supabase login; owner actions check the
 // caller's login against admin_users here instead.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
 const SB_URL = Deno.env.get("SUPABASE_URL")!, SRK = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const KEY = Deno.env.get("GSA_API_KEY") || "";
+let KEY = Deno.env.get("GSA_API_KEY") || ""; // or pst_app_secrets.gsa_api_key (read on first use)
 const GSA = "https://www.goldstandardanalytics.com", API = `${GSA}/api/v1/agent`;
 const SELF = `${SB_URL}/functions/v1/pst-gsa`;
 const db = createClient(SB_URL, SRK, { auth: { persistSession: false } });
@@ -29,6 +29,7 @@ const idem = (p: string) => `pst-${p}-${crypto.randomUUID()}`;
 /* ---------- Gold Standard API ---------- */
 class GsaError extends Error { status = 0; code = ""; details: unknown = null; }
 async function gsa(path: string, init: RequestInit & { idemKey?: string } = {}) {
+  if (!KEY) KEY = await secret("gsa_api_key");
   if (!KEY) { const e = new GsaError("The Gold Standard key (GSA_API_KEY) isn't set on the server yet."); e.status = 500; throw e; }
   const headers: Record<string, string> = { Authorization: `Bearer ${KEY}`, Accept: "application/json", "Content-Type": "application/json" };
   if (init.idemKey) headers["Idempotency-Key"] = init.idemKey;
@@ -160,6 +161,7 @@ async function action(req: Request, body: any) {
   if (act === "status") {
     const [hook, coas, orders] = await Promise.all([secret("gsa_webhook_id"), db.from("pst_gsa_coas").select("*").order("updated_at", { ascending: false }).limit(60), db.from("pst_gsa_orders").select("*").order("created_at", { ascending: false }).limit(30)]);
     let account: any = null, accountError = ""; try { account = unwrap(await gsa("/account")); } catch (e) { accountError = (e as Error).message; }
+    if (!KEY) KEY = await secret("gsa_api_key");
     return out({ connected: !!hook, keySet: !!KEY, account, accountError, coas: coas.data || [], orders: orders.data || [] });
   }
   if (act === "connect") {
