@@ -44,12 +44,12 @@
   "slug": "pp-3-rt-pp-3-rt-50mg"
  },
  "PP-5AMINO-1MQ-10MG": {
-  "sig": "PP-5AMINO-1MQ-10MG|PP-5Amino-1MQ|10mg",
-  "slug": "pp-5amino-1mq-pp-5amino-1mq-10mg"
+  "sig": "PP-5AMINO-1MQ-10MG|PP-5AM-1MQ|10mg",
+  "slug": "pp-5am-1mq-pp-5amino-1mq-10mg"
  },
  "PP-5AMINO-1MQ-50MG": {
-  "sig": "PP-5AMINO-1MQ-50MG|PP-5Amino-1MQ|50mg",
-  "slug": "pp-5amino-1mq-pp-5amino-1mq-50mg"
+  "sig": "PP-5AMINO-1MQ-50MG|PP-5AM-1MQ|50mg",
+  "slug": "pp-5am-1mq-pp-5amino-1mq-50mg"
  },
  "PP-AOD-5MG": {
   "sig": "PP-AOD-5MG|PP-AOD|5mg",
@@ -266,5 +266,13 @@
  "PP-MLTN-I-10MG-10VIAL": {
   "sig": "PP-MLTN-I-10MG-10VIAL|PP-MLTN-I|10-vial kit · 10mg",
   "slug": "pp-mltn-i-pp-mltn-i-10mg-10vial"
+ },
+ "PSTP100008": {
+  "sig": "PSTP100008|Selank|",
+  "slug": "selank-pstp100008"
+ },
+ "PSTP100009": {
+  "sig": "PSTP100009|TB-500|",
+  "slug": "tb-500-pstp100009"
  }
 }
