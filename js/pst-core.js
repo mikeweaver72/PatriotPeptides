@@ -162,7 +162,7 @@ if (location.protocol === "http:" && /(^|\.)patriotpeptides-usa\.com$/i.test(loc
     if (/^wolverine$/i.test(t)) return { main: t.charAt(0) + t.slice(1).toLowerCase(), sub: "BPC-157 · TB-500" };
     return { main: t, sub: "" };
   }
-  const productUrl = p => isMerch(p) ? `merch.html?item=${encodeURIComponent(p.display_name || "")}` : `product.html?key=${encodeURIComponent(p.product_key)}`;
+  const productUrl = p => isMerch(p) ? `merch.html?item=${encodeURIComponent(p.display_name || "")}` : `${(window.PST_SEO && window.PST_SEO[p.product_key]) || "product.html"}?key=${encodeURIComponent(p.product_key)}`; // PST_SEO: js/pst-seo-map.js (tools/seo/build.mjs)
   const coaHref = p => { const u = String(p.coa_url || "").trim(); if (!u || /pending/i.test(u)) return ""; return /^https?:/.test(u) ? u : u.replace(/^\/?(a?ssets\/)/, "assets/").replace(/^ssets\//, "assets/"); };
 
   /* vial artwork from the product's label colour (no photos needed) */

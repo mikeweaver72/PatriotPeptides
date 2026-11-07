@@ -7,7 +7,8 @@
 const { chromium } = require("playwright"); const fs = require("fs"), path = require("path");
 const args = process.argv.slice(2).filter(a => !a.startsWith("--")), ONLY_CHANGED = process.argv.includes("--changed");
 const OUT = path.resolve(args[0] || "."), SITE = (args[1] || "https://www.patriotpeptides-usa.com").replace(/\/$/, "");
-const IDX = path.join(OUT, "img/share/index.json"); let index = {}; try { index = JSON.parse(fs.readFileSync(IDX, "utf8")); } catch {}
+const IDX = path.join(OUT, "img/share/index.json");
+let SEO_MAP = {}; try { SEO_MAP = JSON.parse((fs.readFileSync(path.join(OUT, "js/pst-seo-map.js"), "utf8").match(/window\.PST_SEO = (\{[^\n]*\});/) || [])[1] || "{}"); } catch {} let index = {}; try { index = JSON.parse(fs.readFileSync(IDX, "utf8")); } catch {}
 const esc = s => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 (async () => {
   const b = await chromium.launch({ proxy: process.env.HTTPS_PROXY ? { server: process.env.HTTPS_PROXY } : undefined });
@@ -61,7 +62,7 @@ h1{margin:26px 0 0;font-weight:900;font-size:${x.name.length <= 10 ? 92 : x.name
     await card.screenshot({ path: path.join(OUT, "img/share", x.slug + ".jpg"), type: "jpeg", quality: 84 });
     const title = `${x.name}${x.strength ? " " + x.strength : ""} | Patriot Peptides USA`;
     const desc = `${x.name}${x.strength ? " " + x.strength : ""} ${bac ? "bacteriostatic water" : "research peptide"} from Patriot Peptides USA. Third-party lab report on file, kit savings, free shipping over $200 and one-tap Venmo checkout. For research use only.`;
-    const img = `${SITE}/img/share/${x.slug}.jpg`, dest = `product.html?key=${encodeURIComponent(x.key)}`;
+    const img = `${SITE}/img/share/${x.slug}.jpg`, dest = `${SEO_MAP[x.key] || "product.html"}?key=${encodeURIComponent(x.key)}`; // the product's own SEO page when tools/seo/build.mjs has made one
     fs.writeFileSync(path.join(OUT, x.slug + ".html"), `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(title)}</title>
