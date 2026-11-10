@@ -618,3 +618,8 @@ body.app-home .shelf{padding-bottom:4px}
 [data-gsa2] .emhd{display:flex;justify-content:space-between;align-items:center;gap:10px}[data-gsa2] .emhd b{min-width:0;overflow-wrap:anywhere}
 [data-gsa2] .osheet{margin-bottom:10px}[data-gsa2] .notice{padding:10px 12px;border:1px solid var(--line);font-size:13px}
 .gord .chips{display:flex;flex-wrap:wrap;gap:6px}.gord .glot select,.gord .glot input{min-width:0;width:100%}
+/* Build-A-Kit savings (owner, More → Build-A-Kit savings; Nov 10 2026) */
+.kitset .kitsw{display:flex;align-items:center;gap:10px;margin:10px 0}.kitset .kitsw input{width:22px;height:22px;accent-color:var(--red,#C8102E)}
+.kitset .kitrow{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;margin:8px 0}.kitset .kitrow input{width:100%}
+.kitset .kitex{margin:6px 0 4px;padding-left:18px;font-size:14px;line-height:1.6}.kitset .kbtns{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.kitset .kbtns .btn{flex:1 1 160px}
+.kitset .emhd{margin:18px 0 4px}

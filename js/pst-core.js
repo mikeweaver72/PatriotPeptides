@@ -481,18 +481,35 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
   //   research vials: 3–4 in the bag = 5% off, 5+ = 10% off, and the kit total rounds DOWN to the whole dollar
   //   (3 × BPC-157 5mg $35 = $105 → $99; 5 × $35 = $175 → $157, exactly his "3 Vial Kit" / "5 Vial Kit" prices).
   //   BAC water: 5+ in the bag = 20% off, rounded down the same way (his 5 and 10 vial BAC kits). 10-vial wholesale kits never count.
-  const KIT_TIERS = [[5, 0.10], [3, 0.05]], BAC_TIER = [5, 0.20];
+  //   Since Nov 10 2026 Jeff sets these in the owner app (More → Build-A-Kit savings): ppu_store_settings.kit_rules. The values below
+  //   are the defaults until his settings load (kitCfg); checkout always waits for them.
+  let KIT_TIERS = [[5, 0.10], [3, 0.05]], BAC_TIER = [5, 0.20], KIT_ON = true, BAC_ON = true, kitP = null;
+  const KIT_DEFAULT = { on: true, tiers: [{ vials: 3, pct: 5 }, { vials: 5, pct: 10 }], bac: { on: true, vials: 5, pct: 20 } };
+  function applyKit(r) {
+    r = r && typeof r === "object" ? r : KIT_DEFAULT;
+    const tiers = (Array.isArray(r.tiers) ? r.tiers : []).map(t => [Math.round(Number(t.vials)), Number(t.pct) / 100]).filter(([n, p]) => n >= 2 && p > 0 && p < 1).sort((a, b) => b[0] - a[0]);
+    KIT_TIERS = tiers; KIT_ON = r.on !== false && tiers.length > 0;
+    const b = r.bac || {}; BAC_TIER = [Math.max(1, Math.round(Number(b.vials) || 5)), Math.min(0.9, Math.max(0, Number(b.pct) / 100 || 0))]; BAC_ON = b.on !== false && BAC_TIER[1] > 0;
+    return kitRules();
+  }
+  const kitRules = () => ({ on: KIT_ON, tiers: KIT_ON ? KIT_TIERS.slice().reverse().map(([n, p]) => ({ vials: n, pct: Math.round(p * 1000) / 10 })) : [], bac: BAC_ON ? { vials: BAC_TIER[0], pct: Math.round(BAC_TIER[1] * 1000) / 10 } : null });
+  try { const c = JSON.parse(localStorage.getItem("ppu_kit_rules") || "null"); if (c) applyKit(c); } catch {}
+  const kitCfg = (fresh = false) => (!fresh && kitP) || (kitP = client().from("ppu_store_settings").select("kit_rules").eq("id", 1).maybeSingle()
+    .then(({ data }) => { const r = data?.kit_rules; if (r) { try { localStorage.setItem("ppu_kit_rules", JSON.stringify(r)); } catch {} } return applyKit(r || KIT_DEFAULT); }, () => kitRules()));
+  // "Any 3 vials, 5% off. Any 5, 10% off." from his current tiers
+  const kitText = () => { const t = kitRules().tiers; if (!t.length) return "";
+    return t.map((x, i) => `Any ${x.vials}${i ? "" : " vials"}, ${x.pct}% off.`).join(" "); };
   const isBac = p => /^suppl/i.test(p.category || "") && /bac/i.test(`${p.display_name || ""} ${p.product_key || ""}`);
   const kitOff = (base, pct) => pct ? round(base - Math.floor(round(base * (1 - pct)) + 1e-9)) : 0;
   function kitInfo(items) { // items: [{p, q, t}]
     const elig = items.filter(i => i.p && !isMerch(i.p) && !/^suppl|wholesale/i.test(i.p.category || "") && !/10-vial/i.test(i.p.strength || ""));
     const bac = items.filter(i => i.p && isBac(i.p));
     const vials = elig.reduce((n, i) => n + i.q, 0), base = elig.reduce((n, i) => n + i.t, 0);
-    const bv = bac.reduce((n, i) => n + i.q, 0), bb = bac.reduce((n, i) => n + i.t, 0), bpct = bv >= BAC_TIER[0] ? BAC_TIER[1] : 0;
-    const tier = KIT_TIERS.find(([n]) => vials >= n);
-    const pct = tier ? tier[1] : 0, next = KIT_TIERS.slice().reverse().find(([n]) => vials < n);
+    const bv = bac.reduce((n, i) => n + i.q, 0), bb = bac.reduce((n, i) => n + i.t, 0), bpct = BAC_ON && bv >= BAC_TIER[0] ? BAC_TIER[1] : 0;
+    const tiers = KIT_ON ? KIT_TIERS : [], tier = tiers.find(([n]) => vials >= n);
+    const pct = tier ? tier[1] : 0, next = tiers.slice().reverse().find(([n]) => vials < n);
     const pa = kitOff(base, pct), ba = kitOff(bb, bpct);
-    const label = [pa ? `${vials} vials · ${Math.round(pct * 100)}%` : "", ba ? `${bv} BAC water · 20%` : ""].filter(Boolean).join(" + ");
+    const label = [pa ? `${vials} vials · ${Math.round(pct * 100)}%` : "", ba ? `${bv} BAC water · ${Math.round(bpct * 100)}%` : ""].filter(Boolean).join(" + ");
     return { vials, pct, amount: round(pa + ba), peptideAmount: pa, bacAmount: ba, bacVials: bv, label, nextAt: next ? next[0] : null, nextPct: next ? next[1] : null };
   }
   // Wholesale shipping (Jeff, Oct 30 2026): any 10-vial wholesale kit in the bag ships at a zone rate, no free-shipping threshold.
@@ -657,6 +674,7 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
     const sub = priced.reduce((s, i) => s + i.t, 0);
     const stQ = profile?.shipping_state || profile?.state || "";
     const ship = delivery === "pickup" ? 0 : shipQuote(priced.map(i => i.p), stQ, sub).ship;
+    await kitCfg(true); // price the kit with Jeff's current settings
     const kit = kitInfo(priced), kitDisc = kit.amount;
     const codeDisc = discountAmount(sub - kitDisc, discount), payDisc = payDiscount(sub - kitDisc, payMethod, discount);
     const disc = round(codeDisc + payDisc + kitDisc);
@@ -1220,7 +1238,10 @@ ${rows.length ? `<div class="mbl">${rows.map(r => `<div class="mbr${r.key === ad
   }
   document.addEventListener("DOMContentLoaded", ownerChip);
   document.addEventListener("click", async e => { if (!e.target.closest("[data-signout-g]")) return; e.preventDefault(); try { (localStorage.removeItem("pst-shelf-cache"), await client().auth.signOut()); } catch {} location.href = "index.html"; });
-  window.PST = { isMerch, merchProducts, allProducts, shipQuote, isWholesale, WS_ZONES, giftLines, flipper, mountFlip, activePromotions, vialCanvas, US_STATES, stateCode, stateSelect, kitInfo, SMS_CONSENT, usPhone, fmtPhone, PREVIEW, lockScroll, CFG, FOCUS, REMIND, $, $$, esc, money, round, params, store, fmtDate, isStandalone, isIOS, client, getUser, getProfile, isAdmin, customerName, firstName,
+  // pages with a Build-A-Kit line (homepage) show his current tiers, or hide it when kits are off
+  document.addEventListener("DOMContentLoaded", () => { if (!document.querySelector("[data-kittext]")) return;
+    kitCfg().then(() => document.querySelectorAll("[data-kittext]").forEach(el => { const t = kitText(); if (t) el.textContent = t; else (el.closest("[data-kitpromo]") || el).hidden = true; })); });
+  window.PST = { kitCfg, kitRules, kitText, isMerch, merchProducts, allProducts, shipQuote, isWholesale, WS_ZONES, giftLines, flipper, mountFlip, activePromotions, vialCanvas, US_STATES, stateCode, stateSelect, kitInfo, SMS_CONSENT, usPhone, fmtPhone, PREVIEW, lockScroll, CFG, FOCUS, REMIND, $, $$, esc, money, round, params, store, fmtDate, isStandalone, isIOS, client, getUser, getProfile, isAdmin, customerName, firstName,
     products, groups, cycles, suggestDays, myHistory, myProducts, isDone, handedOff, stageOf, vialLiquid, paidNotice, gIn, gBest, gMin, unitPrice, onSale, qty, stock, focuses, isBlend, titleParts, productUrl, coaHref, vial, cmpProduct,
     readCart, writeCart, addToCart, setQty, count, refreshCount, cartRows, reminders, setReminder,
     photo: () => VIAL_ON, vialStudio, bakeBottle, vialSig, vialColorName, LABEL_COLORS, track, validateDiscount, discountAmount, payDiscount, payLabel, OTHER_PAY, isOtherPay, backordersOn, creditBalance, freeVials, choiceRewards, paymentMethods, payCard, submitOrder, venmoLink, openAvailability,

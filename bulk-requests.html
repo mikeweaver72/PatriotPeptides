@@ -38,9 +38,9 @@
   let client, requests=[], selected=null;
   const $=id=>document.getElementById(id);
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const ref=n=>'PST-B'+String(n).padStart(6,'0');
+  const ref=n=>'PP-B'+String(n).padStart(6,'0');
   const date=v=>v?new Date(v).toLocaleString():'—';
-  const testing=v=>v==='pst_coordinated'?'PST coordinates independent testing':'Customer coordinates independent testing';
+  const testing=v=>v==='pst_coordinated'?'Patriot coordinates independent testing':'Customer coordinates independent testing';
 
   async function start(){
     client=window.pstAuthGuardClient;

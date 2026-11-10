@@ -329,7 +329,7 @@ ${admin ? `<div class="setrow"><div><b>Store owner</b><span>The owner app (order
       try {
         const { data, error } = await P.client().rpc("pst_submit_bulk_request", { p_name: v("name"), p_company: v("company"), p_email: v("email"), p_phone: v("phone"), p_product: v("product"), p_strength: v("strength"), p_kits: Number(v("kits")), p_requirements: v("requirements"), p_testing_path: v("testing"), p_acknowledgment: f.ack.checked });
         if (error) throw error;
-        f.innerHTML = `<div class="okmsg">${P.icon("check", 34)}<h2 class="serif">Request received</h2><p>Your reference number is <b style="color:var(--gold2)">PST-B${String(data).padStart(6, "0")}</b>.</p><p class="muted">We'll review it and email you. No order or payment has been created.</p><a class="btn ghost" href="catalog.html">Back to the collection</a></div>`;
+        f.innerHTML = `<div class="okmsg">${P.icon("check", 34)}<h2 class="serif">Request received</h2><p>Your reference number is <b style="color:var(--gold2)">PP-B${String(data).padStart(6, "0")}</b>.</p><p class="muted">We'll review it and email you. No order or payment has been created.</p><a class="btn ghost" href="catalog.html">Back to the collection</a></div>`;
       } catch (err) { notice(msg, err.message || "We couldn't send your request.", "err"); b.disabled = false; b.textContent = "Send bulk request"; }
     });
   }

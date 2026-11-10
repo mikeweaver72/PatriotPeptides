@@ -747,7 +747,7 @@ ${g.map(r => `<div class="rqrow"><div><b>${esc(r.customer_name || r.customer_ema
 ${rows.map(r => `<button type="button" class="crow" data-bulk="${r.request_number}"><span class="cav">${P.icon("box", 16)}</span><span><b>${esc(bref(r.request_number))} · ${esc(r.name)}</b><small>${esc(r.product)} ${esc(r.strength || "")} · ${r.kits} kit${r.kits === 1 ? "" : "s"} · ${P.fmtDate(r.created_at)}</small></span><em class="opill sm ${r.status === "new" ? "pend" : r.status === "closed" ? "bad" : "ok"}">${esc(r.status)}</em></button>`).join("") || `<p class="muted small">No bulk requests${f ? " with that status" : ""}.</p>`}`;
     }
   }
-  const bref = n => "PST-B" + String(n).padStart(6, "0");
+  const bref = n => "PP-B" + String(n).padStart(6, "0");
   async function addRestockFlow(then) { // = availability-requests.html → Add Restock Notification
     const { data } = await P.client().from("product_inventory").select("product_key,display_name,strength,current_inventory,status_override").order("display_name");
     const un = (data || []).filter(p => Number(p.current_inventory || 0) <= 0 || p.status_override === "out_of_stock");

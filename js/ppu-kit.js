@@ -4,8 +4,8 @@
    kit rule (kitInfo in pst-core.js) applies the discount at checkout. Works with a finger or a mouse (pointer events). */
 (() => {
   const P = window.PST, $ = s => document.querySelector(s), esc = P.esc, money = P.money;
-  const SIZES = [[3, .05, "3-Vial Kit"], [5, .10, "5-Vial Kit"]];
-  let size = Number(P.params.get("size")) === 5 ? 5 : 3, slots = [], all = [], q = "", f = "";
+  let SIZES = [[3, .05, "3-Vial Kit"], [5, .10, "5-Vial Kit"]]; // replaced by Jeff's tiers (owner app → More → Build-A-Kit savings)
+  let size = 3, slots = [], all = [], q = "", f = "";
   const eligible = p => p && p.is_active !== false && !/^suppl|wholesale/i.test(p.category || "") && !/10-vial/i.test(p.strength || "") && !String(p.admin_only || "").trim();
   const byKey = k => all.find(p => p.product_key === k);
   const used = k => slots.filter(x => x === k).length;
@@ -113,6 +113,11 @@
   document.addEventListener("DOMContentLoaded", async () => {
     const root = $("[data-kit]"); if (!root) return;
     root.innerHTML = `<p class="muted small">Loading the collection…</p>`;
-    try { all = await P.products(); render(); } catch (err) { root.innerHTML = `<p class="empty">Couldn't load the collection. ${esc(err.message || "")}</p>`; }
+    try {
+      const k = await P.kitCfg();
+      if (!k.tiers.length) { root.innerHTML = `<div class="empty"><h2 class="serif">Kit savings are paused</h2><p>Every vial is still available on its own.</p><a class="btn primary" href="catalog.html">Shop the collection</a></div>`; return; }
+      SIZES = k.tiers.map(t => [t.vials, t.pct / 100, `${t.vials}-Vial Kit`]);
+      const want = Number(P.params.get("size")); size = (SIZES.find(([n]) => n === want) || SIZES[0])[0];
+      all = await P.products(); render(); } catch (err) { root.innerHTML = `<p class="empty">Couldn't load the collection. ${esc(err.message || "")}</p>`; }
   });
 })();
