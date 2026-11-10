@@ -320,7 +320,7 @@ ${on.length > max ? `<p class="notice err small">${on.length} kits are on right 
 <label>Name on the label <span class="muted small">(optional: only if it should read differently)</span><input name="label_line_1" maxlength="24" value="${esc(v.label_line_1 || "")}" placeholder="${esc(String(v.display_name || "Same as name").replace(/\s*\(.*\)\s*/, "").toUpperCase())}" autocapitalize="characters"></label>
 <div class="pm2"><label>Strength<input name="strength" maxlength="30" value="${esc(v.strength || "")}" placeholder="10mg"></label><label>Price<input name="price" type="number" step="0.01" min="0" inputmode="decimal" value="${Number(v.price || 0).toFixed(2)}"></label></div>
 <div class="pm2"><label>Category<select name="category">${[...new Set([...PM_CATS, v.category].filter(Boolean))].map(c => `<option${c === v.category ? " selected" : ""}>${esc(c)}</option>`).join("")}</select></label>
-<label>Label color<select name="label_color"><option value="" data-pmauto>Auto (${esc(P.vialColorName({ ...v, label_color: "" }))})</option>${colors.map(c => `<option${String(v.label_color || "").toLowerCase() === c.toLowerCase() ? " selected" : ""}>${c}</option>`).join("")}</select></label></div>
+</div>
 <div class="pm2"><label class="toggle"><input type="checkbox" name="sale_enabled"${v.sale_enabled ? " checked" : ""}> On sale</label><label>Sale price<input name="sale_price" type="number" step="0.01" min="0" inputmode="decimal" value="${v.sale_price ?? ""}"></label></div>
 <label class="toggle"><input type="checkbox" name="is_active"${v.is_active !== false ? " checked" : ""}> Live on the site</label>
 <label class="toggle"><input type="checkbox" name="coming_soon"${(isNew || v.coming_soon) ? " checked" : ""}> Coming soon <span class="muted small">(not stocked yet: shoppers see "Coming soon" and can request it. Turns off by itself when stock arrives.)</span></label>
@@ -339,7 +339,7 @@ ${isNew ? `<p class="muted small">New products start with 0 in stock. Add stock 
 <button class="btn primary wide" type="submit">${isNew ? "Create product" : "Save changes"}</button><p class="status" data-pmstat role="status"></p></form>`, { label: isNew ? "New product" : "Edit product" });
     const f = w.querySelector("form"), prev = w.querySelector("[data-pmprev]");
     if (window.PSTGSA) PSTGSA.ownerField(f.coa_url, () => `${f.display_name.value.trim()} ${f.strength.value.trim()}`.trim()); // live Gold Standard check (pst-gsa.js)
-    const cur = () => ({ ...v, product_key: v.product_key, display_name: f.display_name.value.trim() || "NEW PRODUCT", label_line_1: f.label_line_1.value.trim() || null, strength: f.strength.value.trim(), label_color: f.label_color.value, category: f.category.value });
+    const cur = () => ({ ...v, product_key: v.product_key, display_name: f.display_name.value.trim() || "NEW PRODUCT", label_line_1: f.label_line_1.value.trim() || null, strength: f.strength.value.trim(), label_color: v.label_color || "", category: f.category.value }); // Patriot labels have no color (Jimmie, Nov 10 2026)
     const drawPrev = () => { const c = cur(); c.product_key = "__prev_" + (v.product_key || "new"); prev.innerHTML = P.vial(c, 130);
       const a = f.querySelector("[data-pmauto]"); if (a) a.textContent = `Auto (${P.vialColorName({ ...c, label_color: "" })})`;
       f.label_line_1.placeholder = String(f.display_name.value.trim() || "Same as name").replace(/\s*\(.*\)\s*/, "").toUpperCase(); };
@@ -351,7 +351,7 @@ ${isNew ? `<p class="muted small">New products start with 0 in stock. Add stock 
     f.addEventListener("submit", async e => {
       e.preventDefault(); const st = f.querySelector("[data-pmstat]"), btn = f.querySelector("[type=submit]"); btn.disabled = true; st.textContent = "Saving…"; st.className = "status";
       const now = new Date().toISOString(), name = f.display_name.value.trim(), strength = f.strength.value.trim() || null, category = f.category.value, price = Math.max(0, Number(f.price.value) || 0), live = f.is_active.checked;
-      const fields = { display_name: name, label_line_1: f.label_line_1.value.trim().toUpperCase() || null, strength, category, price, label_color: f.label_color.value || null, is_active: live, blend_stack: category === "Multi-Peptide Product",
+      const fields = { display_name: name, label_line_1: f.label_line_1.value.trim().toUpperCase() || null, strength, category, price, is_active: live, blend_stack: category === "Multi-Peptide Product",
         coming_soon: f.coming_soon.checked, sale_enabled: f.sale_enabled.checked, sale_price: f.sale_enabled.checked && Number(f.sale_price.value) > 0 ? Number(f.sale_price.value) : null, home_feature_rank: f.home_feature_rank.value ? Number(f.home_feature_rank.value) : null, updated_at: now,
         sort_name: f.sort_name.value.trim() || name, sale_label: f.sale_label.value.trim() || null, research_focus: $$("input[name=rf]:checked", f).map(x => x.value), coa_url: (window.PSTGSA ? PSTGSA.normalize(f.coa_url.value) : f.coa_url.value.trim()) || null, coa_label: f.coa_label.value.trim() || "View COA", admin_only: f.admin_only.value.trim() || null };
       if (f.sale_enabled.checked && !(Number(f.sale_price.value) > 0)) { st.textContent = "Add the sale price, or turn the sale off."; st.className = "status bad"; btn.disabled = false; return; }
@@ -366,7 +366,7 @@ ${isNew ? `<p class="muted small">New products start with 0 in stock. Add stock 
           const cost = Number(f.cost?.value || 0);
           const r2 = await P.client().from("product_inventory").upsert({ product_key: k, display_name: name, category, strength, price, current_inventory: 0, low_stock_threshold: 5, limited_stock_threshold: 10, is_active: live, featured: false, blend_stack: fields.blend_stack, coa_url: fields.coa_url, coa_label: fields.coa_label, cost_per_unit: cost > 0 ? cost : null, updated_at: now }, { onConflict: "product_key" });
           if (r2.error) throw new Error(`${k} was created, but the inventory record didn't save: ${r2.error.message}`);
-          P.toast(`${name} ${strength || ""} created · label ${r1.data?.label_color || "auto"}`);
+          P.toast(`${name} ${strength || ""} created`);
         } else {
           let r1 = await P.client().from("product_catalog").update(fields).eq("product_key", v.product_key);
           if (r1.error && /coming_soon/.test(r1.error.message)) { delete fields.coming_soon; r1 = await P.client().from("product_catalog").update(fields).eq("product_key", v.product_key); }
