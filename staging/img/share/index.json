@@ -274,5 +274,9 @@
  "PSTP100009": {
   "sig": "PSTP100009|TB-500|",
   "slug": "tb-500-pstp100009"
+ },
+ "PSTP100010": {
+  "sig": "PSTP100010|PP-3-RT|10mg",
+  "slug": "pp-3-rt-pstp100010"
  }
 }
