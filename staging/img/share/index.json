@@ -84,8 +84,8 @@
   "slug": "pp-cjc-no-dac-pp-cjc-no-dac-20mg"
  },
  "PP-EPN-10MG": {
-  "sig": "PP-EPN-10MG|PP-EPN|10mg",
-  "slug": "pp-epn-pp-epn-10mg"
+  "sig": "PP-EPN-10MG|PP-EPTLN|50mg",
+  "slug": "pp-eptln-pp-epn-10mg"
  },
  "PP-EPN-40MG": {
   "sig": "PP-EPN-40MG|PP-EPN|40mg",
@@ -272,11 +272,47 @@
   "slug": "selank-pstp100008"
  },
  "PSTP100009": {
-  "sig": "PSTP100009|TB-500|",
-  "slug": "tb-500-pstp100009"
+  "sig": "PSTP100009|PP-TB-500|5mg",
+  "slug": "pp-tb-500-pstp100009"
  },
  "PSTP100010": {
   "sig": "PSTP100010|PP-3-RT|10mg",
   "slug": "pp-3-rt-pstp100010"
+ },
+ "PSTP100014": {
+  "sig": "PSTP100014|PP-AHK-cu|50mg",
+  "slug": "pp-ahk-cu-pstp100014"
+ },
+ "PSTP100015": {
+  "sig": "PSTP100015|PP-AHK-cu|100mg",
+  "slug": "pp-ahk-cu-pstp100015"
+ },
+ "PSTP100019": {
+  "sig": "PSTP100019|PP-EPTLN|100mg",
+  "slug": "pp-eptln-pstp100019"
+ },
+ "PSTP100018": {
+  "sig": "PSTP100018|PP-FSTN|1mg",
+  "slug": "pp-fstn-pstp100018"
+ },
+ "PSTP100017": {
+  "sig": "PSTP100017|PP-FSTN|2mg",
+  "slug": "pp-fstn-pstp100017"
+ },
+ "PSTP100016": {
+  "sig": "PSTP100016|PP-MLTN-2|10mg",
+  "slug": "pp-mltn-2-pstp100016"
+ },
+ "PSTP100013": {
+  "sig": "PSTP100013|PP-TA-1|10mg",
+  "slug": "pp-ta-1-pstp100013"
+ },
+ "PSTP100011": {
+  "sig": "PSTP100011|PP-TB-500|10mg",
+  "slug": "pp-tb-500-pstp100011"
+ },
+ "PSTP100012": {
+  "sig": "PSTP100012|PP-TB-500|20mg",
+  "slug": "pp-tb-500-pstp100012"
  }
 }
