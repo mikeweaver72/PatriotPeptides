@@ -75,7 +75,8 @@
   "pp-dsip"
  ],
  "PP-EPN-10MG": [
-  "pp-epn"
+  "pp-epn",
+  "pp-eptln"
  ],
  "PP-EPN-40MG": [
   "pp-epn"
@@ -192,9 +193,37 @@
   "selank"
  ],
  "PSTP100009": [
-  "tb-500"
+  "tb-500",
+  "pp-tb-500"
  ],
  "PSTP100010": [
   "pp-3-rt"
+ ],
+ "PSTP100014": [
+  "pp-ahk-cu"
+ ],
+ "PSTP100015": [
+  "pp-ahk-cu"
+ ],
+ "PSTP100019": [
+  "pp-eptln"
+ ],
+ "PSTP100018": [
+  "pp-fstn"
+ ],
+ "PSTP100017": [
+  "pp-fstn"
+ ],
+ "PSTP100016": [
+  "pp-mltn-2"
+ ],
+ "PSTP100013": [
+  "pp-ta-1"
+ ],
+ "PSTP100011": [
+  "pp-tb-500"
+ ],
+ "PSTP100012": [
+  "pp-tb-500"
  ]
 }
