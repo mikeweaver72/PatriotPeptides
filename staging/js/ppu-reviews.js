@@ -1,5 +1,5 @@
 /* Patriot Peptides USA · order ratings (Nov 17 2026, test site first)
-   Customers rate each shipped/delivered order on 4 things, 1–4 stars, plus an optional comment (rate.html?order=PP-O…,
+   Customers rate each shipped/delivered order on 4 things, 1–4 stars. Stars only: no comment box (Mike/Jeff, Nov 17 2026), so nobody can post "results" (rate.html?order=PP-O…,
    linked from My Account → Orders and from the Delivered email). Jeff approves ratings in the owner app (More → Reviews);
    only approved ones count toward the homepage section ([data-reviews] on index.html).
    Database: ppu_reviews + ppu_submit_review() + ppu_public_reviews() (server/sql/99e_reviews.sql).
@@ -15,9 +15,9 @@
   const MIN_SHOW = 3; // the homepage section appears once Jeff has approved this many ratings
   const DEMO = /[?&]demo=1\b/.test(location.search);
   const DEMO_DATA = { count: 27, accuracy: 3.93, shipping: 3.7, packaging: 3.85, service: 3.89, overall: 3.84, recent: [
-    { name: "Derek M.", accuracy: 4, shipping: 4, packaging: 4, service: 4, comment: "Exactly what I ordered, labeled clearly, and tracking came the same day it shipped.", date: "2026-11-12" },
-    { name: "Sarah K.", accuracy: 4, shipping: 3, packaging: 4, service: 4, comment: "Packed really well and Jeff answered my question about a backordered item within the hour.", date: "2026-11-09" },
-    { name: "Chris L.", accuracy: 4, shipping: 4, packaging: 3, service: 4, comment: "Fast to the West Coast. Everything arrived sealed. Will order again.", date: "2026-11-04" }] };
+    { name: "Derek M.", accuracy: 4, shipping: 4, packaging: 4, service: 4, date: "2026-11-12" },
+    { name: "Sarah K.", accuracy: 4, shipping: 3, packaging: 4, service: 4, date: "2026-11-09" },
+    { name: "Chris L.", accuracy: 4, shipping: 4, packaging: 3, service: 4, date: "2026-11-04" }] };
   const avg = r => (Number(r.accuracy) + Number(r.shipping) + Number(r.packaging) + Number(r.service)) / 4;
 
   // stars: n out of 4, halves allowed (for averages)
@@ -40,7 +40,7 @@
 <p class="muted small">From ${Number(d.count)} rated orders. Every rating comes from a real order and is reviewed before it's posted.</p></div>
 <div class="rvall"><b>${fmt(d.overall)}</b><span>out of 4</span>${stars(d.overall, 20)}</div></div>
 <div class="rvcats">${CATS.map(([k, t, s]) => `<div class="rvcat"><div><b>${esc(t)}</b><small>${esc(s)}</small></div><div class="rvbar"><i style="width:${(Number(d[k]) / 4 * 100).toFixed(0)}%"></i></div><span class="rvn">${fmt(d[k])}</span></div>`).join("")}</div>
-${rec.length ? `<div class="rvlist">${rec.map(r => `<figure class="rvq"><div class="rvqh">${stars(avg(r), 14)}<span class="muted small">${esc(r.name || "Verified buyer")} · ${P.fmtDate ? esc(P.fmtDate(r.date)) : esc(r.date)}</span></div><blockquote>${esc(r.comment)}</blockquote></figure>`).join("")}</div>` : ""}
+${rec.length ? `<div class="rvlist"><span class="kick">Latest ratings</span>${rec.map(r => `<div class="rvq">${stars(avg(r), 14)}<b>${fmt(avg(r))}</b><span class="muted small">${esc(r.name || "Verified buyer")} · ${P.fmtDate ? esc(P.fmtDate(r.date)) : esc(r.date)}</span></div>`).join("")}</div>` : ""}
 </div>`;
     el.hidden = false;
   }
@@ -56,7 +56,7 @@ ${rec.length ? `<div class="rvlist">${rec.map(r => `<figure class="rvq"><div cla
       const q = P.client().from("orders").select("id,order_number,created_at,status,total").eq("user_id", user.id);
       const { data } = on ? await q.eq("order_number", on).limit(1) : await q.in("status", ["shipped", "delivered", "complete", "completed"]).order("created_at", { ascending: false }).limit(1);
       o = (data || [])[0] || null;
-      if (o) mine = (await P.client().from("ppu_reviews").select("accuracy,shipping,packaging,service,comment,status").eq("order_id", o.id).maybeSingle()).data;
+      if (o) mine = (await P.client().from("ppu_reviews").select("accuracy,shipping,packaging,service,status").eq("order_id", o.id).maybeSingle()).data;
     }
     if (!o) { root.innerHTML = `<div class="empty"><h1 class="serif">Rate your order</h1><p>We couldn't find ${on ? `order ${esc(on)}` : "a shipped order"} on this account. You may be signed in with a different email.</p><a class="btn ghost" href="account.html#orders">See my orders</a></div>`; return; }
     if (!["shipped", "delivered", "complete", "completed"].includes(String(o.status || "").toLowerCase())) { root.innerHTML = `<div class="empty"><h1 class="serif">Almost there</h1><p>You can rate ${esc(o.order_number)} once it ships.</p><a class="btn ghost" href="account.html#orders">See my orders</a></div>`; return; }
@@ -67,9 +67,6 @@ ${rec.length ? `<div class="rvlist">${rec.map(r => `<figure class="rvq"><div cla
 <form data-rform novalidate>
 ${CATS.map(([k, t, s]) => `<fieldset class="rrow" data-k="${k}"><legend><b>${esc(t)}</b><small>${esc(s)}</small></legend>
 <div class="rpick" role="radiogroup" aria-label="${esc(t)}">${[1, 2, 3, 4].map(n => `<button type="button" role="radio" aria-checked="${pick[k] === n}" aria-label="${n} star${n > 1 ? "s" : ""}, ${WORDS[n]}" data-n="${n}"><svg width="34" height="34" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.4l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg></button>`).join("")}<span class="rword" aria-live="polite">${pick[k] ? WORDS[pick[k]] : ""}</span></div></fieldset>`).join("")}
-<label class="rcom"><b>Anything to add? <span class="muted small">(optional)</span></b>
-<textarea name="c" maxlength="500" rows="4" placeholder="How was ordering, shipping and the packaging?">${esc(mine?.comment || "")}</textarea>
-<small class="muted">Please keep it to the ordering and shipping experience. Comments about personal use won't be posted. Your first name and last initial show with an approved comment.</small></label>
 <p class="notice err" data-rerr hidden></p>
 <button class="btn primary" type="submit">${mine ? "Update my rating" : "Send my rating"}</button>
 </form></div>`;
@@ -80,11 +77,10 @@ ${CATS.map(([k, t, s]) => `<fieldset class="rrow" data-k="${k}"><legend><b>${esc
       e.preventDefault(); const err = root.querySelector("[data-rerr]"), missing = CATS.filter(([k]) => !pick[k]);
       if (missing.length) { missing.forEach(([k]) => root.querySelector(`.rrow[data-k="${k}"]`).classList.add("miss")); err.textContent = `Pick stars for ${missing.map(m => m[1]).join(", ")}.`; err.hidden = false; return; }
       err.hidden = true; const btn = e.submitter || root.querySelector("[type=submit]"); btn.disabled = true; btn.textContent = "Sending…";
-      const comment = root.querySelector("textarea").value.trim();
-      let fail = "";
-      if (!DEMO) { const { error } = await P.client().rpc("ppu_submit_review", { p_order: o.order_number, p_accuracy: pick.accuracy, p_shipping: pick.shipping, p_packaging: pick.packaging, p_service: pick.service, p_comment: comment || null }); if (error) fail = error.message; }
+            let fail = "";
+      if (!DEMO) { const { error } = await P.client().rpc("ppu_submit_review", { p_order: o.order_number, p_accuracy: pick.accuracy, p_shipping: pick.shipping, p_packaging: pick.packaging, p_service: pick.service, p_comment: null }); if (error) fail = error.message; }
       if (fail) { btn.disabled = false; btn.textContent = "Send my rating"; err.textContent = fail; err.hidden = false; return; }
-      root.innerHTML = `<div class="empty"><div class="rdone">${stars(avg(pick), 28)}</div><h1 class="serif">Thank you</h1><p>Your rating for ${esc(o.order_number)} is in. ${comment ? "Once it's approved, your comment may appear on our homepage with your first name and last initial." : ""}</p><div class="rbtns"><a class="btn primary" href="catalog.html">Shop the collection</a><a class="btn ghost" href="account.html#orders">My orders</a></div></div>`;
+      root.innerHTML = `<div class="empty"><div class="rdone">${stars(avg(pick), 28)}</div><h1 class="serif">Thank you</h1><p>Your rating for ${esc(o.order_number)} is in. Thanks for taking a moment.</p><div class="rbtns"><a class="btn primary" href="catalog.html">Shop the collection</a><a class="btn ghost" href="account.html#orders">My orders</a></div></div>`;
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
   }

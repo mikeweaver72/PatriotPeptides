@@ -656,3 +656,6 @@ body.app-home .shelf{padding-bottom:4px}
 .orvb{display:flex;gap:8px}.orvb .btn{flex:1}
 .rv,.rate{text-align:left}.rv .rvcat,.rv .rvq,.rv blockquote{text-align:left}
 .rrow legend small{text-transform:none;letter-spacing:0;font-weight:400}
+/* ratings: stars only (no comments) */
+.rvlist{display:block;margin-top:16px}.rvlist .kick{display:block;margin-bottom:6px}
+.rvlist .rvq{display:flex;align-items:center;gap:8px;padding:8px 0;border:0;border-top:1px solid var(--line,#1f2838);border-radius:0}.rvlist .rvq b{font-size:14px}

@@ -6,16 +6,16 @@
   const R = () => window.PPUReviews;
   const DEMO = /[?&]demo=1\b/.test(location.search);
   const SAMPLE = [
-    { id: "d1", status: "pending", display_name: "Marcus T.", accuracy: 4, shipping: 3, packaging: 4, service: 4, comment: "Everything was right and well packed. Took 4 days to Ohio, which is fair.", created_at: "2026-11-16T15:10:00Z", order_number: "PP-O100041" },
-    { id: "d2", status: "pending", display_name: "Amy R.", accuracy: 4, shipping: 4, packaging: 4, service: 4, comment: null, created_at: "2026-11-15T21:40:00Z", order_number: "PP-O100038" },
-    { id: "d3", status: "pending", display_name: "Kevin D.", accuracy: 3, shipping: 2, packaging: 3, service: 4, comment: "Box was a little crushed but the vials were fine. Jeff replied fast when I asked.", created_at: "2026-11-14T18:05:00Z", order_number: "PP-O100035" },
-    { id: "d4", status: "approved", display_name: "Derek M.", accuracy: 4, shipping: 4, packaging: 4, service: 4, comment: "Exactly what I ordered, labeled clearly, and tracking came the same day it shipped.", created_at: "2026-11-12T12:00:00Z", order_number: "PP-O100031" },
-    { id: "d5", status: "hidden", display_name: "Verified buyer", accuracy: 4, shipping: 4, packaging: 4, service: 4, comment: "(A comment about personal use, kept off the site.)", created_at: "2026-11-10T12:00:00Z", order_number: "PP-O100029" }];
+    { id: "d1", status: "pending", display_name: "Marcus T.", accuracy: 4, shipping: 3, packaging: 4, service: 4, created_at: "2026-11-16T15:10:00Z", order_number: "PP-O100041" },
+    { id: "d2", status: "pending", display_name: "Amy R.", accuracy: 4, shipping: 4, packaging: 4, service: 4, created_at: "2026-11-15T21:40:00Z", order_number: "PP-O100038" },
+    { id: "d3", status: "pending", display_name: "Kevin D.", accuracy: 3, shipping: 2, packaging: 3, service: 4, created_at: "2026-11-14T18:05:00Z", order_number: "PP-O100035" },
+    { id: "d4", status: "approved", display_name: "Derek M.", accuracy: 4, shipping: 4, packaging: 4, service: 4, created_at: "2026-11-12T12:00:00Z", order_number: "PP-O100031" },
+    { id: "d5", status: "hidden", display_name: "Verified buyer", accuracy: 4, shipping: 4, packaging: 4, service: 4, created_at: "2026-11-10T12:00:00Z", order_number: "PP-O100029" }];
   let rows = [], tab = "pending", host = null;
 
   async function load() {
     if (DEMO) return SAMPLE.map(r => ({ ...r }));
-    const { data, error } = await P.client().from("ppu_reviews").select("id,order_id,status,display_name,accuracy,shipping,packaging,service,comment,created_at,reviewed_at,orders(order_number)").order("created_at", { ascending: false }).limit(300);
+    const { data, error } = await P.client().from("ppu_reviews").select("id,order_id,status,display_name,accuracy,shipping,packaging,service,created_at,reviewed_at,orders(order_number)").order("created_at", { ascending: false }).limit(300);
     if (error) throw error;
     return (data || []).map(r => ({ ...r, order_number: r.orders?.order_number || "" }));
   }
@@ -36,14 +36,13 @@
     const RV = R(), when = P.fmtDate ? P.fmtDate(r.created_at) : String(r.created_at).slice(0, 10);
     return `<article class="orv" data-rid="${esc(r.id)}"><div class="orvh"><div><b>${esc(r.display_name || "Verified buyer")}</b><span class="muted small">${esc(r.order_number || "")} · ${esc(when)}</span></div><div class="orvavg">${RV.stars(RV.avg(r), 15)}<b>${RV.fmt(RV.avg(r))}</b></div></div>
 <div class="orvrows">${RV.CATS.map(([k, t]) => `<div><span>${esc(t)}</span>${RV.stars(r[k], 13)}<small>${RV.WORDS[r[k]] || ""}</small></div>`).join("")}</div>
-${r.comment ? `<blockquote>${esc(r.comment)}</blockquote>` : `<p class="muted small">Stars only, no comment.</p>`}
 <div class="orvb">${r.status !== "approved" ? `<button type="button" class="btn primary sm" data-rv="approved">Approve</button>` : ""}${r.status !== "hidden" ? `<button type="button" class="btn ghost sm" data-rv="hidden">${r.status === "approved" ? "Take down" : "Don't post"}</button>` : ""}</div></article>`;
   }
   function draw() {
     const n = s => rows.filter(r => r.status === s).length, list = rows.filter(r => r.status === tab);
     host.innerHTML = `${DEMO ? `<p class="notice">Sample ratings (preview). Nothing here is saved.</p>` : ""}${summary()}
 <div class="chips orvtabs" role="tablist">${[["pending", "Waiting"], ["approved", "Approved"], ["hidden", "Not posted"]].map(([k, t]) => `<button type="button" role="tab" class="chip${tab === k ? " on" : ""}" aria-selected="${tab === k}" data-tab="${k}">${t} (${n(k)})</button>`).join("")}</div>
-<p class="muted small">${tab === "pending" ? "Approved ratings count toward your homepage scores, and approved comments can appear there with the customer's first name and last initial. Don't post comments about personal use." : tab === "approved" ? "These count on your homepage. Take one down any time." : "These never show on your site. You can still approve one later."}</p>
+<p class="muted small">${tab === "pending" ? "Approved ratings count toward your homepage scores. The homepage shows the customer's first name and last initial with their stars." : tab === "approved" ? "These count on your homepage. Take one down any time." : "These never show on your site. You can still approve one later."}</p>
 <div class="orvlist">${list.map(card).join("") || `<p class="muted">${tab === "pending" ? "Nothing waiting. New ratings show up here and in your bell." : "None."}</p>`}</div>`;
     host.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { tab = b.dataset.tab; draw(); });
     host.querySelectorAll("[data-rv]").forEach(b => b.onclick = async () => {
