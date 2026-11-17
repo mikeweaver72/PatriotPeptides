@@ -185,7 +185,7 @@ ${mine.length ? `<details class="myacc" data-myacc><summary><span class="myacc-t
   /* ---------------- PRODUCT ---------------- */
   async function product() {
     dealsP().then(() => { const el = document.querySelector("[data-pdeal]"); if (el && !el.innerHTML) el.innerHTML = dealNote(); });
-    const host = $("[data-pdp]"), key = P.params.get("key") || P.params.get("id") || "";
+    const host = $("[data-pdp]"), key = P.params.get("key") || P.params.get("id") || document.body.dataset.key || ""; // SEO product pages carry their product code
     if (!key) { host.innerHTML = `<div class="wrap pad empty"><p>No product selected.</p><a class="btn ghost" href="catalog.html">Browse the collection</a></div>`; return; }
     let all;
     try { all = await P.products(); } catch (err) { host.innerHTML = `<div class="wrap pad empty"><p>Couldn't load this product. ${esc(err.message || "")}</p></div>`; return; }
@@ -197,6 +197,8 @@ ${mine.length ? `<details class="myacc" data-myacc><summary><span class="myacc-t
     }
     if (!cur) { host.innerHTML = `<div class="wrap pad empty"><h1 class="serif">That product isn't listed right now</h1><p>It may have been renamed or retired.</p><a class="btn primary" href="catalog.html">Browse the collection</a></div>`; return; }
     const group = all.filter(p => String(p.display_name || "").trim().toLowerCase() === String(cur.display_name || "").trim().toLowerCase()).sort(P.cmpProduct);
+    { const seo = window.PST_SEO && window.PST_SEO[cur.product_key]; // product.html?key= points Google at the product's own page (tools/seo/build.mjs)
+      if (seo && !document.querySelector('link[rel="canonical"]')) { const l = document.createElement("link"); l.rel = "canonical"; l.href = new URL(seo, location.href).href; document.head.appendChild(l); } }
     // v46: share the product's own page (it carries the product picture and name for texts and social posts) when it exists
     let shareUrl = location.href; { const g0 = group[0] || cur, slug = String(P.titleParts(g0).main || "").toLowerCase().replace(/\([^)]*\)/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "product";
       const cand = new URL(`${slug}-${String(g0.product_key || "").toLowerCase()}.html`, location.href).href; fetch(cand, { method: "HEAD" }).then(r => { if (r.ok) shareUrl = cand; }).catch(() => {}); }

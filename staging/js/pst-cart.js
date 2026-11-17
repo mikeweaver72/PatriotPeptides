@@ -119,6 +119,7 @@ ${smsOn ? (has && !smsCustom ? `<p class="muted small">Texts go to ${esc(P.fmtPh
   const redrawSide = () => { const s = $("[data-side]"); if (s) s.innerHTML = sideHtml(); };
 
   async function load() {
+    await P.kitCfg().catch(() => {}); // Jeff's Build-A-Kit savings
     const el = host();
     el.innerHTML = `<div class="cartgrid"><div>${[1, 2].map(() => `<div class="cline"><div class="ci skel" style="height:70px"></div><div><div class="skel" style="height:18px;width:60%"></div><div class="skel" style="height:12px;width:40%;margin-top:8px"></div></div><span></span></div>`).join("")}</div></div>`;
     try {
