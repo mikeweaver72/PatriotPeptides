@@ -623,3 +623,39 @@ body.app-home .shelf{padding-bottom:4px}
 .kitset .kitrow{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;margin:8px 0}.kitset .kitrow input{width:100%}
 .kitset .kitex{margin:6px 0 4px;padding-left:18px;font-size:14px;line-height:1.6}.kitset .kbtns{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.kitset .kbtns .btn{flex:1 1 160px}
 .kitset .emhd{margin:18px 0 4px}
+/* Order ratings (homepage section, rate.html, account button; Nov 17 2026) */
+:root{--star:#E8B23A;--starOff:rgba(150,160,180,.35)}
+.rstars{display:inline-flex;gap:1px;vertical-align:middle}.rstars svg{display:block}
+.rv{border:1px solid var(--line,#1f2838);border-radius:14px;padding:22px 20px;background:var(--panel,rgba(255,255,255,.02))}
+.rvtop{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px 24px;align-items:flex-end}.rvtop h2{margin:4px 0 6px}.rvtop p{margin:0;max-width:520px}
+.rvall{display:grid;justify-items:end;gap:2px}.rvall b{font:400 44px/1 "Archivo Black",Inter,sans-serif}.rvall span{font-size:12px;color:var(--muted,#8a94a7);text-transform:uppercase;letter-spacing:.12em}
+.rvcats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 28px;margin:20px 0 4px}
+.rvcat{display:grid;grid-template-columns:minmax(0,1fr) 110px 34px;gap:12px;align-items:center}.rvcat b{display:block;font-size:14px}.rvcat small{display:block;color:var(--muted,#8a94a7);font-size:12px;line-height:1.35}
+.rvbar{height:8px;border-radius:5px;background:var(--starOff);overflow:hidden}.rvbar i{display:block;height:100%;background:var(--star);border-radius:5px}.rvn{font-weight:700;text-align:right}
+.rvlist{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:18px}
+.rvq{margin:0;padding:14px;border:1px solid var(--line,#1f2838);border-radius:10px}.rvqh{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.rvq blockquote{margin:8px 0 0;font-size:14px;line-height:1.5}
+@media (max-width:760px){.rvcats,.rvlist{grid-template-columns:1fr}.rvall{justify-items:start}.rvcat{grid-template-columns:minmax(0,1fr) 80px 30px}}
+.rate{max-width:620px;margin:0 auto}.rate h1{margin:6px 0 6px}
+.rrow{border:1px solid var(--line,#1f2838);border-radius:12px;padding:12px 14px;margin:12px 0;min-width:0}.rrow legend{padding:0}.rrow legend b{display:block}.rrow legend small{display:block;color:var(--muted,#8a94a7);font-size:13px;margin-top:2px}
+.rrow.miss{border-color:var(--red,#C8102E)}
+.rpick{display:flex;align-items:center;gap:4px;margin-top:8px}.rpick button{background:none;border:0;padding:4px;cursor:pointer;line-height:0;border-radius:8px;min-width:44px;min-height:44px;display:grid;place-items:center}
+.rpick button svg path{fill:var(--starOff)}.rpick button.on svg path{fill:var(--star)}.rpick button:focus-visible{outline:2px solid var(--star);outline-offset:2px}
+.rword{margin-left:8px;font-weight:600;font-size:14px}
+.rcom{display:grid;gap:6px;margin:16px 0}.rcom textarea{width:100%;resize:vertical}
+.rate form .btn.primary{width:100%}.rdone{margin-bottom:8px}.rbtns{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.btn.rated .rstars,.oacts .btn .rstars{margin-right:6px}
+/* Owner: More → Reviews */
+.orvsum{display:grid;gap:10px;border:1px solid var(--line,#1f2838);border-radius:12px;padding:12px 14px;margin:6px 0 12px}
+.orvall{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.orvall b{font:400 26px/1 "Archivo Black",Inter,sans-serif}
+.orvcats{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;font-size:13px}.orvcats div{display:flex;align-items:center;gap:6px}.orvcats span{flex:1;min-width:0}
+.orvtabs{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.orv{border:1px solid var(--line,#1f2838);border-radius:12px;padding:12px 14px;margin:10px 0}
+.orvh{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.orvh b{display:block}.orvavg{display:flex;align-items:center;gap:6px}
+.orvrows{display:grid;gap:4px;margin:10px 0;font-size:13px}.orvrows div{display:grid;grid-template-columns:minmax(0,1fr) auto 64px;gap:8px;align-items:center}.orvrows small{color:var(--muted,#8a94a7)}
+.orv blockquote{margin:6px 0 10px;padding:8px 10px;border-left:3px solid var(--star,#E8B23A);background:rgba(232,178,58,.06);font-size:14px;line-height:1.5}
+.orvb{display:flex;gap:8px}.orvb .btn{flex:1}
+.rv,.rate{text-align:left}.rv .rvcat,.rv .rvq,.rv blockquote{text-align:left}
+.rrow legend small{text-transform:none;letter-spacing:0;font-weight:400}
+/* ratings: stars only (no comments) */
+.rvlist{display:block;margin-top:16px}.rvlist .kick{display:block;margin-bottom:6px}
+.rvlist .rvq{display:flex;align-items:center;gap:8px;padding:8px 0;border:0;border-top:1px solid var(--line,#1f2838);border-radius:0}.rvlist .rvq b{font-size:14px}

@@ -1,4 +1,5 @@
 // PST_EDGE_FUNCTION_PATCH_V7_EMAIL_BRAND_REFRESH
+// v64 (Nov 17, 2026, Patriot): "How did we do?" rating box on Delivered emails when the sender passes rate:true (owner app) or a Patriot rateUrl.
 // v63 (Oct 31, 2026, Patriot): merch photos in order emails; partner-portal lines show no vial picture; optional shippingLabel ("Billed later") for partner orders.
 // v62 (Oct 27, 2026, Patriot): "Other method" payment for customers the owner turns it on for: no pay instructions, "a team member will contact you".
 // v61 (Oct 27, 2026, Patriot): branded look: navy header with the eagle, vial photos per item, dot progress, navy footer.
