@@ -362,6 +362,14 @@ if (location.protocol === "http:" && /(^|\.)patriotpeptides-usa\.com$/i.test(loc
   function setQty(key, n) { n = Math.min(9999, Math.max(0, Math.floor(Number(n) || 0))); writeCart(readCart().map(i => i.key === key ? { ...i, quantity: n } : i).filter(i => i.quantity > 0)); }
   const count = () => readCart().reduce((s, i) => s + i.quantity, 0);
   function refreshCount() { const n = count(); $$("[data-cart-count]").forEach(el => { el.textContent = n; el.hidden = !n; }); }
+  // v108: every page drops bag lines for products that are no longer sold (the bag page already did), so the bag badge never counts an item the bag doesn't show.
+  // Remembered in ppu_cart_removed so the bag page can still say "an item … is no longer available".
+  async function pruneCart() {
+    try { if (!readCart().length) return; const rows = await cartRows(), all = await allProducts(); if (!all.length) return;
+      const gone = rows.filter(r => !r.product); if (!gone.length) return;
+      const keys = new Set(gone.map(r => r.key)); writeCart(readCart().filter(i => !keys.has(i.key))); store.set("ppu_cart_removed", (Number(store.get("ppu_cart_removed", 0)) || 0) + gone.length);
+    } catch {}
+  }
   async function aliasMap(cart) {
     const legacy = [...new Set(cart.map(i => i.key).filter(k => k && !/^PSTP\d+$/i.test(k)))];
     if (!legacy.length) return {};
@@ -818,7 +826,7 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
     document.body.insertAdjacentHTML("afterbegin", header(page));
     try { if (localStorage.getItem("pst-is-owner") === "1") mountFlip("shop"); } catch {}
     document.body.insertAdjacentHTML("beforeend", footer() + tabbar(page));
-    refreshCount(); refreshSaved();
+    refreshCount(); refreshSaved(); if (page !== "cart") pruneCart();
     getUser().then(async u => {
       const a = $("[data-acct]"); if (!a) return;
       if (!u) { try { localStorage.removeItem("pst-is-owner"); } catch {} document.querySelector(".flipfloat")?.remove(); }

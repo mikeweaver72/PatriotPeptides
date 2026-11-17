@@ -126,6 +126,7 @@ ${smsOn ? (has && !smsCustom ? `<p class="muted small">Texts go to ${esc(P.fmtPh
       [rows, user, allP] = await Promise.all([P.cartRows(), P.getUser(), P.products()]);
       const gone = rows.filter(r => !r.product);
       if (gone.length && allP.length) { gone.forEach(r => P.setQty(r.key, 0)); rows = rows.filter(r => r.product); removedN = gone.length; }
+      { const pre = Number(P.store?.get("ppu_cart_removed", 0)) || 0; if (pre) { removedN += pre; P.store?.set("ppu_cart_removed", 0); } } // v108: removed on another page (pst-core pruneCart)
       await primeReminders();
       if (user) {
         [profile, methods] = await Promise.all([P.getProfile(user), P.paymentMethods()]);
