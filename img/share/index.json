@@ -314,5 +314,9 @@
  "PSTP100012": {
   "sig": "PSTP100012|PP-TB-500|20mg",
   "slug": "pp-tb-500-pstp100012"
+ },
+ "PSTP100020": {
+  "sig": "PSTP100020|PP-2-TZ|60mg",
+  "slug": "pp-2-tz-pstp100020"
  }
 }
