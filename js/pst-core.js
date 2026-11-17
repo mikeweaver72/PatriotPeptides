@@ -1252,6 +1252,22 @@ ${rows.length ? `<div class="mbl">${rows.map(r => `<div class="mbr${r.key === ad
   // pages with a Build-A-Kit line (homepage) show his current tiers, or hide it when kits are off
   document.addEventListener("DOMContentLoaded", () => { if (!document.querySelector("[data-kittext]")) return;
     kitCfg().then(() => document.querySelectorAll("[data-kittext]").forEach(el => { const t = kitText(); if (t) el.textContent = t; else (el.closest("[data-kitpromo]") || el).hidden = true; })); });
+  /* PepSeekr hand-off: any page opened with ?add=KEY:QTY,KEY:QTY puts those items in the bag, then
+     cleans the address. Keys are checked for shape only; a key that isn't sold is dropped by the bag's
+     usual "no longer available" pass, so a stale link can't add anything that isn't on the shelf. */
+  (function bagFromLink() {
+    try {
+      const raw = params.get("add"); if (!raw) return;
+      let n = 0;
+      for (const part of raw.split(",").slice(0, 30)) {
+        const [k, q] = part.split(":"); const key = String(k || "").trim();
+        if (!/^[\w.+\- ]{1,60}$/.test(key)) continue;
+        addToCart(key, Math.min(20, Math.max(1, Math.floor(Number(q) || 1)))); n++;
+      }
+      const u = new URL(location.href); u.searchParams.delete("add"); history.replaceState(null, "", u.pathname + u.search + u.hash);
+      if (n) document.addEventListener("DOMContentLoaded", () => { try { toast(`Added ${n} item${n === 1 ? "" : "s"} to your bag`); } catch {} });
+    } catch { /* private mode or old browser: the shopper can still add items by hand */ }
+  })();
   window.PST = { kitCfg, kitRules, kitText, isMerch, merchProducts, allProducts, shipQuote, isWholesale, WS_ZONES, giftLines, flipper, mountFlip, activePromotions, vialCanvas, US_STATES, stateCode, stateSelect, kitInfo, SMS_CONSENT, usPhone, fmtPhone, PREVIEW, lockScroll, CFG, FOCUS, REMIND, $, $$, esc, money, round, params, store, fmtDate, isStandalone, isIOS, client, getUser, getProfile, isAdmin, customerName, firstName,
     products, groups, cycles, suggestDays, myHistory, myProducts, isDone, handedOff, stageOf, vialLiquid, paidNotice, gIn, gBest, gMin, unitPrice, onSale, qty, stock, focuses, isBlend, titleParts, productUrl, coaHref, vial, cmpProduct,
     readCart, writeCart, addToCart, setQty, count, refreshCount, cartRows, reminders, setReminder,
