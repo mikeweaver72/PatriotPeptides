@@ -13,6 +13,7 @@
 // supplies get pages (so links work) but are noindex and left out of the sitemap and A–Z. Merch is never built (sign-in only).
 // Renamed products keep working: every address a product has had is kept in tools/seo/slugs.json and forwards to the new page.
 import { writeFileSync, readFileSync, existsSync, readdirSync, unlinkSync, mkdirSync } from "node:fs";
+import { execSync } from "node:child_process";
 
 const SITE = "https://www.patriotpeptides-usa.com", BRAND = "Patriot Peptides USA";
 const ROOT = new URL("../../", import.meta.url).pathname;
@@ -47,7 +48,7 @@ async function rest(path) {
 
 // product.html is the template: its head and body are reused, so header, footer and ?v= numbers stay current
 const TPL = readFileSync(ROOT + "product.html", "utf8");
-function fromTemplate({ title, desc, canonical, robots, ogImage, jsonld, bodyAttrs, inner }) {
+function fromTemplate({ title, desc, canonical, robots, ogImage, jsonld, bodyAttrs, inner, after = "" }) {
   let h = TPL;
   const set = (rx, val) => { if (!rx.test(h)) throw new Error(`product.html template changed: ${rx}`); h = h.replace(rx, val); };
   set(/<title>[^<]*<\/title>/, `<title>${esc(title)}</title>`);
@@ -61,9 +62,16 @@ function fromTemplate({ title, desc, canonical, robots, ogImage, jsonld, bodyAtt
   h = h.replace(/<head>/, `<head>\n${MARK}`);
   h = h.replace(/<\/head>/, `<style>.seo{max-width:1100px;margin:0 auto;padding:28px 20px 40px}.seo h1{margin:6px 0 10px}.seo h2{margin:26px 0 8px}.seo p,.seo li{line-height:1.6}.seo .kick{letter-spacing:.18em;text-transform:uppercase;font-size:12px}.seo table{border-collapse:collapse;width:100%;max-width:560px}.seo td,.seo th{padding:8px 10px;border-bottom:1px solid var(--line,#1f2838);text-align:left}.seo .ruo{margin-top:26px;font-size:13px}</style>\n<script type="application/ld+json">${JSON.stringify(jsonld).replace(/</g, "\\u003c")}</script>\n</head>`);
   set(/<body data-page="product">/, `<body ${bodyAttrs}>`);
-  set(/<div data-pdp>[\s\S]*?<\/main>/, `<div data-pdp>${inner}</div>\n</main>`);
+  set(/<div data-pdp>[\s\S]*?<\/main>/, `<div data-pdp>${inner}</div>\n${after}${after ? "\n" : ""}</main>`);
   return h;
 }
+
+// Nov 17 2026: research notes that go with a product page (and back). Every product page also links the COA and storage guides.
+const ART_FOR = { "pp-mk-677": ["buy-mk-677-research-compound"], "pp-cjc-ipa": ["cjc-1295-ipamorelin-research-blend-standards"], "pp-cjc-no-dac": ["cjc-1295-ipamorelin-research-blend-standards"],
+  "pp-ipa": ["cjc-1295-ipamorelin-research-blend-standards"], "pp-eptln": ["epithalon-peptide-research-supplier"], "pp-igf1-lr3": ["igf-1-lr3-research-material-quality-checks"], "pp-mltn-i": ["melanotan-i-research-peptide-quality-review"] };
+const ART_ALL = ["how-to-read-peptide-coa", "how-to-store-lyophilized-peptides", "peptide-identity-versus-purity"];
+const artTitle = f => { try { return stripTags((readFileSync(ROOT + `research/${f}.html`, "utf8").match(/<h1[^>]*>([\s\S]*?)<\/h1>/) || [])[1]) || ""; } catch { return ""; } };
+const readingFor = slug => [...new Set([...(ART_FOR[slug] || []), ...ART_ALL])].map(f => [f, artTitle(f)]).filter(([, t]) => t);
 
 const SHIP = `Orders ship within the United States once paid, with tracking emailed when they go out. Free shipping on orders over $200.`;
 const RUO = `For laboratory research use only. Not for human or veterinary use. Not a drug, food, cosmetic or supplement. ${BRAND} is not a compounding pharmacy and does not give dosing or preparation guidance.`;
@@ -98,8 +106,11 @@ ${supply ? "" : `<h2>Lab report</h2><p>${gsa ? `Verified by Gold Standard Analyt
 <h2>Shipping</h2><p>${esc(SHIP)} <a href="shipping.html">Shipping and returns</a>.</p>
 <p class="ruo">${esc(RUO)}</p>
 <p><a href="catalog.html">Browse the full collection</a> · <a href="${AZ}">Research peptides A–Z</a> · <a href="research-library.html">Research notes</a></p></div>`;
-  const html = fromTemplate({ title, desc, canonical, robots: noindex ? "noindex,follow" : "", ogImage: img, jsonld, bodyAttrs: `data-page="product" data-key="${esc(p0.product_key)}"`, inner });
-  return { html, noindex, keys: g.map(p => p.product_key) };
+  // outside [data-pdp], so it stays on the page after the shop script draws the product (Google reads the drawn page)
+  const reading = supply ? [] : readingFor(slug);
+  const after = reading.length ? `<section class="wrap pad pdrel" aria-labelledby="pdrel-h"><h2 class="serif" id="pdrel-h">Related research notes</h2><ul>${reading.map(([f, t]) => `<li><a href="research/${f}.html">${esc(t)}</a></li>`).join("")}</ul><p><a href="${AZ}">Research peptides A–Z</a> · <a href="testing.html">How we test</a> · <a href="research-library.html">All research notes</a></p></section>` : "";
+  const html = fromTemplate({ title, desc, canonical, robots: noindex ? "noindex,follow" : "", ogImage: img, jsonld, bodyAttrs: `data-page="product" data-key="${esc(p0.product_key)}"`, inner, after });
+  return { html, noindex, keys: g.map(p => p.product_key), def: p0.product_key };
 }
 
 function azIndex(groups, map) {
@@ -133,12 +144,12 @@ if (prods.length < 5) throw new Error(`Only ${prods.length} products came back; 
 const labKeys = new Set((await rest("coa_records?select=product_key&is_published=eq.true&limit=1000").catch(e => { console.warn("coa_records:", e.message); return []; })).map(r => r.product_key).filter(Boolean));
 const groups = Object.values(prods.reduce((m, p) => { const k = String(p.display_name || "").trim().toLowerCase(); (m[k] ||= []).push(p); return m; }, {}));
 const RESERVED = new Set(readdirSync(ROOT).filter(f => f.endsWith(".html") && !readFileSync(ROOT + f, "utf8").includes(MARK)));
-const map = {}, built = [], indexable = [], hidden = [];
+const map = {}, built = [], indexable = [], hidden = [], defs = {};
 const HIST = ROOT + "tools/seo/slugs.json", hist = existsSync(HIST) ? JSON.parse(readFileSync(HIST, "utf8")) : {};
 for (const g of groups) {
   let slug = slugOf(g[0].display_name); if (RESERVED.has(`${slug}.html`)) slug = `${slug}-research-peptide`;
   if (RESERVED.has(`${slug}.html`)) { console.warn(`skipped ${g[0].display_name}: ${slug}.html is a hand-made page`); continue; }
-  const { html, noindex, keys } = productPage(g, slug, labKeys);
+  const { html, noindex, keys, def } = productPage(g, slug, labKeys); defs[`${slug}.html`] = def;
   writeFileSync(ROOT + `${slug}.html`, html); built.push(`${slug}.html`); if (!noindex) indexable.push(`${slug}.html`); else hidden.push(...keys);
   keys.forEach(k => { map[k] = `${slug}.html`; (hist[k] ||= []).includes(slug) || hist[k].push(slug); });
 }
@@ -158,9 +169,38 @@ for (const f of readdirSync(ROOT)) { if (!f.endsWith(".html") || built.includes(
 if (!RESERVED.has(AZ)) { writeFileSync(ROOT + AZ, azIndex(groups, map)); built.push(AZ); }
 // remove pages this build made before for products that are gone
 for (const f of readdirSync(ROOT)) if (f.endsWith(".html") && !built.includes(f) && readFileSync(ROOT + f, "utf8").includes(MARK)) unlinkSync(ROOT + f);
-writeFileSync(ROOT + "js/pst-seo-map.js", `/* generated by tools/seo/build.mjs on ${today}: product code -> product page */\nwindow.PST_SEO = ${JSON.stringify(map)};\n/* products kept out of search (NOINDEX list in build.mjs) */\nwindow.PST_NOINDEX = ${JSON.stringify(hidden)};\n`);
+writeFileSync(ROOT + "js/pst-seo-map.js", `/* generated by tools/seo/build.mjs on ${today}: product code -> product page */\nwindow.PST_SEO = ${JSON.stringify(map)};\n/* products kept out of search (NOINDEX list in build.mjs) */\nwindow.PST_NOINDEX = ${JSON.stringify(hidden)};\n/* the strength each page opens on: links to it need no ?key= (one address per page for Google) */\nwindow.PST_SEO_DEF = ${JSON.stringify(defs)};\n`);
 // research articles: every page in research/ that isn't noindex
 const articles = existsSync(ROOT + "research") ? readdirSync(ROOT + "research").filter(f => f.endsWith(".html") && !/noindex/i.test(readFileSync(ROOT + "research/" + f, "utf8"))).sort() : [];
+// Nov 17 2026: each article gets Article + Breadcrumb data and a "Keep reading" block (related products, 3 related notes, A–Z, lab reports),
+// so articles link to each other and to the shop instead of only back to Research Notes. Rewritten between markers; unchanged files aren't touched.
+const STOP = new Set("a an and the of to for in on vs versus how what why are is does do your research peptide peptides guide html usa".split(" "));
+const words = f => new Set(f.replace(/\.html$/, "").split("-").filter(w => !STOP.has(w) && w.length > 2));
+const PROD_FOR = {}; for (const [slug, fs] of Object.entries(ART_FOR)) if (indexable.includes(`${slug}.html`)) for (const f of fs) (PROD_FOR[f] ||= []).push(slug);
+const EXTRA = { "single-vials-versus-peptide-kits": [["kit.html", "Build a kit"]], "research-peptide-bulk-ordering": [["bulk-request.html", "Bulk requests"]], "wholesale-research-peptides-usa-buying-standards": [["bulk-request.html", "Bulk requests"], ["wholesale.html", "Wholesale kits"]] };
+const pageName = f => { try { return stripTags((readFileSync(ROOT + f, "utf8").match(/<h1[^>]*>([\s\S]*?)<\/h1>/) || [])[1]); } catch { return f; } };
+let arts = 0;
+for (const f of articles) {
+  const path = ROOT + "research/" + f, src = readFileSync(path, "utf8"), base = f.replace(/\.html$/, "");
+  const h1 = stripTags((src.match(/<h1[^>]*>([\s\S]*?)<\/h1>/) || [])[1]), date = (src.match(/<p class="muted">(\d{4}-\d{2}-\d{2})/) || [])[1];
+  const desc = (src.match(/<meta name="description" content="([^"]*)"/) || [])[1] || "", url = `${SITE}/research/${f}`;
+  const mine = words(f), rel = articles.filter(x => x !== f).map(x => [x, [...words(x)].filter(w => mine.has(w)).length]).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 3).map(([x]) => x);
+  const prods = (PROD_FOR[base] || []).map(sl => [`${sl}.html`, pageName(`${sl}.html`)]), extra = EXTRA[base] || [];
+  const ld = { "@context": "https://schema.org", "@graph": [ORG, { "@type": "Article", headline: h1, description: stripTags(desc), ...(date ? { datePublished: date } : {}), author: { "@id": `${SITE}/#org` }, publisher: { "@id": `${SITE}/#org` }, mainEntityOfPage: url, image: `${SITE}/img/og/og-home.jpg` },
+    crumbs(["Home", `${SITE}/`], ["Research notes", `${SITE}/research-library.html`], [h1, url])] };
+  const head = `<!-- ppu-art --><script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\\u003c")}</script><!-- /ppu-art -->`;
+  const block = `<!-- ppu-rel --><div class="relnotes" style="margin-top:32px;padding-top:18px;border-top:1px solid var(--line,#1f2838)">${prods.length || extra.length ? `<h2>From the shop</h2><ul>${[...prods, ...extra].map(([h, t]) => `<li><a href="${h}">${esc(t)}</a></li>`).join("")}</ul>` : ""}<h2>Keep reading</h2><ul>${rel.map(x => `<li><a href="research/${x}">${esc(pageName("research/" + x))}</a></li>`).join("")}</ul><p><a href="${AZ}">Research peptides A–Z</a> · <a href="testing.html">Lab reports</a> · <a href="research-library.html">All research notes</a></p></div><!-- /ppu-rel -->`;
+  let out = src.replace(/<!-- ppu-art -->[\s\S]*?<!-- \/ppu-art -->\n?/, "").replace(/<!-- ppu-rel -->[\s\S]*?<!-- \/ppu-rel -->/, "");
+  out = out.replace(/<\/head>/, `${head}\n</head>`);
+  out = /<p class="muted small"[^>]*>Research Use Only/.test(out) ? out.replace(/(<p class="muted small"[^>]*>Research Use Only)/, `${block}$1`) : out.replace(/(<\/div><\/section>\s*<\/main>)/, `${block}$1`);
+  if (out !== src) { writeFileSync(path, out); arts++; }
+}
 const urls = [...MAIN.map(u => `${SITE}/${u}`), ...indexable.map(f => `${SITE}/${f}`), `${SITE}/${AZ}`, ...articles.map(f => `${SITE}/research/${f}`)];
-writeFileSync(ROOT + "sitemap.xml", `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(u => `  <url><loc>${u}</loc><lastmod>${today}</lastmod></url>`).join("\n")}\n</urlset>\n`);
-console.log(`built ${built.length} pages (${indexable.length} product pages indexable, ${hidden.length} codes noindex), share pages pointed: ${shares}, ${articles.length} articles, ${urls.length} sitemap URLs`);
+// lastmod = the day the page last changed (git), not today on every page every night (Google ignores lastmod that always moves)
+const lastmod = {}; try {
+  let cur = ""; for (const line of execSync("git log --format=@%cs --name-only -- '*.html'", { cwd: ROOT, maxBuffer: 1 << 28 }).toString().split("\n")) { if (line.startsWith("@")) cur = line.slice(1); else if (line && !lastmod[line]) lastmod[line] = cur; }
+  for (const line of execSync("git status --porcelain -- '*.html'", { cwd: ROOT }).toString().split("\n")) { const f = line.slice(3).trim(); if (f) lastmod[f] = today; }
+} catch (e) { console.warn("git dates:", e.message); }
+const fileOf = u => { const f = u.slice(SITE.length + 1); return f || "index.html"; };
+writeFileSync(ROOT + "sitemap.xml", `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(u => `  <url><loc>${u}</loc><lastmod>${lastmod[fileOf(u)] || today}</lastmod></url>`).join("\n")}\n</urlset>\n`);
+console.log(`built ${built.length} pages (${indexable.length} product pages indexable, ${hidden.length} codes noindex), share pages pointed: ${shares}, ${articles.length} articles (${arts} updated), ${urls.length} sitemap URLs`);

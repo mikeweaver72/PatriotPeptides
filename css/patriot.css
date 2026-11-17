@@ -659,3 +659,13 @@ body.app-home .shelf{padding-bottom:4px}
 /* ratings: stars only (no comments) */
 .rvlist{display:block;margin-top:16px}.rvlist .kick{display:block;margin-bottom:6px}
 .rvlist .rvq{display:flex;align-items:center;gap:8px;padding:8px 0;border:0;border-top:1px solid var(--line,#1f2838);border-radius:0}.rvlist .rvq b{font-size:14px}
+/* v107: keep room for the header + announcement bar until the shop script draws them, so the page doesn't jump (layout shift). Removed the moment they exist (main is no longer body's first child). On body, not main, so main itself never moves. */
+body:not([data-chrome="none"]):has(>main:first-child){padding-top:121px}
+@media(min-width:470px){body:not([data-chrome="none"]):has(>main:first-child){padding-top:101px}}
+@media(min-width:900px){body:not([data-chrome="none"]):has(>main:first-child){padding-top:117px}}
+@media(display-mode:standalone){body:not([data-chrome="none"]):has(>main:first-child){padding-top:66px}}
+@media(display-mode:standalone) and (min-width:900px){body:not([data-chrome="none"]):has(>main:first-child){padding-top:82px}}
+/* v107: research notes under each product page (tools/seo/build.mjs) */
+.pdrel{max-width:1100px;margin:0 auto}.pdrel h2{font-size:22px;margin:0 0 10px}.pdrel ul{margin:0 0 12px;padding-left:20px}.pdrel li{margin:6px 0;line-height:1.5}.pdrel p{font-size:14px}
+.relnotes h2{font-size:20px}.relnotes ul{padding-left:20px}.relnotes li{margin:6px 0}
+.pdrel a{color:var(--gold);text-decoration:underline;text-underline-offset:3px}

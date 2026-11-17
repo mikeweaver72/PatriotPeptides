@@ -1,5 +1,5 @@
-@font-face{font-family:PSTLabel;src:url(../fonts/RobotoCondensed_700Bold.ttf) format("truetype");font-weight:700;font-display:block}
-@font-face{font-family:PSTLabelR;src:url(../fonts/RobotoCondensed_400Regular.ttf) format("truetype");font-display:block}
+@font-face{font-family:PSTLabel;src:url(../fonts/RobotoCondensed_700Bold.woff2) format("woff2"),url(../fonts/RobotoCondensed_700Bold.ttf) format("truetype");font-weight:700;font-display:block}
+@font-face{font-family:PSTLabelR;src:url(../fonts/RobotoCondensed_400Regular.woff2) format("woff2"),url(../fonts/RobotoCondensed_400Regular.ttf) format("truetype");font-display:block}
 /* Patriot Peptides USA · Old Glory (v1). Mobile first. */
 :root{--bg:#0a101c;--bg2:#0d1525;--card:#111a2b;--card2:#16213a;--line:#1f2838;--line2:#3a3424;--ink:#f3ede1;--muted:#a59f93;--dim:#7c776c;
 --gold:#c9a45c;--gold2:#e6cf96;--goldg:linear-gradient(135deg,#ecd9a2,#b8913a);--ok:#7fcf9f;--warn:#e9c46a;--bad:#f08a8a;

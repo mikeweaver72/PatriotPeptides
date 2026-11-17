@@ -162,7 +162,8 @@ if (location.protocol === "http:" && /(^|\.)patriotpeptides-usa\.com$/i.test(loc
     if (/^wolverine$/i.test(t)) return { main: t.charAt(0) + t.slice(1).toLowerCase(), sub: "BPC-157 · TB-500" };
     return { main: t, sub: "" };
   }
-  const productUrl = p => isMerch(p) ? `merch.html?item=${encodeURIComponent(p.display_name || "")}` : `${(window.PST_SEO && window.PST_SEO[p.product_key]) || "product.html"}?key=${encodeURIComponent(p.product_key)}`; // PST_SEO: js/pst-seo-map.js (tools/seo/build.mjs)
+  const productUrl = p => { if (isMerch(p)) return `merch.html?item=${encodeURIComponent(p.display_name || "")}`; const pg = (window.PST_SEO && window.PST_SEO[p.product_key]) || "product.html";
+    return window.PST_SEO_DEF && window.PST_SEO_DEF[pg] === p.product_key ? pg : `${pg}?key=${encodeURIComponent(p.product_key)}`; }; // v107: the strength a page opens on gets a plain link (one address per page for Google) // PST_SEO: js/pst-seo-map.js (tools/seo/build.mjs)
   const coaHref = p => { const u = String(p.coa_url || "").trim(); if (!u || /pending/i.test(u)) return ""; return /^https?:/.test(u) ? u : u.replace(/^\/?(a?ssets\/)/, "assets/").replace(/^ssets\//, "assets/"); };
 
   /* vial artwork from the product's label colour (no photos needed) */
@@ -186,7 +187,7 @@ if (location.protocol === "http:" && /(^|\.)patriotpeptides-usa\.com$/i.test(loc
   const loadImg = src => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; });
   function vialAssetsP() {
     return vialAssets || (vialAssets = Promise.all([loadImg("img/vial-base.webp"), loadImg("img/vial-shade.png"), loadImg("img/vial-stock.png"), fetch("img/vial.json").then(r => r.json()),
-      document.fonts.load("700 40px PSTLabel"), document.fonts.load("17px PSTLabelR"), loadImg("img/patriot-lockup.png")]).then(([base, shade, stock, m, , , lockup]) => ({ base, shade, stock, m, lockup })));
+      document.fonts.load("700 40px PSTLabel"), document.fonts.load("17px PSTLabelR"), loadImg("img/patriot-lockup.webp")]).then(([base, shade, stock, m, , , lockup]) => ({ base, shade, stock, m, lockup })));
   }
   async function vialCanvas(p, S = 2) {
     const { base, shade, stock, m, lockup } = await vialAssetsP(), W = m.w * S, H = m.h * S;
@@ -749,10 +750,12 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
   };
   const icon = (n, s = 22) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n] || ""}</svg>`;
   const EMB = "img/pst-emblem-96.webp", EMB2 = "img/pst-emblem-192.webp";
+  // v107: the default announcement is drawn with the header, so the page doesn't jump down when it fills in (a promotion replaces it)
+  const ANNC_DEFAULT = `<span><a href="kit.html" class="nw"><b>Build a kit</b> 3 vials 5% <i>★</i> 5 vials 10%</a> <span class="nw"><i>★</i> Free shipping over $200</span><span class="lg"> <i>★</i> Third-party tested</span></span>`;
   function header(page) {
     const a = (h, t, k) => `<a href="${h}"${page === k ? ' aria-current="page"' : ""}>${t}</a>`;
     return `<a class="skip" href="#main">Skip to content</a>
-<div class="annc" data-annc hidden></div>
+<div class="annc" data-annc>${ANNC_DEFAULT}</div>
 <header class="hd"><div class="wrap hrow">
   <button class="mobi" type="button" data-act="drawer" aria-label="Menu" aria-controls="drawer">${icon("menu")}</button>
   <nav class="nav l" aria-label="Shop">
@@ -771,7 +774,7 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
 <div class="mega" id="mega" hidden><div class="wrap mgrid">
   <div><b>Shop by type</b><a href="catalog.html">All products</a><a href="catalog.html?category=Peptide">Peptides</a><a href="catalog.html?category=Multi-Peptide%20Product">Research blends</a><a href="catalog.html?category=Supply">Supplies</a><a href="wholesale.html">Wholesale kits</a><a href="merch.html">Merch</a></div>
   <div><b>Research focus</b><a href="catalog.html?focus=performance">Performance</a><a href="catalog.html?focus=recovery">Recovery</a><a href="catalog.html?focus=longevity">Longevity</a></div>
-  <div><b>Quick links</b><a href="catalog.html?stock=1">Available now</a><a href="catalog.html?sort=new">New arrivals</a><a href="catalog.html?sort=best">Best sellers</a><a href="testing.html">Lab reports</a><a href="kit.html">Build a kit</a><a href="wholesale.html">Wholesale</a><a href="bulk-request.html">Bulk requests</a></div>
+  <div><b>Quick links</b><a href="catalog.html?stock=1">Available now</a><a href="catalog.html?sort=new">New arrivals</a><a href="catalog.html?sort=best">Best sellers</a><a href="testing.html">Lab reports</a><a href="research-peptides-a-z.html">Peptides A–Z</a><a href="research-library.html">Research notes</a><a href="kit.html">Build a kit</a><a href="wholesale.html">Wholesale</a><a href="bulk-request.html">Bulk requests</a></div>
   <div class="mfeat" data-mfeat></div>
 </div></div></header>
 <div class="drawerwrap" id="drawer" hidden><aside class="drawer" role="dialog" aria-modal="true" aria-label="Menu">
@@ -781,7 +784,7 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
   <details open><summary>Shop</summary><a href="catalog.html">All products</a><a href="catalog.html?stock=1">Available now</a><a href="catalog.html?sort=new">New arrivals</a><a href="catalog.html?sort=best">Best sellers</a><a href="catalog.html?category=Peptide">Peptides</a><a href="catalog.html?category=Multi-Peptide%20Product">Research blends</a><a href="catalog.html?category=Supply">Supplies</a><a href="merch.html">Merch</a></details>
   <details><summary>Research focus</summary><a href="catalog.html?focus=performance">Performance</a><a href="catalog.html?focus=recovery">Recovery</a><a href="catalog.html?focus=longevity">Longevity</a></details>
   <details><summary>My account</summary><a href="index.html">My products</a><a href="account.html#orders">Orders &amp; tracking</a><a href="saved.html">Saved items</a><a href="account.html#rewards">Rewards &amp; credit</a><a href="account.html#alerts">Notifications</a></details>
-  <details><summary>Help</summary><a href="testing.html">Lab reports</a><a href="shipping.html">Shipping &amp; returns</a><a href="faq.html">FAQ</a><a href="contact.html">Contact</a><a href="about.html">About us</a><a href="kit.html">Build a kit</a><a href="wholesale.html">Wholesale</a><a href="bulk-request.html">Bulk requests</a></details>
+  <details><summary>Help</summary><a href="testing.html">Lab reports</a><a href="research-library.html">Research notes</a><a href="research-peptides-a-z.html">Peptides A–Z</a><a href="shipping.html">Shipping &amp; returns</a><a href="faq.html">FAQ</a><a href="contact.html">Contact</a><a href="about.html">About us</a><a href="kit.html">Build a kit</a><a href="wholesale.html">Wholesale</a><a href="bulk-request.html">Bulk requests</a></details>
   <a href="https://www.starnstone.com" class="dlink" target="_blank" rel="noopener">Skin care <span aria-hidden="true">↗</span><span class="sr"> (Star N Stone, opens in a new tab)</span></a>
   </nav>
   <button type="button" class="dtheme" data-act="theme">${themeIcon()}<span data-themelabel>${themeLabel()}</span></button>
@@ -800,8 +803,8 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
   <form class="nform" action="register.html"><label class="sr" for="nem">Email</label><input id="nem" type="email" name="email" placeholder="Your email" autocomplete="email" required><input type="hidden" name="news" value="1"><button class="btn primary sm">Sign me up</button></form></section>
   <div class="fmark"><img src="${EMB2}" alt="" width="64" height="64" loading="lazy"><div class="wm">PATRIOT PEPTIDES<small>★ USA ★</small></div><p class="tagl">Quality <span>|</span> Consistency <span>|</span> Transparency</p></div>
   <div class="fcols f4">
-    <nav aria-label="Shop"><b>Shop</b><a href="catalog.html">All products</a><a href="catalog.html?stock=1">Available now</a><a href="catalog.html?sort=new">New arrivals</a><a href="catalog.html?category=Multi-Peptide%20Product">Research blends</a><a href="kit.html">Build a kit</a><a href="wholesale.html">Wholesale</a><a href="bulk-request.html">Bulk requests</a><a href="merch.html">Merch</a></nav>
-    <nav aria-label="Help"><b>Help</b><a href="shipping.html">Shipping &amp; returns</a><a href="faq.html">FAQ</a><a href="testing.html">Lab reports</a><a href="contact.html">Contact</a><a href="mailto:${CFG.support}">${CFG.support}</a></nav>
+    <nav aria-label="Shop"><b>Shop</b><a href="catalog.html">All products</a><a href="research-peptides-a-z.html">Peptides A–Z</a><a href="catalog.html?stock=1">Available now</a><a href="catalog.html?sort=new">New arrivals</a><a href="catalog.html?category=Multi-Peptide%20Product">Research blends</a><a href="kit.html">Build a kit</a><a href="wholesale.html">Wholesale</a><a href="bulk-request.html">Bulk requests</a><a href="merch.html">Merch</a></nav>
+    <nav aria-label="Help"><b>Help</b><a href="shipping.html">Shipping &amp; returns</a><a href="faq.html">FAQ</a><a href="testing.html">Lab reports</a><a href="research-library.html">Research notes</a><a href="contact.html">Contact</a><a href="mailto:${CFG.support}">${CFG.support}</a></nav>
     <nav aria-label="Account"><b>Account</b><a href="account.html">My account</a><a href="account.html#orders">Track an order</a><a href="saved.html">Saved items</a><a href="rewards.html">Researcher rewards</a><a href="install.html">Get the app</a><a href="account.html#alerts">Notifications</a></nav>
     <nav aria-label="Company"><b>Company</b><a href="about.html">About us</a><a href="https://www.starnstone.com" target="_blank" rel="noopener">Skin care <span aria-hidden="true">↗</span><span class="sr"> (Star N Stone, opens in a new tab)</span></a><a href="terms.html">Terms</a><a href="privacy.html">Privacy</a></nav>
   </div>
@@ -832,7 +835,7 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
       else { $("#drawer nav")?.insertAdjacentHTML("afterend", `<div class="dsign"><a class="btn primary wide" href="login.html">Sign in</a><a class="btn ghost wide" href="register.html">Create account</a></div>`); }
       if (!u) a.href = `login.html?redirect=${encodeURIComponent((location.pathname.split("/").pop() || "index.html") + location.search)}`;
       const promo = await activePromotion(u).catch(() => null), el = $("[data-annc]");
-      if (el) { el.innerHTML = promo ? `<span>${promo.badge ? `<b>${esc(promo.badge)}</b> ` : ""}${esc(promo.title)}</span>${promo.button_link ? `<a href="${esc(promo.button_link)}">${esc(promo.button_text || "Learn more")} →</a>` : ""}` : `<span><a href="kit.html" class="nw"><b>Build a kit</b> 3 vials 5% <i>★</i> 5 vials 10%</a> <span class="nw"><i>★</i> Free shipping over $200</span><span class="lg"> <i>★</i> Third-party tested</span></span>`; el.hidden = false; }
+      if (el) { if (promo) el.innerHTML = `<span>${promo.badge ? `<b>${esc(promo.badge)}</b> ` : ""}${esc(promo.title)}</span>${promo.button_link ? `<a href="${esc(promo.button_link)}">${esc(promo.button_text || "Learn more")} →</a>` : ""}`; el.hidden = false; }
     });
   }
 
