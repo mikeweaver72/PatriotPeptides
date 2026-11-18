@@ -105,15 +105,18 @@
     });
   }
   /* ---- his protected-action rule: re-enter the admin password ---- */
+  // v109: once the password is confirmed, protected actions don't ask again for 10 minutes (kept in memory only: a reload or sign-out asks again)
+  const PW_GRACE = 10 * 60 * 1000; let pwOkAt = 0;
   function confirmPassword(reason) {
+    if (Date.now() - pwOkAt < PW_GRACE) return Promise.resolve(true);
     return new Promise(resolve => {
-      const w = P.sheet(`<form class="osheet" data-pwf><h2 class="serif">Confirm it's you</h2><p class="muted">${esc(reason)}. Enter your admin password to continue.</p><label>Password<input type="password" name="pw" autocomplete="current-password" required></label><p class="status" data-pws role="status"></p><button class="btn primary wide" type="submit">Confirm</button><button class="btn ghost wide" type="button" data-pwx style="margin-top:8px">Cancel</button></form>`, { label: "Confirm password" });
+      const w = P.sheet(`<form class="osheet" data-pwf><h2 class="serif">Confirm it's you</h2><p class="muted">${esc(reason)}. Enter your admin password to continue. You won't be asked again for 10 minutes.</p><label>Password<input type="password" name="pw" autocomplete="current-password" required></label><p class="status" data-pws role="status"></p><button class="btn primary wide" type="submit">Confirm</button><button class="btn ghost wide" type="button" data-pwx style="margin-top:8px">Cancel</button></form>`, { label: "Confirm password" });
       const f = w.querySelector("form");
       w.querySelector("[data-pwx]").addEventListener("click", () => { P.closeSheet(); resolve(false); });
       f.addEventListener("submit", async e => { e.preventDefault(); const b = f.querySelector("[type=submit]"); b.disabled = true;
         const { error } = await P.client().auth.signInWithPassword({ email: me().email, password: f.pw.value });
         if (error) { f.querySelector("[data-pws]").textContent = "That password didn't work. Nothing was changed."; b.disabled = false; return; }
-        P.closeSheet(); resolve(true); });
+        pwOkAt = Date.now(); P.closeSheet(); resolve(true); });
     });
   }
   function confirmSheet(title, body, yes, danger) {
@@ -174,7 +177,7 @@ ${mails.length ? mails.map(x => { const ok = x.action_type === "email_sent", to 
   return `<div class="omrow ${ok ? "ok" : "bad"}"><span class="omic" aria-hidden="true">${ok ? "✓" : "✕"}</span><span><b>${esc(x.old_value || "Email")}</b><small>${ok ? "Sent" : "Failed"}${to ? ` to ${esc(to)}` : ""} · ${esc(new Date(x.created_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }))}${!ok && why ? ` · ${esc(why)}` : ""}</small></span></div>`; }).join("") : `<p class="muted small">No emails sent from the owner app for this order yet.</p>`}
 <p class="muted small" style="margin-top:8px">The order-received email goes out by itself when the customer checks out.</p></details>
 <details class="omore"><summary>More actions</summary>
-${st.k !== "dead" && !isLocked(o) ? btn("edit", "Edit items") : ""}${st.k !== "dead" && isLocked(o) && left > 0 ? btn("reduce", "Remove unshipped items") : ""}${st.k !== "dead" ? btn("comp", "+ Free item ($0)") : ""}
+${st.k !== "dead" && !isLocked(o) ? btn("edit", "Edit items") : ""}${st.k !== "dead" && isLocked(o) && left > 0 ? btn("reduce", "Remove unshipped items") : ""}${st.k !== "dead" ? btn("comp", "+ Free items ($0)") : ""}
 ${st.k === "unpaid" && o.payment_deadline_at ? btn("extend", "Give 24 more hours to pay") : ""}${btn("emails", "Email the customer…")}
 ${st.k !== "dead" && nm(pStatus(o)) === "paid" ? btn("refund", "Mark refunded", "danger") : ""}${st.k !== "dead" && st.k !== "done" ? btn("cancel", "Cancel order", "danger") : ""}
 <a class="btn ghost wide" href="admin.html">Open in full admin</a></details>
@@ -611,23 +614,39 @@ ${ch.map((i, k) => `<label class="chip rowchip"><input type="radio" name="it" va
     const { data: stock, error } = await P.client().from("product_inventory").select("product_key,display_name,strength,current_inventory").gt("current_inventory", 0).order("display_name");
     if (error || !stock?.length) { P.toast(error ? error.message : "Nothing is in stock."); return; }
     const hist = await shipHistory(o).catch(() => []);
-    const w = P.sheet(`<form class="osheet"><h2 class="serif">Add a free item</h2><p class="muted small">Adds it to ${esc(o.order_number || "")} at $0.00 and takes it out of stock now. The order total doesn't change.</p>
-<label>Product<select name="p" required><option value="">Choose…</option>${stock.map((p, k) => `<option value="${k}">${esc(p.display_name)} ${esc(p.strength || "")} · ${p.current_inventory} on hand</option>`).join("")}</select></label>
-<label>How many<input name="q" type="number" min="1" step="1" inputmode="numeric" value="1" required></label>
+    // v109: several products in one go (one password check), instead of one product per form
+    const opts = `<option value="">Choose…</option>${stock.map((p, k) => `<option value="${k}">${esc(p.display_name)} ${esc(p.strength || "")} · ${p.current_inventory} on hand</option>`).join("")}`;
+    const row = () => `<div class="crow" data-crow style="display:grid;grid-template-columns:1fr 72px 36px;gap:8px;align-items:end;margin-bottom:8px"><label style="margin:0">Product<select name="p">${opts}</select></label><label style="margin:0">Qty<input name="q" type="number" min="1" step="1" inputmode="numeric" value="1"></label><button type="button" class="btn ghost sm" data-crm aria-label="Remove this product" style="height:40px;padding:0">×</button></div>`;
+    const w = P.sheet(`<form class="osheet"><h2 class="serif">Add free items</h2><p class="muted small">Adds them to ${esc(o.order_number || "")} at $0.00 and takes them out of stock now. The order total doesn't change.</p>
+<div data-crows>${row()}</div><button type="button" class="btn ghost sm" data-cadd style="margin:0 0 12px">+ Another product</button>
 ${hist.length ? `<label>Goes with<select name="sh"><option value="">Not shipped yet</option>${hist.map(s => `<option value="${esc(s.id)}">${esc(s.carrier || "Shipment")} ${esc(s.tracking_number || "")}</option>`).join("")}</select></label>` : ""}
-<p class="status" data-cs></p><button class="btn primary wide" type="submit">Add free item</button></form>`, { label: "Free item" });
+<p class="status" data-cs role="status"></p><button class="btn primary wide" type="submit">Add free items</button></form>`, { label: "Free items" });
     w.classList.add("full");
-    const f = w.querySelector("form");
+    const f = w.querySelector("form"), rows = f.querySelector("[data-crows]");
+    f.querySelector("[data-cadd]").addEventListener("click", () => { rows.insertAdjacentHTML("beforeend", row()); rows.lastElementChild.querySelector("select").focus(); });
+    rows.addEventListener("click", e => { const x = e.target.closest("[data-crm]"); if (!x) return; if (rows.children.length > 1) x.closest("[data-crow]").remove(); else { const r = x.closest("[data-crow]"); r.querySelector("select").value = ""; r.querySelector("input").value = 1; } });
     f.addEventListener("submit", async e => { e.preventDefault();
-      const p = stock[+f.p.value], q = Number(f.q.value), st = f.querySelector("[data-cs]");
-      if (!p) { st.textContent = "Choose a product."; return; }
-      if (!Number.isInteger(q) || q < 1 || q > Number(p.current_inventory)) { st.textContent = `Enter 1 to ${p.current_inventory}.`; return; }
-      const shipmentId = f.sh?.value || null;
-      if (!(await confirmPassword("Adding a free item takes it out of stock"))) return;
-      const { error: e2 } = await P.client().rpc("pst_add_complimentary_order_item", { p_order_id: o.id, p_product_key: p.product_key, p_quantity: q, p_shipment_id: shipmentId, p_request_key: crypto.randomUUID() });
-      if (e2) { P.toast(e2.message); return; }
-      await audit(o, `Complimentary item added: ${q} × ${p.display_name} ${p.strength || ""} at $0.00, inventory deducted. ${shipmentId ? "Linked to existing shipment." : "Not linked to a shipment."}`);
-      done(o, `Free item added · ${q} taken out of stock`);
+      const st = f.querySelector("[data-cs]"), want = new Map();
+      for (const r of rows.querySelectorAll("[data-crow]")) {
+        const v = r.querySelector("select").value, q = Number(r.querySelector("input").value);
+        if (v === "") continue;
+        if (!Number.isInteger(q) || q < 1) { st.textContent = "Each quantity must be 1 or more."; return; }
+        want.set(+v, (want.get(+v) || 0) + q);
+      }
+      if (!want.size) { st.textContent = "Choose a product."; return; }
+      for (const [k, q] of want) if (q > Number(stock[k].current_inventory)) { st.textContent = `Only ${stock[k].current_inventory} of ${stock[k].display_name} ${stock[k].strength || ""} on hand.`; return; }
+      const shipmentId = f.sh?.value || null, btn = f.querySelector("[type=submit]");
+      if (!(await confirmPassword("Adding free items takes them out of stock"))) return;
+      btn.disabled = true; btn.textContent = "Adding…";
+      const added = [];
+      for (const [k, q] of want) {
+        const p = stock[k];
+        const { error: e2 } = await P.client().rpc("pst_add_complimentary_order_item", { p_order_id: o.id, p_product_key: p.product_key, p_quantity: q, p_shipment_id: shipmentId, p_request_key: crypto.randomUUID() });
+        if (e2) { if (added.length) await audit(o, `Complimentary items added: ${added.join(", ")} at $0.00, inventory deducted.`); P.toast(`${added.length ? `Added ${added.join(", ")}. ` : ""}Stopped at ${p.display_name}: ${e2.message}`); if (added.length) done(o, `Free items added · ${added.length} product${added.length > 1 ? "s" : ""}`); else { btn.disabled = false; btn.textContent = "Add free items"; } return; }
+        added.push(`${q} × ${p.display_name} ${p.strength || ""}`.trim());
+      }
+      await audit(o, `Complimentary items added: ${added.join(", ")} at $0.00, inventory deducted. ${shipmentId ? "Linked to existing shipment." : "Not linked to a shipment."}`);
+      done(o, `Free items added · ${added.length} product${added.length > 1 ? "s" : ""} taken out of stock`);
     });
   }
 
