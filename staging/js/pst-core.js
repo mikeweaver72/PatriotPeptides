@@ -348,9 +348,12 @@ if (location.protocol === "http:" && /(^|\.)patriotpeptides-usa\.com$/i.test(loc
     s.t = Date.now(); try { sessionStorage.setItem("pst_sid", JSON.stringify(s)); } catch {}
     return { v, s };
   }
+  // v110: robots, test browsers and copies of the site never count as visitors (the server function checks the browser name too)
+  const BOT_UA = /bot\b|bot\/|crawl|spider|slurp|headless|lighthouse|pagespeed|inspectiontool|google-|bingpreview|facebookexternalhit|embedly|preview|validator|monitor|uptime|pingdom|phantom|puppeteer|playwright|selenium|python|curl|wget|httpclient/i;
+  const IS_BOT = () => { try { return !!navigator.webdriver || BOT_UA.test(navigator.userAgent || "") || !/(^|\.)patriotpeptides-usa\.com$/.test(location.hostname) || /\.xml$|^wp-|\.php$/i.test(location.pathname.split("/").pop() || "") || document.visibilityState === "prerender"; } catch { return true; } };
   function track(event, d = {}) {
     try {
-      if (ANALYTICS_OFF() || window.PST_DEMO) return;
+      if (ANALYTICS_OFF() || window.PST_DEMO || IS_BOT()) return;
       const { v, s } = ids(), w = innerWidth, ref = document.referrer ? new URL(document.referrer).host : "";
       const p = { visitor: v, session: s.id, event, path: location.pathname.split("/").pop() || "index.html", product_key: d.key || null, qty: d.qty ?? null, value: d.value ?? null, term: d.term || null,
         ref_host: ref && ref !== location.host ? ref : null, utm_source: s.utm.source || null, utm_medium: s.utm.medium || null, utm_campaign: s.utm.campaign || null,

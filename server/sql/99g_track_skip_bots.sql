@@ -1,0 +1,4 @@
+-- Applied Nov 17 2026 (migration ppu_track_skip_bots): pst_track ignores robots, headless/test browsers and scripts
+-- (user-agent from request.headers), plus .xml/.php/wp- probe paths. Fake visits moved to pst_web_events_bot_backup (RLS on, no policies):
+-- 210 events / 88 visitors from Nov 17 (automated page tests, Google live-test checks, overnight pings, WordPress probes) + 2 older probes.
+-- Client side (pst-core v110) also skips navigator.webdriver, bot user agents and any host other than patriotpeptides-usa.com.
