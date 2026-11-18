@@ -27,7 +27,7 @@
     await loadStats().catch(() => {});
     if (!me.has_prices) return promoter();
     profile = await P.getProfile(user).catch(() => null);
-    const [s, m] = await Promise.all([P.client().from("ppu_partner_prices").select("id,sku,name,amount,price,sort").order("sort").order("name"), P.paymentMethods().catch(() => [])]);
+    const [s, m] = await Promise.all([P.client().from("ppu_partner_prices").select("id,sku,name,amount,price,sort").eq("tier", me.tier).eq("active", true).order("sort") /* v111: owners who are also partners can read every tier, so ask for theirs only */.order("name"), P.paymentMethods().catch(() => [])]);
     if (s.error) return msg("lock", "Couldn't load your pricing", esc(s.error.message));
     sheet = s.data || []; methods = (m || []).filter(x => !P.isOtherPay?.(x.label));
     bag = loadBag(); Object.keys(bag).forEach(k => { if (!sheet.some(x => x.id === k) || !(bag[k] > 0)) delete bag[k]; }); saveBag();
