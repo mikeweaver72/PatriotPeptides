@@ -154,6 +154,7 @@ ${open ? `<button class="btn ghost sm" type="button" data-gcancel style="margin-
   }
 
   /* ---------- group buy POs (ppu_group_pos): saved apart from the store's POs ---------- */
+  const dDay = d => new Date(`${String(d).slice(0, 10)}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }); // date-only, no time-zone shift
   const poKits = po => (po.lines || []).reduce((s, l) => s + Number(l.kits || 0), 0);
   const poSub = po => (po.lines || []).reduce((s, l) => s + Number(l.kits || 0) * Number(l.kit_cost || 0), 0);
   const poTotal = po => poSub(po) + Number(po.shipping || 0);
@@ -186,14 +187,14 @@ ${open ? `<button class="btn ghost sm" type="button" data-gcancel style="margin-
     if (r.error) { el.innerHTML = `<p class="notice err">${esc(r.error.message)}</p>`; return; }
     pos = r.data || []; vendors = v.data || vendors;
     el.innerHTML = `<p class="muted small">Supplier POs for group buys. Kept apart from your store POs, so they never change your stock, reorder suggestions or costs. One is saved each time you place a group order.</p>
-${pos.length ? `<div class="gbox">${pos.map(po => `<button type="button" class="gcard${po.status === "arrived" ? " placed" : po.status === "cancelled" ? " closed" : ""}" data-popen="${esc(po.id)}" style="text-align:left;width:100%;color:inherit;font:inherit"><div><span class="kick">${esc(P.fmtDate(po.ordered_at))}</span><b>${esc(po.po_number)} · ${esc(po.vendor_name || "Supplier not set")}</b><small>${poKits(po)} kits · ${money(poTotal(po))}${po.tracking ? ` · ${esc(po.tracking)}` : ""}</small></div>${poChip(po)}</button>`).join("")}</div>` : `<div class="nalbox"><p class="muted small" style="margin:0">No group buy POs yet. Place a group order and its PO lands here.</p></div>`}`;
+${pos.length ? `<div class="gbox">${pos.map(po => `<button type="button" class="gcard${po.status === "arrived" ? " placed" : po.status === "cancelled" ? " closed" : ""}" data-popen="${esc(po.id)}" style="text-align:left;width:100%;color:inherit;font:inherit"><div><span class="kick">${esc(dDay(po.ordered_at))}</span><b>${esc(po.po_number)} · ${esc(po.vendor_name || "Supplier not set")}</b><small>${poKits(po)} kits · ${money(poTotal(po))}${po.tracking ? ` · ${esc(po.tracking)}` : ""}</small></div>${poChip(po)}</button>`).join("")}</div>` : `<div class="nalbox"><p class="muted small" style="margin:0">No group buy POs yet. Place a group order and its PO lands here.</p></div>`}`;
     if (!el.dataset.pobound) { el.dataset.pobound = "1"; el.addEventListener("click", e => { const o = e.target.closest("[data-popen]"); if (o) openPO(o.dataset.popen); }); }
   }
   async function openPO(id) {
     const { data: po, error } = await db().from("ppu_group_pos").select("*").eq("id", id).single(); if (error) return P.toast(error.message);
     if (!vendors.length) vendors = (await db().from("vendors").select("id,company_name").order("company_name")).data || [];
     let lines = (po.lines || []).map(l => ({ ...l }));
-    const w = P.sheet(`<form class="pmform" data-poform novalidate><h2 class="serif">${esc(po.po_number)} ${poChip(po)}</h2><p class="muted small">Group buy PO · ordered ${esc(P.fmtDate(po.ordered_at))}${po.shipped_at ? ` · shipped ${esc(P.fmtDate(po.shipped_at))}` : ""}${po.arrived_at ? ` · arrived ${esc(P.fmtDate(po.arrived_at))}` : ""}</p>
+    const w = P.sheet(`<form class="pmform" data-poform novalidate><h2 class="serif">${esc(po.po_number)} ${poChip(po)}</h2><p class="muted small">Group buy PO · ordered ${esc(dDay(po.ordered_at))}${po.shipped_at ? ` · shipped ${esc(P.fmtDate(po.shipped_at))}` : ""}${po.arrived_at ? ` · arrived ${esc(P.fmtDate(po.arrived_at))}` : ""}</p>
 <label>Supplier<select name="vendor"><option value="">Not set</option>${vendors.map(v => `<option value="${esc(v.id)}"${v.id === po.vendor_id ? " selected" : ""}>${esc(v.company_name)}</option>`).join("")}</select></label>
 <div class="gob" data-polines></div>
 <div class="pm2"><label>Shipping &amp; fees ($)<input name="shipping" type="number" min="0" step="0.01" inputmode="decimal" value="${Number(po.shipping || 0) ? Number(po.shipping).toFixed(2) : ""}"></label><label>Carrier<input name="carrier" maxlength="40" value="${esc(po.carrier || "")}" placeholder="e.g. DHL"></label></div>
