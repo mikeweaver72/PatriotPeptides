@@ -137,6 +137,13 @@
   // v117: take a shipment back off an order (wrong label, voided label, marked shipped by mistake). With a tracking number, only the
   // shipments with that number come off; without one, the latest. The order goes back to partly shipped, packed or paid, and the normal
   // next steps (Buy & print label, Ship it, Hand delivered) come back. Returns true when something was removed.
+  // Patriot's orders keep no packed date, so the order history says whether it was packed before it shipped
+  async function wasPacked(o) {
+    if (o.packed_at) return true;
+    const { data } = await P.client().from("order_audit_log").select("new_value").eq("order_id", o.id).eq("action_type", "order_status_changed").order("created_at", { ascending: false }).limit(10);
+    const prior = (data || []).map(r => nm(r.new_value || "")).find(v => !["shipped", "partially_shipped", "delivered", "complete", "completed"].includes(v));
+    return prior === "packed";
+  }
   async function undoShipment(o, tracking = "", quiet = false) {
     const hist = await shipHistory(o);
     const take = tracking ? hist.filter(s => String(s.tracking_number || "") === String(tracking)) : hist.slice(-1);
@@ -145,7 +152,7 @@
     const { error: e1 } = await P.client().from("order_shipment_items").delete().in("shipment_id", ids); if (e1) throw e1;
     const { error: e2 } = await P.client().from("order_shipments").delete().in("id", ids); if (e2) throw e2;
     const last = rest[rest.length - 1], from = oStatus(o), now = nowIso();
-    const to = rest.length ? "partially_shipped" : o.packed_at ? "packed" : "processing";
+    const to = rest.length ? "partially_shipped" : (await wasPacked(o)) ? "packed" : "processing";
     await safeUpdate(o, { order_status: to, status: to, tracking_number: last?.tracking_number || null, tracking: last?.tracking_number || null, tracking_carrier: last?.carrier || null, carrier: last?.carrier || null,
       tracking_url: last ? trackUrl(last.carrier, last.tracking_number) : null, shipped_at: last ? o.shipped_at : null, last_admin_actor: adminName(), last_admin_actor_email: me().email, updated_at: now });
     await audit(o, `Shipment taken off by ${adminName()}: ${take.map(s => `${s.carrier || ""} ${s.tracking_number || ""}`.trim()).join(", ")}. Status ${String(from).replaceAll("_", " ")} → ${to.replaceAll("_", " ")}`);
@@ -231,7 +238,7 @@ ${st.k !== "dead" && nm(pStatus(o)) === "paid" ? btn("refund", "Mark refunded", 
         const h = extra.hist || [], s = h[h.length - 1]; if (!s) return;
         const { data: lbs } = window.PPULabels ? await P.client().from("ppu_shipping_labels").select("status,test_mode").eq("order_id", o.id).eq("tracking_number", s.tracking_number || "").eq("status", "purchased") : { data: [] };
         const live = (lbs || []).some(l => !l.test_mode);
-        if (!(await confirmSheet("Undo this shipment?", `Takes ${esc(s.carrier || "the shipment")} ${esc(s.tracking_number || "")} off ${esc(o.order_number || "")}. The order goes back to ${h.length > 1 ? "partly shipped" : o.packed_at ? "packed" : "paid"} so you can buy a label, ship it or mark it hand delivered.${live ? "<br><br><b>A paid label goes with this shipment.</b> Void it under Shipping labels instead if it won't be mailed, so the postage is refunded." : ""} No email is sent.`, "Undo shipment", true))) return;
+        if (!(await confirmSheet("Undo this shipment?", `Takes ${esc(s.carrier || "the shipment")} ${esc(s.tracking_number || "")} off ${esc(o.order_number || "")}. The order goes back to ${h.length > 1 ? "partly shipped" : (await wasPacked(o)) ? "packed" : "paid"} so you can buy a label, ship it or mark it hand delivered.${live ? "<br><br><b>A paid label goes with this shipment.</b> Void it under Shipping labels instead if it won't be mailed, so the postage is refunded." : ""} No email is sent.`, "Undo shipment", true))) return;
         await undoShipment(o, s.tracking_number || "", true); return done(o, "Shipment taken off the order");
       }
       if (a === "emails") return emailToolsFlow(o);
