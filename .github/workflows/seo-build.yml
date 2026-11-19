@@ -41,4 +41,5 @@ jobs:
           git diff --cached --quiet && exit 0
           git commit -m 'SEO pages and sitemap: nightly rebuild from the product list'
           git pull --rebase origin main
-          git push
+          # main may have moved while this ran (a release or the other job): rebase onto it and retry
+          for i in 1 2 3; do git pull --rebase -q origin main && git push && break; sleep $((i*10)); done; git push  # fails loudly if it still could not publish
