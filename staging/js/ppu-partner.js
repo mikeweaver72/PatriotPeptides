@@ -33,7 +33,7 @@
     profile = await P.getProfile(user).catch(() => null);
     const [s, m] = await Promise.all([P.client().from("ppu_partner_prices").select("id,sku,name,amount,price,sort").eq("tier", me.tier).eq("active", true).order("sort") /* v111: owners who are also partners can read every tier, so ask for theirs only */.order("name"), P.paymentMethods().catch(() => [])]);
     if (s.error) return msg("lock", "Couldn't load your pricing", esc(s.error.message));
-    sheet = s.data || []; methods = (m || []).filter(x => !P.isOtherPay?.(x.label));
+    sheet = s.data || []; index(); methods = (m || []).filter(x => !P.isOtherPay?.(x.label));
     bag = loadBag(); Object.keys(bag).forEach(k => { if (!sheet.some(x => x.id === k) || !(bag[k] > 0)) delete bag[k]; }); saveBag();
     pay = pay || (methods.find(x => /venmo/i.test(x.id + x.label)) || methods[0] || {}).label || "";
     await loadGroups();
@@ -73,8 +73,8 @@
     const head = `<button class="btn ghost sm" type="button" data-gback>← My price sheet</button><div class="phead" style="margin-top:12px"><span class="ptier t${me.tier}">${me.tier}</span><div><span class="kick">Group order · Tier ${me.tier}</span><h1 class="serif">${esc(g.title || day(g.order_date))}</h1></div></div>${info}`;
     if (!g.open) { el().innerHTML = `${head}<p class="muted">${gKits(g) ? "Your kits on this order:" : "You didn't add anything to this one."}</p><div class="vrl">${(g.lines || []).map(l => `<div class="r"><span>${esc(l.name)} ${esc(l.amount || "")} <small class="muted">× ${kits(l.qty)}</small></span><b>${money(Number(l.price) * l.qty)}</b></div>`).join("")}</div>`; return; }
     el().innerHTML = `${head}<p class="muted small">Add the kits you want from your price sheet. <b>Nothing is charged now.</b> When Jeff places the order you'll get an email with your total and how to pay. Supplier shipping is split across the group and billed after the block ships.</p>
-<input class="psearch" type="search" data-vsearch placeholder="Search ${sheet.length} products" aria-label="Search your price sheet">
-<div class="vlist" data-vlist>${sheet.map(rowHtml).join("")}</div><div data-vbar>${barHtml()}</div>`;
+<input class="psearch" type="search" data-vsearch placeholder="Search ${names.length} products" aria-label="Search your price sheet">
+<div class="vlist" data-vlist>${rowsHtml()}</div><div data-vbar>${barHtml()}</div>`;
   }
   function reviewGroup() {
     const t = totals(), g = grp, out = !t.n;
@@ -122,19 +122,28 @@ ${stats ? `<div class="pstats"><div><small>Earned</small><b>${money(stats.earned
     };
   }
 
-  function rowHtml(x) {
-    const n = bag[x.id] || 0;
-    return `<div class="vrow${n ? " in" : ""}" data-vname="${esc(`${x.name} ${x.amount || ""} ${x.sku || ""}`.toLowerCase())}"><span class="vtx"><b>${esc(x.name)}</b><small>${esc(x.amount || "")} · kit of 10</small></span><b class="vpr">${money(x.price)}<small>/kit</small></b>
-<div class="qty sm"><button type="button" data-vq="${esc(x.id)}" data-d="-1" aria-label="Fewer ${esc(x.name)} ${esc(x.amount || "")}"${n ? "" : " disabled"}>−</button><input type="number" min="0" max="9999" inputmode="numeric" value="${n || ""}" placeholder="0" data-vn="${esc(x.id)}" aria-label="${esc(x.name)} ${esc(x.amount || "")} quantity"><button type="button" data-vq="${esc(x.id)}" data-d="1" aria-label="More ${esc(x.name)} ${esc(x.amount || "")}">+</button></div></div>`;
+  // v6 (Nov 19 2026): one row per compound with a strength picker (was one row per strength), blend recipes shown small under the name
+  const mg = a => { const m = String(a || "").match(/[\d.]+/); return m ? Number(m[0]) * (/g\b/i.test(a) && !/mg|mcg/i.test(a) ? 1000 : /mcg/i.test(a) ? .001 : 1) : 0; };
+  let names = [], byName = {}, sel = {};
+  function index() { names = []; byName = {}; sheet.forEach(x => { const k = String(x.name || "").trim(); if (!byName[k]) { byName[k] = []; names.push(k); } byName[k].push(x); }); names.forEach(k => byName[k].sort((a, b) => mg(a.amount) - mg(b.amount))); }
+  const short = n => { const m = String(n).match(/^(.+?)\s*\((.+)\)\s*$/); return m ? [m[1], m[2]] : [n, ""]; };
+  function rowHtml(k, i) {
+    const its = byName[k], x = its.find(y => y.id === sel[k]) || its.find(y => bag[y.id] > 0) || its[0], n = bag[x.id] || 0, [nm, recipe] = short(k);
+    const others = its.filter(y => y.id !== x.id && bag[y.id] > 0).map(y => `${esc(y.amount || "")} ×${bag[y.id]}`);
+    const str = its.length > 1 ? `<select class="vstr" data-vs="${i}" aria-label="${esc(nm)} strength">${its.map(y => `<option value="${esc(y.id)}"${y.id === x.id ? " selected" : ""}>${esc(y.amount || "")}${bag[y.id] > 0 && y.id !== x.id ? ` (${bag[y.id]})` : ""}</option>`).join("")}</select>` : `<span class="vstr one">${esc(x.amount || "")}</span>`;
+    return `<div class="vrow${its.some(y => bag[y.id] > 0) ? " in" : ""}" data-vg="${i}" data-vname="${esc(`${k} ${its.map(y => `${y.amount || ""} ${y.sku || ""}`).join(" ")}`.toLowerCase())}"><span class="vtx"><b>${esc(nm)}</b>${recipe ? `<small>${esc(recipe)}</small>` : ""}${others.length ? `<small class="also">Also in: ${others.join(", ")}</small>` : ""}</span>${str}<b class="vpr">${money(x.price)}<small>/kit</small></b>
+<div class="qty sm"><button type="button" data-vq="${esc(x.id)}" data-d="-1" aria-label="Fewer ${esc(nm)} ${esc(x.amount || "")}"${n ? "" : " disabled"}>−</button><input type="number" min="0" max="9999" inputmode="numeric" value="${n || ""}" placeholder="0" data-vn="${esc(x.id)}" aria-label="${esc(nm)} ${esc(x.amount || "")} kits"><button type="button" data-vq="${esc(x.id)}" data-d="1" aria-label="More ${esc(nm)} ${esc(x.amount || "")}">+</button></div></div>`;
   }
+  const rowsHtml = () => names.map(rowHtml).join("");
+  function redrawRow(k) { const i = names.indexOf(k), row = $(`[data-vg="${i}"]`); if (!row) return; const tmp = document.createElement("div"); tmp.innerHTML = rowHtml(k, i); const nr = tmp.firstElementChild; nr.hidden = row.hidden; row.replaceWith(nr); }
   function barHtml() { const t = totals();
     if (grp) return t.n ? `<div class="vbar"><span><b>${kits(t.n)}</b><small>${money(t.sub)} · nothing charged now</small></span><button class="btn primary" type="button" data-greview>Review my part</button></div>` : grp.saved_at ? `<div class="vbar"><span><b>No kits</b><small>You're on this order with nothing</small></span><button class="btn primary" type="button" data-greview>Take me off</button></div>` : "";
     return t.n ? `<div class="vbar"><span><b>${kits(t.n)}</b><small>${money(t.sub)} + shipping billed later</small></span><button class="btn primary" type="button" data-vreview>Review order · ${money(t.total)}</button></div>` : ""; }
   function draw() {
     el().innerHTML = `<div class="phead"><span class="ptier t${me.tier}">${me.tier}</span><div><span class="kick">Tier ${me.tier} · ${esc(me.tier_name)}${me.company ? ` · ${esc(me.company)}` : ""}</span><h1 class="serif">Your price sheet</h1></div></div>
 ${groupBanner()}${progress()}<p class="muted small">Prices are per 10-vial kit and for your account only. Orders go out with the next twice-monthly block. Supplier shipping is split across the group, so your share is billed after the block ships.</p>
-<input class="psearch" type="search" data-vsearch placeholder="Search ${sheet.length} products" aria-label="Search your price sheet" value="${esc(q)}">
-<div class="vlist" data-vlist>${sheet.map(rowHtml).join("") || `<p class="muted">Your price sheet is being set up. Check back soon.</p>`}</div>
+<input class="psearch" type="search" data-vsearch placeholder="Search ${names.length} products" aria-label="Search your price sheet" value="${esc(q)}">
+<div class="vlist" data-vlist>${rowsHtml() || `<p class="muted">Your price sheet is being set up. Check back soon.</p>`}</div>
 <div data-vbar>${barHtml()}</div><div data-vrecent></div>`;
     filter();
   }
@@ -147,8 +156,7 @@ ${groupBanner()}${progress()}<p class="muted small">Prices are per 10-vial kit a
   function filter() { $$("[data-vname]").forEach(r => r.hidden = !!q && !r.dataset.vname.includes(q)); }
   function setN(id, n) {
     n = Math.max(0, Math.min(9999, Math.floor(Number(n) || 0))); if (n) bag[id] = n; else delete bag[id]; saveBag();
-    const x = sheet.find(s => s.id === id), row = $(`[data-vn="${CSS.escape(id)}"]`)?.closest(".vrow");
-    if (row && x) { const tmp = document.createElement("div"); tmp.innerHTML = rowHtml(x); const nr = tmp.firstElementChild; nr.hidden = row.hidden; row.replaceWith(nr); }
+    const x = sheet.find(s => s.id === id); if (x) { sel[String(x.name).trim()] = id; redrawRow(String(x.name).trim()); }
     $("[data-vbar]").innerHTML = barHtml();
   }
 
@@ -198,7 +206,8 @@ ${groupBanner()}${progress()}<p class="muted small">Prices are per 10-vial kit a
       if (e.target.closest("[data-gback]")) leaveGroup();
       const gp = e.target.closest("[data-gpay]"); if (gp) payGroup(gp.dataset.gpay); };
     el().oninput = e => { if (e.target.matches("[data-vsearch]")) { q = e.target.value.trim().toLowerCase(); filter(); } };
-    el().onchange = e => { if (e.target.matches("[data-vn]")) setN(e.target.dataset.vn, e.target.value); };
+    el().onchange = e => { if (e.target.matches("[data-vn]")) setN(e.target.dataset.vn, e.target.value);
+      if (e.target.matches("[data-vs]")) { const k = names[Number(e.target.dataset.vs)]; sel[k] = e.target.value; redrawRow(k); $(`[data-vs="${e.target.dataset.vs}"]`)?.focus(); } };
   }
 
   document.addEventListener("DOMContentLoaded", async () => { if (!el()) return; try { await boot(); if (me?.has_prices && me.status === "active") bindList(); } catch (err) { msg("lock", "Something went wrong", esc(err.message || "Please refresh.")); } });
