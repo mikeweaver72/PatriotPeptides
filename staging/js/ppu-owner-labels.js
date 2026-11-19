@@ -29,6 +29,25 @@
     if (!r.ok || !j || j.ok === false) { const e = new Error(j?.error || (r.status === 404 ? "The label service isn't installed yet (ship-label function)." : `Label service error (${r.status}).`)); e.needsConfirm = !!j?.needs_confirm; throw e; }
     return j;
   }
+  // v115 (Mike): Print label opens the print dialog directly. The PDF comes through the ship-label function (Shippo's host can't be
+  // printed from the page), goes into a hidden frame, and that frame prints. Phones (and any failure) fall back to opening the label.
+  const isPhone = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  async function printLabel(l, btn) {
+    const old = btn?.textContent; if (btn) { btn.textContent = "Opening printer…"; btn.setAttribute("aria-busy", "true"); }
+    try {
+      const { data } = await P.client().auth.getSession();
+      const r = await fetch(`${P.CFG.url}/functions/v1/${P.CFG.labelFn || "ship-label"}`, { method: "POST", headers: { "Content-Type": "application/json", apikey: P.CFG.key, Authorization: `Bearer ${data?.session?.access_token || P.CFG.key}` }, body: JSON.stringify({ action: "file", label_id: l.id }) });
+      if (!r.ok || !/pdf/i.test(r.headers.get("Content-Type") || "")) throw new Error("no pdf");
+      const url = URL.createObjectURL(await r.blob());
+      if (isPhone()) { window.open(url, "_blank") || (location.href = url); return; } // phones: the share sheet has Print
+      document.querySelectorAll("iframe[data-lbprint]").forEach(f => f.remove());
+      const f = document.createElement("iframe"); f.dataset.lbprint = "1"; f.title = "Shipping label";
+      f.style.cssText = "position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none";
+      f.onload = () => setTimeout(() => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch { window.open(url, "_blank"); } }, 300);
+      f.src = url; document.body.appendChild(f);
+    } catch { window.open(l.label_url, "_blank", "noopener"); }
+    finally { if (btn) { btn.textContent = old; btn.removeAttribute("aria-busy"); } }
+  }
   async function getSettings() {
     const { data, error } = await P.client().from("ppu_ship_settings").select("*").eq("id", 1).maybeSingle();
     if (error) throw new Error(/does not exist|schema cache/i.test(error.message || "") ? "Shipping labels aren't installed yet (run 99h_shipping_labels.sql)." : error.message);
@@ -150,11 +169,14 @@ ${exp ? `<p class="small"><span class="opill exp">EXPRESS</span> Customer paid f
   function doneSheet(o, api, label, carrier, ls, rec, recErr) {
     const w = P.sheet(`<div class="osheet lbdone"><div class="okc">${P.icon("check", 30)}</div><h2 class="serif">Label bought</h2>
 <p class="muted">${esc(label.carrier)} ${esc(label.service)} · ${money(label.amount)}${label.test_mode ? " · TEST" : ""}</p><p class="trk">${esc(label.tracking_number || "")}</p>
-<a class="btn primary wide" href="${esc(label.label_url)}" target="_blank" rel="noopener">Print label</a>
+<button class="btn primary wide" type="button" data-lbprint>${P.icon ? P.icon("truck", 16) : ""} Print label</button>
+<a class="small muted" href="${esc(label.label_url)}" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px">Or open the label file</a>
 ${recErr ? `<p class="notice err" style="margin-top:10px">The label is bought, but the shipment didn't save on the order: ${esc(recErr)}. Use "Ship it (add tracking)" with the tracking number above.</p>` : `<p class="muted small" style="margin-top:10px">Saved on the order as ${rec?.complete ? "shipped" : "partly shipped"}.</p>`}
 ${recErr ? "" : `<button class="btn ghost wide" type="button" data-lbemail style="margin-top:8px">Next: ${rec?.complete ? "shipped" : "shipment update"} email</button>`}
 <button class="btn ghost wide" type="button" data-lbclose style="margin-top:8px">Done</button></div>`, { label: "Label bought" });
     w.classList.add("full");
+    w.querySelector("[data-lbprint]").addEventListener("click", e => printLabel(label, e.currentTarget));
+    if (!isPhone()) printLabel(label, w.querySelector("[data-lbprint]")); // desktop: go straight to the print dialog once the label is bought
     w.querySelector("[data-lbclose]").addEventListener("click", () => api.done(o, rec?.complete ? "Shipped" : "Label bought"));
     w.querySelector("[data-lbemail]")?.addEventListener("click", async () => {
       const items = api.items(o) || [];
@@ -170,8 +192,9 @@ ${recErr ? "" : `<button class="btn ghost wide" type="button" data-lbemail style
     const { data, error } = await P.client().from("ppu_shipping_labels").select("*").eq("order_id", o.id).order("created_at", { ascending: false });
     if (error || !data?.length) { el.innerHTML = ""; return; }
     const stt = { purchased: "", void_pending: " · void requested", voided: " · voided (refund on its way)", void_rejected: " · void refused by the carrier" };
-    el.innerHTML = `<div class="lbbox"><p class="kick" style="margin:0 0 4px">Shipping labels</p>${data.map(l => `<div class="lbrow"><span><b>${esc(l.carrier)} ${esc(l.service)} · ${money(l.amount)}${l.test_mode ? " · TEST" : ""}</b><small>${esc(l.tracking_number || "")}${stt[l.status] || ""} · ${esc(P.fmtDate(l.created_at))}</small></span><span class="acts">${l.label_url && l.status === "purchased" ? `<a class="btn ghost sm" href="${esc(l.label_url)}" target="_blank" rel="noopener">Reprint</a><button class="btn ghost sm" type="button" data-lbvoid="${esc(l.id)}">Void</button>` : ""}</span></div>`).join("")}</div>`;
+    el.innerHTML = `<div class="lbbox"><p class="kick" style="margin:0 0 4px">Shipping labels</p>${data.map(l => `<div class="lbrow"><span><b>${esc(l.carrier)} ${esc(l.service)} · ${money(l.amount)}${l.test_mode ? " · TEST" : ""}</b><small>${esc(l.tracking_number || "")}${stt[l.status] || ""} · ${esc(P.fmtDate(l.created_at))}</small></span><span class="acts">${l.label_url && l.status === "purchased" ? `<button class="btn ghost sm" type="button" data-lbreprint="${esc(l.id)}">Reprint</button><button class="btn ghost sm" type="button" data-lbvoid="${esc(l.id)}">Void</button>` : ""}</span></div>`).join("")}</div>`;
     el.addEventListener("click", async e => {
+      const rp = e.target.closest("[data-lbreprint]"); if (rp) { e.stopPropagation(); return printLabel(data.find(x => x.id === rp.dataset.lbreprint), rp); }
       const b = e.target.closest("[data-lbvoid]"); if (!b) return; e.stopPropagation();
       const l = data.find(x => x.id === b.dataset.lbvoid);
       if (!(await api.confirmSheet("Void this label?", `${esc(l.carrier)} ${esc(l.service)} · ${esc(l.tracking_number || "")}<br><br>Only void a label that hasn't been mailed. The ${money(l.amount)} is refunded to your Shippo account, usually within a few weeks. The shipment stays on the order: if you're not shipping it, edit the order.`, "Void label", true))) return api.reopen(o);

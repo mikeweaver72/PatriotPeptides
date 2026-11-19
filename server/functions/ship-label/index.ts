@@ -1,5 +1,6 @@
 // ship-label (Nov 2026, Jeff; installed Nov 19 by Mike with two fixes: order fields that exist on Patriot, owner check by account ID only): owner-only. Gets live label rates from Shippo for an order, buys the label the owner picks,
 // and voids unused labels. The Shippo key never leaves the server.
+// v3 (Nov 19): action "file" returns a bought label's PDF so the owner app can open the print dialog directly.
 // v2 (Nov 19): from email defaults to the shop address (Shippo requires it to buy); overseas-carrier notes hidden from the rates list.
 //
 // Deploy with JWT verification OFF (it checks the caller itself, like the other functions).
@@ -11,6 +12,7 @@
 //        package = { length, width, height, weight_oz }  (inches, ounces)
 // POST { action: "buy", order_id, rate_id, shipment_id, package, allow_another? } -> { ok, label }
 // POST { action: "void", label_id }                           -> { ok, status }
+// POST { action: "file", label_id }                           -> the label PDF
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
@@ -138,6 +140,19 @@ async function voidLabel(payload: Rec) {
   return json({ ok: true, status });
 }
 
+// the label PDF itself, passed through so the browser can print it (Shippo's file host doesn't allow that directly)
+async function labelFile(payload: Rec) {
+  const id = String(payload.label_id || "");
+  if (!/^[0-9a-f-]{36}$/i.test(id)) throw new Error("Unknown label.");
+  const rows = await rest(`ppu_shipping_labels?id=eq.${id}&select=label_url`);
+  const url = String((Array.isArray(rows) && rows[0]?.label_url) || "");
+  let host = ""; try { host = new URL(url).hostname; } catch { /* bad url */ }
+  if (!/^https:/.test(url) || !/(^|\.)(goshippo\.com|amazonaws\.com|shippo-delivery[\w.-]*)$/i.test(host)) throw new Error("This label has no printable file.");
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`Couldn't fetch the label (${r.status}).`);
+  return new Response(await r.arrayBuffer(), { status: 200, headers: { ...cors, "Content-Type": r.headers.get("Content-Type") || "application/pdf", "Cache-Control": "private, max-age=300" } });
+}
+
 async function setupStatus() {
   const rows = await rest("ppu_shipping_labels?select=id&limit=1").then(() => rest("ppu_ship_settings?id=eq.1&select=from_street1,from_city,from_state,from_zip,from_phone")).catch(() => null);
   const s = Array.isArray(rows) ? rows[0] : null;
@@ -155,6 +170,7 @@ serve(async req => {
       case "rates": return await rates(payload);
       case "buy": return await buy(payload, user);
       case "void": return await voidLabel(payload);
+      case "file": return await labelFile(payload);
       default: return json({ ok: false, error: "Unknown action." }, 400);
     }
   } catch (err) {
