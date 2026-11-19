@@ -310,5 +310,13 @@
  "PSTP100020": {
   "sig": "PSTP100020|PP-2-TZ|60mg",
   "slug": "pp-2-tz-pstp100020"
+ },
+ "BAC-W-3ML": {
+  "sig": "BAC-W-3ML|PP-BAC-W|3ml",
+  "slug": "pp-bac-w-bac-w-3ml"
+ },
+ "BAC-W-10ML": {
+  "sig": "BAC-W-10ML|PP-BAC-W|10ml",
+  "slug": "pp-bac-w-bac-w-10ml"
  }
 }
