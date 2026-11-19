@@ -28,8 +28,9 @@ returns jsonb language sql stable set search_path to '' as $$
     'alert_id', 'ppu-group-' || g.id,
     'event', p_event,
     'cutoff_at', to_char(g.cutoff_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
+    'order_date', to_char(g.order_date, 'YYYY-MM-DD'), -- the coop accepts this field (Nov 19)
     'ships_by', null,
-    'title', left(coalesce(nullif(btrim(g.title), ''), 'Group order') || ' · order date ' || to_char(g.order_date, 'Dy Mon FMDD'), 120),
+    'title', left(coalesce(nullif(btrim(g.title), ''), 'Group order'), 120),
     'message', nullif(left(btrim(coalesce(g.note, '')), 500), ''),
     'min_order', null,
     'products', '[]'::jsonb,
