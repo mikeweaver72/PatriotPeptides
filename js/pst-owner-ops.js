@@ -156,18 +156,19 @@
     const mails = await P.client().from("order_audit_log").select("action_type,old_value,new_value,created_at").eq("order_id", o.id).in("action_type", ["email_sent", "email_failed"]).order("created_at", { ascending: false }).limit(30).then(r => r.data || [], () => []);
     const shipped = shippedMap(hist), left = its.reduce((n, i) => n + Math.max(0, Number(i.quantity || 1) - (shipped.get(String(i.id)) || 0)), 0);
     const btn = (a, label, cls = "ghost") => `<button class="btn ${cls} wide" type="button" data-oa="${a}">${label}</button>`;
+    const lb = window.PPULabels ? (cls = "ghost") => btn("label", `${P.icon("truck", 16)} Buy &amp; print label`, cls) : () => ""; // Shippo labels (ppu-owner-labels.js)
     const next = st.k === "unpaid" ? btn("paid", `${P.icon("check", 16)} Mark paid`, "primary") + btn("remind", "Email a payment reminder")
-      : st.k === "paid" ? (pk ? btn("packed", "Ready for pickup", "primary") + btn("pickedup", "Picked up (hand off now)") : btn("packed", "Mark packed", "primary") + btn("ship", "Ship it (add tracking)"))
-      : st.k === "packed" ? (pk ? btn("pickedup", "Picked up", "primary") : btn("ship", "Ship it (add tracking)", "primary"))
-      : st.k === "partial" ? btn("ship", "Ship the rest", "primary")
+      : st.k === "paid" ? (pk ? btn("packed", "Ready for pickup", "primary") + btn("pickedup", "Picked up (hand off now)") : btn("packed", "Mark packed", "primary") + lb() + btn("ship", "Ship it (I have tracking)"))
+      : st.k === "packed" ? (pk ? btn("pickedup", "Picked up", "primary") : lb("primary") + btn("ship", "Ship it (I have tracking)"))
+      : st.k === "partial" ? lb("primary") + btn("ship", "Ship the rest (I have tracking)")
       : st.k === "shipped" ? btn("delivered", pk ? "Mark picked up" : "Mark delivered", "primary") : "";
     const w = P.sheet(`<div class="osheet" data-osheet="${o.id}">
-<div class="oshead"><div><small class="muted">${esc(o.order_number || "")} · ${P.fmtDate(o.created_at)}</small><h2 class="serif">${esc(custName(o))}</h2><b class="ostot">${money(o.total)}</b> <span class="opill ${st.cls}">${esc(st.t)}</span>${o.send_pepkeep ? ` <span class="pkchip" title="The customer asked to send this order to PepKeep">PepKeep ✓</span>` : ""} <span class="muted small">· ${pk ? "Pickup" : "Ship"} · ${esc(o.payment_method || "payment not chosen")}</span></div></div>
+<div class="oshead"><div><small class="muted">${esc(o.order_number || "")} · ${P.fmtDate(o.created_at)}</small><h2 class="serif">${esc(custName(o))}</h2><b class="ostot">${money(o.total)}</b> <span class="opill ${st.cls}">${esc(st.t)}</span>${!pk && window.PPULabels?.isExpress(o) ? ` <span class="opill exp">EXPRESS</span>` : ""}${o.send_pepkeep ? ` <span class="pkchip" title="The customer asked to send this order to PepKeep">PepKeep ✓</span>` : ""} <span class="muted small">· ${pk ? "Pickup" : "Ship"} · ${esc(o.payment_method || "payment not chosen")}</span></div></div>
 ${match ? `<div class="vmatch ${match.status === "matched" ? "ok" : "warn"}">${P.icon(match.status === "matched" ? "check" : "bell", 18)}<span><b>Venmo ${money(match.amount)} from ${esc(match.payer || "someone")}</b><small>${match.status === "matched" ? "Matches this order." : match.status === "guessed" ? "No order number in the note, same total as this order." : `Order total is ${money(o.total)}.`}</small></span></div>` : ""}
 ${o.payment_deadline_at && st.k === "unpaid" ? (() => { const at = new Date(o.payment_deadline_at), held = at - Date.now() > 300 * 864e5; return `<p class="small hold">${P.icon("clock", 14)} ${held ? "Held until paid · auto-cancel off" : `Auto-cancels in ${Math.max(0, Math.round((at - Date.now()) / 36e5))}h if unpaid`} <button class="btn ghost sm" type="button" data-hold="${o.id}" data-on="${held ? "0" : "1"}">${held ? "Turn timer back on" : "Hold until paid"}</button></p>`; })() : ""}
 <div class="oitems">${its.map(i => { const s = shipped.get(String(i.id)) || 0; return `<div class="oline"><span>${esc(i.product_name)} ${esc(i.product_strength || "")} × ${i.quantity}${i.backorder_quantity ? ` <span class="bo">· ${i.backorder_quantity} on backorder</span>` : ""}${s ? ` <span class="muted small">· ${s} shipped</span>` : ""}</span><b>${money(i.line_total)}</b>${ctx.lineExtra ? ctx.lineExtra(o, i) : ""}</div>`; }).join("")}
 <div><span class="muted">${pk ? "Local pickup" : "Shipping"}</span><span>${Number(o.shipping) ? money(o.shipping) : "Free"}</span></div>${Number(o.discount_amount) ? `<div><span class="muted">Discount</span><span>−${money(o.discount_amount)}</span></div>` : ""}<div><b>Total</b><b>${money(o.total)}</b></div></div>
-${o.tracking_number ? `<p class="small">${P.icon("truck", 14)} ${esc(o.tracking_carrier || "")} ${esc(o.tracking_number)}</p>` : ""}${!pk && (o.shipping_address || o.shipping_address_line1) ? `<p class="small muted">${P.icon("pin", 14)} ${esc([o.shipping_address || o.shipping_address_line1, o.shipping_city, o.shipping_state, o.shipping_zip].filter(Boolean).join(", "))}</p>` : ""}
+${o.tracking_number ? `<p class="small">${P.icon("truck", 14)} ${esc(o.tracking_carrier || "")} ${esc(o.tracking_number)}</p>` : ""}<div data-lbmount></div>${!pk && (o.shipping_address || o.shipping_address_line1) ? `<p class="small muted">${P.icon("pin", 14)} ${esc([o.shipping_address || o.shipping_address_line1, o.shipping_city, o.shipping_state, o.shipping_zip].filter(Boolean).join(", "))}</p>` : ""}
 <p class="small muted">${esc(custEmail(o))}${ph ? ` · ${esc(o.customer_phone || o.shipping_phone)}` : ""}</p>
 ${shipTo(o)}<div class="ocontact">${ph ? `<button class="btn ghost sm" type="button" data-texts="${o.id}">${P.icon("chat", 15)} Text</button><a class="btn ghost sm" href="tel:${ph}">Call</a>` : ""}${custEmail(o) ? `<a class="btn ghost sm" href="mailto:${esc(custEmail(o))}?subject=${encodeURIComponent("Your Patriot Peptides USA order " + (o.order_number || ""))}">Email</a>` : ""}<button class="btn ghost sm" type="button" data-copy="${esc(o.order_number || o.id)}">Copy #</button></div>
 <div class="obar">${next}</div>
@@ -184,8 +185,11 @@ ${st.k !== "dead" && nm(pStatus(o)) === "paid" ? btn("refund", "Mark refunded", 
 </div>`, { label: `Order ${o.order_number || ""}` });
     w.classList.add("full");
     w.addEventListener("click", e => { const b = e.target.closest("[data-oa]"); if (b) act(o, b.dataset.oa, { match, hist, left }); });
+    if (window.PPULabels && !pk) PPULabels.mount(o, w.querySelector("[data-lbmount]"), labelApi()).catch(() => {});
     if (opt.pay && st.k === "unpaid") setTimeout(() => act(o, "paid", { match }), 200);
   }
+  // what the label module (ppu-owner-labels.js) may use: the same shipment, email and refresh steps as "Ship it"
+  const labelApi = () => ({ items: o => ctx.items[o.id] || [], shipHistory, shippedMap, recordShipment, sendEmail, done, confirmSheet, reopen: o => openOrder(o.id) });
   async function done(o, msg) { const k = /picked up|delivered/i.test(msg) ? "delivered" : /shipped/i.test(msg) ? "shipped" : /packed|ready/i.test(msg) ? "packed" : /paid/i.test(msg) ? "paid" : "", v = k && window.PSTVibe ? PSTVibe.afterAction(ctx.me, k) : ""; P.toast(v ? `${msg} · ${v}` : msg); await ctx.reload(); const fresh = ctx.orders.find(x => x.id === o.id); if (fresh) openOrder(o.id); } // show the order again with its new status and next step
 
   async function act(o, a, extra = {}) {
@@ -199,6 +203,7 @@ ${st.k !== "dead" && nm(pStatus(o)) === "paid" ? btn("refund", "Mark refunded", 
         await sendEmail(o, "order_packed"); return done(o, isPickup(o) ? "Marked ready for pickup" : "Marked packed");
       }
       if (a === "ship") return shipFlow(o);
+      if (a === "label") return window.PPULabels ? PPULabels.open(o, labelApi()) : P.toast("Label buying isn't loaded. Refresh the app.");
       if (a === "edit") return editItemsFlow(o);
       if (a === "reduce") return reduceFlow(o);
       if (a === "comp") return compFlow(o);

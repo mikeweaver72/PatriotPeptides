@@ -3,7 +3,7 @@
   "use strict";
   const P = window.PST, { $, esc, money, round } = P;
   const ss = { get: (k, d) => { try { return JSON.parse(sessionStorage.getItem(k)) ?? d; } catch { return d; } }, set: (k, v) => { try { sessionStorage.setItem(k, JSON.stringify(v)); } catch {} } };
-  let delivery = "ship"; P.store.set("ppu_delivery", "ship"); let _unused = P.store.get("ppu_delivery", "ship"), discount = ss.get("ppu_discount", null), applyCredit = false, pay = ss.get("ppu_pay", ""), notes = "", pkOn = false, smsOn = false, smsPhone = "", smsCustom = false;
+  let delivery = "ship", speed = ss.get("ppu_speed", "standard") === "express" ? "express" : "standard"; P.store.set("ppu_delivery", "ship"); let _unused = P.store.get("ppu_delivery", "ship"), discount = ss.get("ppu_discount", null), applyCredit = false, pay = ss.get("ppu_pay", ""), notes = "", pkOn = false, smsOn = false, smsPhone = "", smsCustom = false;
   const picks = {}, suggest = {};
   let allP = [];
   /* new bag items default to an Auto reminder seeded from the product's typical reorder time */
@@ -17,7 +17,7 @@
   function totals() {
     const live = rows.filter(r => r.product);
     const sub = round(live.reduce((s, r) => s + P.unitPrice(r.product) * r.quantity, 0));
-    const q = live.length ? P.shipQuote(live.map(r => r.product), profile?.shipping_state || profile?.state || "", sub) : { ship: 0 }, ship = q.ship;
+    const q = live.length ? P.shipQuote(live.map(r => r.product), profile?.shipping_state || profile?.state || "", sub, speed) : { ship: 0 }, ship = q.ship;
     const kit = P.kitInfo(live.map(r => ({ p: r.product, q: r.quantity, t: P.unitPrice(r.product) * r.quantity }))), kd = kit.amount;
     const pm = methods.find(m => m.label === pay), pd = P.payDiscount(sub - kd, pm, discount);
     const disc = P.discountAmount(sub - kd, discount), total = Math.max(0, round(sub + ship - kd - disc - pd));
@@ -48,10 +48,10 @@ ${gifts.map(g => `<div class="r disc"><span>Free gift · ${esc(P.titleParts(g.p)
 ${t.kd ? `<div class="r disc"><span>Kit savings · ${t.kit.label}</span><b>−${money(t.kd)}</b></div>` : t.kit.nextAt ? `<div class="r"><span class="muted small">Add ${t.kit.nextAt - t.kit.vials} more vial${t.kit.nextAt - t.kit.vials === 1 ? "" : "s"} for ${Math.round(t.kit.nextPct * 100)}% kit savings</span><b></b></div>` : ""}
 ${t.disc ? `<div class="r disc"><span>Code ${esc(discount?.code || "")}</span><b>−${money(t.disc)}</b></div>` : ""}
 ${t.pd ? `<div class="r disc"><span>${esc(P.payLabel(t.pm))} savings · ${t.pm.pct}%</span><b>−${money(t.pd)}</b></div>` : ""}
-<div class="r"><span>Shipping</span><b>${t.ship ? money(t.ship) : "Free"}</b></div>
+<div class="r"><span>Shipping${t.q.express ? " · Express" : ""}</span><b>${t.ship ? money(t.ship) : "Free"}</b></div>
 ${t.cr ? `<div class="r disc"><span>Store credit</span><b>−${money(t.cr)}</b></div>` : ""}
 <div class="r tot"><span>Total</span><b>${money(t.due)}</b></div>
-${delivery === "ship" && live.length && t.q.wholesale ? `<div class="ship"><span>Wholesale shipping${t.q.known ? ` (${t.q.label})` : ""}: ${money(t.ship)}. Arrives ${t.q.days} after your block is ordered.${t.q.known ? "" : " West Coast and Mountain states pay $20."}</span></div>` : ""}${delivery === "ship" && live.length && !t.q.wholesale ? `<div class="ship"><div class="shipbar"><i style="width:${Math.min(100, t.sub / P.CFG.freeShip * 100)}%"></i></div><span>${t.ship ? `${money(P.CFG.freeShip - t.sub)} away from free shipping` : "You've got free shipping"}</span></div>` : ""}</div>`;
+${delivery === "ship" && live.length && t.q.wholesale ? `<div class="ship"><span>Wholesale shipping${t.q.known ? ` (${t.q.label})` : ""}: ${money(t.ship)}. Arrives ${t.q.days} after your block is ordered.${t.q.known ? "" : " West Coast and Mountain states pay $20."}</span></div>` : ""}${delivery === "ship" && live.length && t.q.express ? `<div class="ship"><span>Express: USPS Priority Mail Express, usually 1–2 days once shipped.</span></div>` : ""}${delivery === "ship" && live.length && !t.q.wholesale && !t.q.express ? `<div class="ship"><div class="shipbar"><i style="width:${Math.min(100, t.sub / P.CFG.freeShip * 100)}%"></i></div><span>${t.ship ? `${money(P.CFG.freeShip - t.sub)} away from free shipping` : "You've got free shipping"}</span></div>` : ""}</div>`;
     if (!user) return `<div class="box">${sum}</div><div class="signin"><h3 class="serif" style="font-size:1.5rem">Sign in to check out</h3><p class="muted small">Orders are saved to your account so you can track them and reorder in a tap.</p>
 <a class="btn primary wide" href="login.html?redirect=cart.html">Sign in</a><a class="btn ghost wide" style="margin-top:8px" href="register.html">Create an account</a></div>`;
     const addr = [profile?.shipping_address || profile?.address1 || profile?.address, [profile?.shipping_city || profile?.city, profile?.shipping_state || profile?.state, profile?.shipping_zip || profile?.zip].filter(Boolean).join(" ")].filter(Boolean).join(", ");
@@ -60,7 +60,9 @@ ${delivery === "ship" && live.length && t.q.wholesale ? `<div class="ship"><span
     const isO = !!otherM && pay === otherM.label;
     const pmRow = (m, best) => `<label><input type="radio" name="pm" value="${esc(m.label)}" ${pay === m.label ? "checked" : ""}>${best && !m.other ? `<span class="vlogo"><svg viewBox="0 0 48 48" width="18" height="18"><path d="M33.6 11c1 1.6 1.4 3.3 1.4 5.4 0 6.7-5.7 15.4-10.4 21.6H13.9L9.6 12.4l9.4-.9 2.3 18.4c2.1-3.5 4.7-9 4.7-12.7 0-2-.3-3.4-.9-4.6l8.5-1.6z" fill="#fff"/></svg></span>` : ""}<span>${esc(m.other ? "Other method" : P.payLabel(m))}</span>${m.other ? '<span class="best">We contact you</span>' : m.pct ? `<span class="best">${m.pct}% off${discount ? " · not with codes" : ""}</span>` : best ? '<span class="best">Fastest · one tap</span>' : ""}</label>`;
     return `<div class="box"><h3>Delivery</h3><div class="dpick">
-<label><input type="radio" name="dl" value="ship" checked><span><b>Ships from the USA</b><small>${rows.some(r => P.isWholesale(r.product)) ? `Wholesale kits: $20 West Coast and Mountain states (about 2 days), $30 everywhere else (about 3–4 days). Ships with the next twice-monthly block.` : `${money(P.CFG.shipRate)} flat, free over ${money(P.CFG.freeShip)}. UPS or USPS with tracking, usually 2–4 days.`}</small></span></label></div>
+${rows.some(r => P.isWholesale(r.product)) ? `<label><input type="radio" name="dl" value="ship" checked><span><b>Ships from the USA</b><small>Wholesale kits: $20 West Coast and Mountain states (about 2 days), $30 everywhere else (about 3–4 days). Ships with the next twice-monthly block.</small></span></label>`
+      : `<label><input type="radio" name="sp" value="standard" ${speed !== "express" ? "checked" : ""}><span><b>Standard · ${t.sub >= P.CFG.freeShip ? "Free" : money(P.CFG.shipRate)}</b><small>${money(P.CFG.shipRate)} flat, free over ${money(P.CFG.freeShip)}. UPS or USPS with tracking, usually 2–4 days.</small></span></label>
+<label><input type="radio" name="sp" value="express" ${speed === "express" ? "checked" : ""}><span><b>Express · ${money(P.CFG.expressRate)}</b><small>USPS Priority Mail Express with tracking, usually 1–2 days once shipped.</small></span></label>`}</div>
 ${delivery === "ship" ? `<p class="addr" style="margin:10px 0 0">${addr ? `Ships to: ${esc(addr)} · <a href="account.html#profile">Change</a>` : `<span style="color:var(--bad)">No shipping address on your account yet.</span> <a href="account.html#profile">Add one</a>`}</p>` : ""}</div>
 ${(frees.length && !gifts.length) || choices.length ? `<div class="box"><h3>Your rewards</h3>${(gifts.length ? [] : frees).map(f => `<div class="reward"><b>${esc(f.name)} · FREE</b><br><span class="muted small">${esc(f.title || "Promotion")} · qty ${f.qty}. Awarded when payment is confirmed, while supplies last.</span></div>`).join("")}
 ${choices.map(c => `<div class="reward"><b>${esc(c.title)}</b><br><span class="muted small">Pick ${c.qty} free vial${c.qty > 1 ? "s" : ""}.</span>${c.options.length ? `<select data-choice="${esc(c.id)}" aria-label="${esc(c.title)}"><option value="">Choose your free vial</option>${c.options.map(o => `<option value="${esc(o.product_key)}"${picks[c.id] === o.product_key ? " selected" : ""}>${esc([o.display_name, o.strength].filter(Boolean).join(" · "))}</option>`).join("")}</select>` : `<p class="muted small">All eligible rewards are out right now.</p>`}</div>`).join("")}</div>` : ""}
@@ -151,7 +153,7 @@ ${smsOn ? (has && !smsCustom ? `<p class="muted small">Texts go to ${esc(P.fmtPh
       const smsTo = smsOn ? (P.usPhone(profile?.phone) && !smsCustom ? P.usPhone(profile.phone) : P.usPhone(smsPhone)) : "";
       if (smsOn && !smsTo) throw new Error("Enter a 10-digit mobile number for texts, or uncheck the text box.");
       const rewardChoices = [...document.querySelectorAll("[data-choice]")].map(s => ({ promotionId: s.dataset.choice, productKey: s.value }));
-      const res = await P.submitOrder({ paymentLabel: pay, payMethod: methods.find(m => m.label === pay) || null, delivery, discount, applyCredit, rewardChoices, notes: notes.trim(), sendPepkeep: pkOn });
+      const res = await P.submitOrder({ paymentLabel: pay, payMethod: methods.find(m => m.label === pay) || null, delivery, speed: rows.some(r => P.isWholesale(r.product)) ? "standard" : speed, discount, applyCredit, rewardChoices, notes: notes.trim(), sendPepkeep: pkOn });
       ss.set("ppu_discount", null); P.store.set("ppu_delivery", delivery);
       if (smsTo) P.client().rpc("pst_sms_consent", { p_on: true, p_phone: smsTo, p_source: "checkout", p_text: P.SMS_CONSENT }).then(r => { if (!r.error && profile) profile.sms_opt_in = true; });
       placed(res);
@@ -200,6 +202,7 @@ ${r.backorder?.length ? `<p class="holdnote">${P.icon("box", 15)} ${r.backorder.
     if (document.body.dataset.page !== "cart") return;
     const t = e.target;
     if (t.name === "dl") { delivery = t.value; P.store.set("ppu_delivery", delivery); redrawSide(); }
+    if (t.name === "sp") { speed = t.value === "express" ? "express" : "standard"; ss.set("ppu_speed", speed); P.track?.("ship_speed", { speed }); redrawSide(); }
     if (t.name === "pm") { pay = t.value; ss.set("ppu_pay", pay); ss.set("ppu_pay_chosen", "1"); redrawSide(); }
     if (t.matches("[data-credit]")) { applyCredit = t.checked; redrawSide(); }
     if (t.matches("[data-choice]")) picks[t.dataset.choice] = t.value;

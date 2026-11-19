@@ -15,6 +15,8 @@ if (location.protocol === "http:" && /(^|\.)patriotpeptides-usa\.com$/i.test(loc
     cashapp: "inkfreak69",                 // Cash App cashtag (shown as $inkfreak69)
     adminEmails: ["patriotpepps@gmail.com", "owner@patriotpeptides-usa.com", "mike.weaver2013@gmail.com"], // order alert emails (same as app.js)
     shipRate: 20.00, freeShip: 200.00,     // Jeff's WooCommerce zone: flat $20, free over $200
+    expressRate: 45.00,                    // Jeff, Nov 2026: Express is a flat $45 (USPS Priority Mail Express). Not offered on wholesale kits.
+    labelFn: "ship-label",                 // owner app: Shippo rates + label buying (server/functions/ship-label)
     emailFn: "send-order-email",
     pepkeep: true, // checkout "Send this order to my PepKeep" box: switch on once pepkeep.io can receive shop orders (add ?pk=1 to cart.html to preview)
     pushFn: "pst-push",
@@ -545,10 +547,11 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
   const WS_WEST = ["WA", "OR", "CA", "NV", "ID", "MT", "WY", "UT", "CO", "AZ", "NM", "AK", "HI"];
   const WS_ZONES = { west: { rate: 20, days: "about 2 days", label: "West" }, east: { rate: 30, days: "about 3–4 days", label: "East" } };
   const isWholesale = p => !!p && (/wholesale/i.test(p.category || "") || /10-vial/i.test(p.strength || ""));
-  function shipQuote(products, state, sub) { // products: array of product rows in the bag
+  function shipQuote(products, state, sub, speed) { // products: array of product rows in the bag; speed: "standard" (default) | "express"
     const st = stateCode(state || "");
-    if (products.some(isWholesale)) { const zone = WS_WEST.includes(st) ? "west" : "east", z = WS_ZONES[zone]; return { ship: z.rate, wholesale: true, zone, known: !!st, ...z }; }
-    return { ship: sub >= CFG.freeShip ? 0 : CFG.shipRate, wholesale: false };
+    if (products.some(isWholesale)) { const zone = WS_WEST.includes(st) ? "west" : "east", z = WS_ZONES[zone]; return { ship: z.rate, wholesale: true, zone, known: !!st, speed: "standard", ...z }; }
+    if (speed === "express") return { ship: CFG.expressRate, wholesale: false, express: true, speed: "express" };
+    return { ship: sub >= CFG.freeShip ? 0 : CFG.shipRate, wholesale: false, speed: "standard" };
   }
   function discountAmount(sub, d) {
     const base = Math.max(0, Number(sub || 0)); if (!d || base <= 0) return 0;
@@ -685,7 +688,7 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
       ...over
     };
   }
-  async function submitOrder({ paymentLabel, payMethod = null, delivery, discount, applyCredit, rewardChoices = [], notes = "", sendPepkeep = false }) {
+  async function submitOrder({ paymentLabel, payMethod = null, delivery, speed = "standard", discount, applyCredit, rewardChoices = [], notes = "", sendPepkeep = false }) {
     const { data: ud } = await client().auth.getUser(); const user = ud?.user;
     if (!user) { location.href = `login.html?redirect=cart.html`; throw new Error("Please sign in to place your order."); }
     const profile = await getProfile(user);
@@ -701,7 +704,8 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
     const priced = rows.map(r => ({ p: r.product, q: r.quantity, u: unitPrice(r.product), t: unitPrice(r.product) * r.quantity }));
     const sub = priced.reduce((s, i) => s + i.t, 0);
     const stQ = profile?.shipping_state || profile?.state || "";
-    const ship = delivery === "pickup" ? 0 : shipQuote(priced.map(i => i.p), stQ, sub).ship;
+    const sq = delivery === "pickup" ? { ship: 0, speed: "standard" } : shipQuote(priced.map(i => i.p), stQ, sub, speed);
+    const ship = sq.ship, express = sq.speed === "express";
     await kitCfg(true); // price the kit with Jeff's current settings
     const kit = kitInfo(priced), kitDisc = kit.amount;
     const codeDisc = discountAmount(sub - kitDisc, discount), payDisc = payDiscount(sub - kitDisc, payMethod, discount);
@@ -721,7 +725,8 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
       shipping_address_line1: l1, shipping_address_line2: l2, shipping_city: city, shipping_state: st, shipping_zip: zip,
       status: "pending", order_status: "pending", payment_status: "pending", payment_method: paymentLabel,
       payment_instructions_snapshot: null, payment_qr_image: null,
-      customer_notes: [`Delivery method: Shipping`, priced.some(i => isWholesale(i.p)) ? `Wholesale shipping: ${stQ || "state unknown"} · $${ship.toFixed(2)}` : "", kitDisc ? `Kit savings: ${kit.label} (−$${kitDisc.toFixed(2)})` : "", remindLines.length ? `Reorder reminder: ${remindLines.join("; ")}` : "", payDisc ? `Payment discount: ${payMethod.label} ${payMethod.pct}% (−$${payDisc.toFixed(2)})` : "", short.length ? `Backorder: ${short.join("; ")}` : "", notes].filter(Boolean).join("\n"),
+      shipping_service: express ? "express" : "standard",
+      customer_notes: [express ? `Delivery method: Shipping · EXPRESS ($${ship.toFixed(2)})` : `Delivery method: Shipping`, priced.some(i => isWholesale(i.p)) ? `Wholesale shipping: ${stQ || "state unknown"} · $${ship.toFixed(2)}` : "", kitDisc ? `Kit savings: ${kit.label} (−$${kitDisc.toFixed(2)})` : "", remindLines.length ? `Reorder reminder: ${remindLines.join("; ")}` : "", payDisc ? `Payment discount: ${payMethod.label} ${payMethod.pct}% (−$${payDisc.toFixed(2)})` : "", short.length ? `Backorder: ${short.join("; ")}` : "", notes].filter(Boolean).join("\n"),
       subtotal: sub, discount: disc, subtotal_before_discount: sub, discount_amount: disc, discount_code_amount: codeDisc, ppu_code: codeDisc > 0 && discount?.code ? String(discount.code).trim() : null, vial_discount_amount: kitDisc, discount_percent: payDisc ? payMethod.pct : undefined, store_credit_applied: 0,
       shipping: ship, tax: 0, tax_rate: 0, tax_region: "", tax_jurisdiction: "", total, source: "website_inquiry", created_at: now, updated_at: now,
       ...(sendPepkeep ? { send_pepkeep: true, send_pepkeep_at: now } : {})
@@ -739,7 +744,7 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
     let credit = 0;
     if (applyCredit) { const r = await client().rpc("pst_redeem_store_credit", { p_order_id: order.id }); if (r.error) throw r.error; credit = Number(r.data || 0); }
     const due = Math.max(0, round(total - credit));
-    const ctx = { customerName: name, customerEmail: email, customerNumber: profile?.customer_number ? `PP-C${profile.customer_number}` : "", items, subtotal: sub, discount: disc, shipping: ship, total: due, paymentMethod: paymentLabel, deliveryMethod: delivery === "pickup" ? "Local Pickup" : "Shipping" };
+    const ctx = { customerName: name, customerEmail: email, customerNumber: profile?.customer_number ? `PP-C${profile.customer_number}` : "", items, subtotal: sub, discount: disc, shipping: ship, total: due, paymentMethod: paymentLabel, deliveryMethod: delivery === "pickup" ? "Local Pickup" : express ? "Express Shipping" : "Shipping" };
     let emailed = false;
     try { await postEmail(emailPayload({ ...order, store_credit_applied: credit }, ctx)); emailed = true; } catch {}
     // admin email: his current checkout sends only the customer email; send-order-email handles the rest, so nothing extra here
