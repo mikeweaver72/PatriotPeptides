@@ -39,18 +39,19 @@ $$;
 -- send one outbox row now (async). Quietly waits if the secrets aren't set yet.
 create or replace function public.ppu_coop_send(p_id bigint)
 returns void language plpgsql security definer set search_path to '' as $$
-declare k text; s text; r public.ppu_coop_outbox; rid bigint;
+declare k text; s text; r public.ppu_coop_outbox; rid bigint; h jsonb;
 begin
   select value into k from public.pst_app_secrets where key = 'coop_api_key';
   select value into s from public.pst_app_secrets where key = 'coop_secret';
-  if coalesce(k, '') = '' or coalesce(s, '') = '' then return; end if;
+  if coalesce(k, '') = '' or coalesce(s, '') = '' or k like '<%>' or s like '<%>' then return; end if; -- not set yet (or still the placeholder)
   select * into r from public.ppu_coop_outbox where id = p_id for update skip locked;
   if not found or r.status not in ('pending') then return; end if;
+  h := jsonb_build_object('Content-Type', 'application/json', 'apikey', k);
+  if k like 'eyJ%' then h := h || jsonb_build_object('Authorization', 'Bearer ' || k); end if; -- old-style anon JWT only; sb_publishable_ keys go in apikey alone
   select net.http_post(
     url := 'https://vddteufnmnkqqndzepbk.supabase.co/rest/v1/rpc/coop_vendor_alert',
     body := jsonb_build_object('p_secret', s, 'p_alert', r.payload || jsonb_build_object('sent_at', to_char(now() at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'))),
-    headers := jsonb_build_object('Content-Type', 'application/json', 'apikey', k, 'Authorization', 'Bearer ' || k),
-    timeout_milliseconds := 10000) into rid;
+    headers := h, timeout_milliseconds := 10000) into rid;
   update public.ppu_coop_outbox set status = 'sending', request_id = rid, attempts = attempts + 1 where id = p_id;
 exception when others then
   update public.ppu_coop_outbox set last_error = left(sqlerrm, 300), next_at = now() + interval '2 minutes' where id = p_id;
