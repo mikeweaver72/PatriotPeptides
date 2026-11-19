@@ -1,5 +1,6 @@
 // ship-label (Nov 2026, Jeff; installed Nov 19 by Mike with two fixes: order fields that exist on Patriot, owner check by account ID only): owner-only. Gets live label rates from Shippo for an order, buys the label the owner picks,
 // and voids unused labels. The Shippo key never leaves the server.
+// v2 (Nov 19): from email defaults to the shop address (Shippo requires it to buy); overseas-carrier notes hidden from the rates list.
 //
 // Deploy with JWT verification OFF (it checks the caller itself, like the other functions).
 // Secrets: SHIPPO_API_KEY (shippo_test_… while testing, shippo_live_… for real labels). Uses SUPABASE_URL,
@@ -76,7 +77,7 @@ function toAddress(o: Rec) {
   if (missing.length) throw new Error(`This order's ship-to address is missing the ${missing.join(", ")}. Fix the address on the order, then try again.`);
   return a;
 }
-const fromAddress = (s: Rec) => ({ name: s.from_name || s.from_company || "Patriot Peptides USA", company: s.from_company || "", street1: s.from_street1, street2: s.from_street2 || "", city: s.from_city, state: s.from_state, zip: s.from_zip, country: "US", phone: s.from_phone, email: s.from_email || "" });
+const fromAddress = (s: Rec) => ({ name: s.from_name || s.from_company || "Patriot Peptides USA", company: s.from_company || "", street1: s.from_street1, street2: s.from_street2 || "", city: s.from_city, state: s.from_state, zip: s.from_zip, country: "US", phone: s.from_phone, email: s.from_email || "info@patriotpeptides-usa.com" }); // Shippo requires a from email to buy
 
 async function rates(payload: Rec) {
   const [s, o] = await Promise.all([settings(), loadOrder(payload.order_id)]);
@@ -92,7 +93,9 @@ async function rates(payload: Rec) {
     amount: Number(r.amount), currency: r.currency || "USD", days: r.estimated_days ?? null, terms: r.duration_terms || "",
     tags: r.attributes || [], express_match: /priority_mail_express|express/i.test(r.servicelevel?.token || "") && /usps/i.test(r.provider || "")
   })).filter((r: Rec) => isFinite(r.amount)).sort((a: Rec, b: Rec) => a.amount - b.amount);
-  const messages = (shipment.messages || []).map((m: Rec) => `${m.source || ""}: ${m.text || ""}`.trim()).filter(Boolean).slice(0, 6);
+  // hide Shippo's notes about overseas carriers that never serve a US-to-US box; keep anything useful (address problems, UPS rate notes)
+  const noise = /doesn't support one or more shipment options|doesn't support shipments to inside of the US|out of service area/i;
+  const messages = (shipment.messages || []).map((m: Rec) => `${m.source || ""}: ${m.text || ""}`.trim()).filter((t: string) => t && !noise.test(t)).slice(0, 6);
   return json({ ok: true, shipment_id: shipment.object_id, express, test_mode: testMode(), rates: list, messages });
 }
 
@@ -108,7 +111,7 @@ async function buy(payload: Rec, user: Rec) {
   const t = await shippo("/transactions/", { rate: rateId, label_file_type: s.label_format || "PDF_4x6", async: false, metadata: `Order ${o.order_number || o.id}`.slice(0, 100) });
   if (t.status !== "SUCCESS") {
     const why = (t.messages || []).map((m: Rec) => m.text).filter(Boolean).join(" ");
-    throw new Error(`The label wasn't bought${why ? `: ${why}` : "."} You weren't charged.`);
+    throw new Error(`The label wasn't bought${why ? `: ${why}` : "."} You weren't charged.${/address_from|address_to/i.test(why) ? " Tap Get rates again, then buy." : ""}`);
   }
   const row = {
     order_id: o.id, shippo_shipment: rate.shipment || payload.shipment_id || null, shippo_rate: rateId, shippo_txn: t.object_id,
