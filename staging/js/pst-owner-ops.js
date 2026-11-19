@@ -156,11 +156,12 @@
     const mails = await P.client().from("order_audit_log").select("action_type,old_value,new_value,created_at").eq("order_id", o.id).in("action_type", ["email_sent", "email_failed"]).order("created_at", { ascending: false }).limit(30).then(r => r.data || [], () => []);
     const shipped = shippedMap(hist), left = its.reduce((n, i) => n + Math.max(0, Number(i.quantity || 1) - (shipped.get(String(i.id)) || 0)), 0);
     const btn = (a, label, cls = "ghost") => `<button class="btn ${cls} wide" type="button" data-oa="${a}">${label}</button>`;
+    const hd = btn("handoff", `${P.icon("check", 16)} Hand delivered (no shipping)`); // v114 (Mike): delivered in person, no label or tracking
     const lb = window.PPULabels ? (cls = "ghost") => btn("label", `${P.icon("truck", 16)} Buy &amp; print label`, cls) : () => ""; // Shippo labels (ppu-owner-labels.js)
     const next = st.k === "unpaid" ? btn("paid", `${P.icon("check", 16)} Mark paid`, "primary") + btn("remind", "Email a payment reminder")
-      : st.k === "paid" ? (pk ? btn("packed", "Ready for pickup", "primary") + btn("pickedup", "Picked up (hand off now)") : btn("packed", "Mark packed", "primary") + lb() + btn("ship", "Ship it (I have tracking)"))
-      : st.k === "packed" ? (pk ? btn("pickedup", "Picked up", "primary") : lb("primary") + btn("ship", "Ship it (I have tracking)"))
-      : st.k === "partial" ? lb("primary") + btn("ship", "Ship the rest (I have tracking)")
+      : st.k === "paid" ? (pk ? btn("packed", "Ready for pickup", "primary") + btn("pickedup", "Picked up (hand off now)") : btn("packed", "Mark packed", "primary") + lb() + btn("ship", "Ship it (I have tracking)") + hd)
+      : st.k === "packed" ? (pk ? btn("pickedup", "Picked up", "primary") : lb("primary") + btn("ship", "Ship it (I have tracking)") + hd)
+      : st.k === "partial" ? lb("primary") + btn("ship", "Ship the rest (I have tracking)") + hd
       : st.k === "shipped" ? btn("delivered", pk ? "Mark picked up" : "Mark delivered", "primary") : "";
     const w = P.sheet(`<div class="osheet" data-osheet="${o.id}">
 <div class="oshead"><div><small class="muted">${esc(o.order_number || "")} · ${P.fmtDate(o.created_at)}</small><h2 class="serif">${esc(custName(o))}</h2><b class="ostot">${money(o.total)}</b> <span class="opill ${st.cls}">${esc(st.t)}</span>${!pk && window.PPULabels?.isExpress(o) ? ` <span class="opill exp">EXPRESS</span>` : ""}${o.send_pepkeep ? ` <span class="pkchip" title="The customer asked to send this order to PepKeep">PepKeep ✓</span>` : ""} <span class="muted small">· ${pk ? "Pickup" : "Ship"} · ${esc(o.payment_method || "payment not chosen")}</span></div></div>
@@ -172,7 +173,7 @@ ${o.tracking_number ? `<p class="small">${P.icon("truck", 14)} ${esc(o.tracking_
 <p class="small muted">${esc(custEmail(o))}${ph ? ` · ${esc(o.customer_phone || o.shipping_phone)}` : ""}</p>
 ${shipTo(o)}<div class="ocontact">${ph ? `<button class="btn ghost sm" type="button" data-texts="${o.id}">${P.icon("chat", 15)} Text</button><a class="btn ghost sm" href="tel:${ph}">Call</a>` : ""}${custEmail(o) ? `<a class="btn ghost sm" href="mailto:${esc(custEmail(o))}?subject=${encodeURIComponent("Your Patriot Peptides USA order " + (o.order_number || ""))}">Email</a>` : ""}<button class="btn ghost sm" type="button" data-copy="${esc(o.order_number || o.id)}">Copy #</button></div>
 <div class="obar">${next}</div>
-${/^(shipped|partially_shipped|delivered|complete|completed)$/.test(nm(o.order_status || o.status || "")) && custEmail(o) ? `<div class="resendrow">${P.icon("truck", 16)}<span>${o.shipping_email_sent_at ? `Shipped email sent ${esc(P.fmtDate(o.shipping_email_sent_at))}` : "Shipped email not sent yet"}</span><button class="btn ${o.shipping_email_sent_at ? "ghost" : "primary"} sm" type="button" data-oa="resendship">${o.shipping_email_sent_at ? "Resend" : "Send shipped email"}</button></div>` : ""}
+${/^(shipped|partially_shipped|delivered|complete|completed)$/.test(nm(o.order_status || o.status || "")) && custEmail(o) && !/^hand delivered$/i.test(String(o.tracking_number || "")) ? `<div class="resendrow">${P.icon("truck", 16)}<span>${o.shipping_email_sent_at ? `Shipped email sent ${esc(P.fmtDate(o.shipping_email_sent_at))}` : "Shipped email not sent yet"}</span><button class="btn ${o.shipping_email_sent_at ? "ghost" : "primary"} sm" type="button" data-oa="resendship">${o.shipping_email_sent_at ? "Resend" : "Send shipped email"}</button></div>` : ""}
 <details class="omore omail"${mails.some(x => x.action_type === "email_failed") ? " open" : ""}><summary>Emails to the customer${mails.length ? ` (${mails.filter(x => x.action_type === "email_sent").length} sent${mails.some(x => x.action_type === "email_failed") ? `, ${mails.filter(x => x.action_type === "email_failed").length} failed` : ""})` : ""}</summary>
 ${mails.length ? mails.map(x => { const ok = x.action_type === "email_sent", to = String(x.new_value || "").split("|")[1]?.trim() || "", why = String(x.new_value || "").split("|").slice(2).join("|").trim();
   return `<div class="omrow ${ok ? "ok" : "bad"}"><span class="omic" aria-hidden="true">${ok ? "✓" : "✕"}</span><span><b>${esc(x.old_value || "Email")}</b><small>${ok ? "Sent" : "Failed"}${to ? ` to ${esc(to)}` : ""} · ${esc(new Date(x.created_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }))}${!ok && why ? ` · ${esc(why)}` : ""}</small></span></div>`; }).join("") : `<p class="muted small">No emails sent from the owner app for this order yet.</p>`}
@@ -211,8 +212,9 @@ ${st.k !== "dead" && nm(pStatus(o)) === "paid" ? btn("refund", "Mark refunded", 
       if (a === "emails") return emailToolsFlow(o);
       if (a === "resendship") { const ok = await previewEmail(o, "order_shipped", {}); if (ok) { o.shipping_email_sent_at = nowIso(); P.closeSheet(); openOrder(o.id); } return; }
       if (a === "refund") return refundFlow(o);
-      if (a === "pickedup") {
-        if (!(await confirmSheet("Picked up?", `Records ${esc(o.order_number || "")} as handed off and complete, and emails ${esc(custName(o))} a thank-you.`, "Yes, picked up"))) return;
+      if (a === "pickedup" || a === "handoff") {
+        if (a === "pickedup" ? !(await confirmSheet("Picked up?", `Records ${esc(o.order_number || "")} as handed off and complete, and emails ${esc(custName(o))} a thank-you.`, "Yes, picked up"))
+          : !(await confirmSheet("Hand delivered?", `Records ${esc(o.order_number || "")} as delivered in person (no label, no tracking) and emails ${esc(custName(o))} the Delivered email with the "Rate your order" box.`, "Yes, delivered"))) return;
         const hist = await shipHistory(o), m = shippedMap(hist), lines = (ctx.items[o.id] || []).map(i => ({ id: i.id, qty: Math.max(0, Number(i.quantity || 1) - (m.get(String(i.id)) || 0)) })).filter(x => x.qty > 0);
         if (lines.length) await recordShipment(o, "Hand Delivered", "Hand Delivered", lines, hist);
         return markDelivered(o);
