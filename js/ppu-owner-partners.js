@@ -1,4 +1,4 @@
-/* Patriot Peptides USA · Owner app → More → Partner program (v1, Oct 31 2026).
+/* Patriot Peptides USA · Owner app → More → Partner program (v1, Oct 31 2026; v4 Nov 19 2026 adds the Group orders tab, js/ppu-owner-group.js).
    Partners are people Jeff sells to (not his suppliers): Tier 1 Promoter (10% code), Tier 2 Runner and Tier 3 Vendor (own price sheets).
    Changing a partner's tier switches their price sheet the next time their portal loads. Price sheets are locked on the server:
    only Jeff and active partners of that tier can read them. */
@@ -25,7 +25,8 @@
     draw();
   }
   function draw() {
-    host.innerHTML = `<div class="oseg two" role="tablist"><button type="button" role="tab" aria-selected="${tab === "people"}" class="${tab === "people" ? "on" : ""}" data-ptab="people">Partners</button><button type="button" role="tab" aria-selected="${tab === "sheets"}" class="${tab === "sheets" ? "on" : ""}" data-ptab="sheets">Price sheets</button></div><div data-pbody></div>`;
+    host.innerHTML = `<div class="oseg three" role="tablist"><button type="button" role="tab" aria-selected="${tab === "people"}" class="${tab === "people" ? "on" : ""}" data-ptab="people">Partners</button><button type="button" role="tab" aria-selected="${tab === "sheets"}" class="${tab === "sheets" ? "on" : ""}" data-ptab="sheets">Price sheets</button><button type="button" role="tab" aria-selected="${tab === "group"}" class="${tab === "group" ? "on" : ""}" data-ptab="group">Group orders</button></div><div data-pbody></div>`;
+    if (tab === "group") return window.PPUGroupOwner ? PPUGroupOwner.pane($("[data-pbody]", host)) : ($("[data-pbody]", host).innerHTML = `<p class="notice err">Group orders didn't load. Refresh the app.</p>`);
     tab === "people" ? drawPeople() : drawSheets();
     host.onclick = onClick; host.onchange = onChange; host.oninput = onInput;
   }

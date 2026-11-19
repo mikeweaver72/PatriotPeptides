@@ -669,3 +669,14 @@ body:not([data-chrome="none"]):has(>main:first-child){padding-top:121px}
 .pdrel{max-width:1100px;margin:0 auto}.pdrel h2{font-size:22px;margin:0 0 10px}.pdrel ul{margin:0 0 12px;padding-left:20px}.pdrel li{margin:6px 0;line-height:1.5}.pdrel p{font-size:14px}
 .relnotes h2{font-size:20px}.relnotes ul{padding-left:20px}.relnotes li{margin:6px 0}
 .pdrel a{color:var(--gold);text-decoration:underline;text-underline-offset:3px}
+/* v119 group orders (vendor.html + owner app) */
+.gbox{display:grid;gap:10px;margin:12px 0}
+.gcard{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 14px;border:1px solid var(--line);border-left:4px solid #12266E;border-radius:10px;background:var(--card)}
+.gcard>div{display:flex;flex-direction:column;gap:2px;min-width:0}.gcard b{font-size:15px}.gcard small{color:var(--muted);line-height:1.4}.gcard .btn{flex:none}
+.gcard.placed{border-left-color:var(--ok)}.gcard.closed{border-left-color:var(--line2);opacity:.85}
+.ginfo{margin:12px 0;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--card)}.ginfo .r{display:flex;justify-content:space-between;gap:10px;padding:3px 0}.ginfo .r span{color:var(--muted)}.ginfo p{margin:8px 0 0;white-space:pre-line}
+@media(max-width:480px){.gcard{flex-direction:column;align-items:stretch}.gcard .btn{width:100%}}
+.gob .r{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}.gob .r small{display:block;color:var(--muted)}.gob .short{color:var(--bad);font-weight:600}
+.gob .wa{background:#25D366;border-color:#25D366;color:#fff}
+.gchip{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.04em;background:var(--line2);color:var(--ink);white-space:nowrap;flex:none}
+.gchip.ok{background:rgba(30,122,69,.18);color:var(--ok)}.gchip.warn{background:rgba(227,199,102,.2);color:var(--warn)}.gchip.pend{background:rgba(18,38,110,.25);color:var(--ink)}
