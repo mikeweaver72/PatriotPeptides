@@ -182,7 +182,9 @@ if (location.protocol === "http:" && /(^|\.)patriotpeptides-usa\.com$/i.test(loc
   // Mike's rules (Oct 2026): what the liquid below the label looks like. Everything else shows the white powder cake.
   const LIQUID = [[/^b-?12\b/i, "#a3122a"], [/ghk-?cu|\bglow\b|\bklow\b|(^|-)glw\b|(^|-)klw\b/i, "#4f86e8"], [/5-?amino/i, "#f0a35e"]]; // Patriot: GHK-Cu / Glow / Klow powders are blue, 5-Amino cream-orange
   const vialLiquid = p => (LIQUID.find(([re]) => re.test(String(p.display_name || ""))) || [])[1] || "";
-  const vialSig = p => ["ppu4", p.product_key, vialName(p), vialStrength(p), vialHex(p), vialLiquid(p)].join("|");
+  // v112 (Jeff, Nov 19 2026): liquids (BAC water and anything sold by the ml, or a Supply item) show clear water, not the powder cake
+  const vialWater = p => /\d\s*ml\b/i.test(String(p.strength || "")) || /^supply$/i.test(String(p.category || "")) || /bac[\s-]*w|water/i.test(String(p.display_name || ""));
+  const vialSig = p => ["ppu4", p.product_key, vialName(p), vialStrength(p), vialHex(p), vialLiquid(p), vialWater(p) ? "water" : ""].join("|");
   const vialCache = new Map(); let vialAssets = null; const vialByKey = new Map();
   const loadImg = src => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; });
   function vialAssetsP() {
@@ -236,8 +238,22 @@ if (location.protocol === "http:" && /(^|\.)patriotpeptides-usa\.com$/i.test(loc
       g.globalCompositeOperation = "screen"; const kl = g.createLinearGradient(lx, 0, lx + lw, 0);
       kl.addColorStop(.2, "rgba(255,255,255,0)"); kl.addColorStop(.3, "rgba(255,255,255,.22)"); kl.addColorStop(.36, "rgba(255,255,255,0)");
       g.fillStyle = kl; g.fillRect(lx, ly, lw, lh); g.restore(); }
+    // v112: clear water: a faint cool tint below the label, a bright meniscus line above it, and a lit bottom curve
+    if (vialWater(p)) { const py = ly + lh, ph = X(78), px0 = X(30), pw = X(240), wy = ly - X(26);
+      // the bottle photo has powder in it: make that part see-through (the page shows through clear water), keeping a little of the glass
+      g.save(); g.beginPath(); g.roundRect ? g.roundRect(px0 + X(6), py, pw - X(12), ph - X(4), X(10)) : g.rect(px0 + X(6), py, pw - X(12), ph - X(4)); g.clip();
+      g.globalCompositeOperation = "destination-out"; g.fillStyle = "rgba(0,0,0,.82)"; g.fillRect(px0, py, pw, ph); g.restore();
+      g.save(); g.beginPath(); g.rect(px0, wy, pw, py + ph - wy); g.clip();
+      g.fillStyle = "rgba(170,205,240,.18)"; g.fillRect(px0, wy, pw, ly - wy); g.fillRect(px0, py, pw, ph); // water above and below the label
+      const mn = g.createLinearGradient(0, wy - X(3), 0, wy + X(7)); mn.addColorStop(0, "rgba(255,255,255,0)"); mn.addColorStop(.35, "rgba(255,255,255,.75)"); mn.addColorStop(.6, "rgba(120,150,190,.35)"); mn.addColorStop(1, "rgba(120,150,190,0)");
+      g.fillStyle = mn; g.fillRect(px0, wy - X(3), pw, X(10)); // meniscus
+      const sd = g.createLinearGradient(px0, 0, px0 + pw, 0); sd.addColorStop(0, "rgba(20,40,80,.22)"); sd.addColorStop(.25, "rgba(20,40,80,0)"); sd.addColorStop(.75, "rgba(20,40,80,0)"); sd.addColorStop(1, "rgba(20,40,80,.26)");
+      g.fillStyle = sd; g.fillRect(px0, wy, pw, py + ph - wy); // glass edges darker through the water
+      g.globalCompositeOperation = "screen"; const bt = g.createRadialGradient(px0 + pw * .5, py + ph, 0, px0 + pw * .5, py + ph, pw * .5); bt.addColorStop(0, "rgba(210,230,255,.35)"); bt.addColorStop(1, "rgba(210,230,255,0)");
+      g.fillStyle = bt; g.fillRect(px0, py, pw, ph); // light collecting in the base
+      g.restore(); }
     // fine lyophilized powder: a matte cake with a soft, very fine grain (deterministic so every render matches)
-    { const py = ly + lh, ph = X(78), px0 = X(30), pw = X(240); let r = 1234567;
+    else { const py = ly + lh, ph = X(78), px0 = X(30), pw = X(240); let r = 1234567;
       const rnd = () => (r = (r * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
       g.save(); g.beginPath(); g.rect(px0, py, pw, ph); g.clip();
       const sh = g.createLinearGradient(px0, 0, px0 + pw, 0); sh.addColorStop(0, "rgba(0,0,0,.22)"); sh.addColorStop(.3, "rgba(0,0,0,0)"); sh.addColorStop(.7, "rgba(0,0,0,0)"); sh.addColorStop(1, "rgba(0,0,0,.26)");
