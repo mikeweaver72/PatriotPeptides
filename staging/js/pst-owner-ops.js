@@ -134,6 +134,24 @@
     const { data: ln, error: e2 } = await P.client().from("order_shipment_items").select("*").in("shipment_id", sh.map(x => x.id)); if (e2) throw e2;
     return sh.map(s => ({ ...s, lines: (ln || []).filter(l => l.shipment_id === s.id) }));
   }
+  // v117: take a shipment back off an order (wrong label, voided label, marked shipped by mistake). With a tracking number, only the
+  // shipments with that number come off; without one, the latest. The order goes back to partly shipped, packed or paid, and the normal
+  // next steps (Buy & print label, Ship it, Hand delivered) come back. Returns true when something was removed.
+  async function undoShipment(o, tracking = "", quiet = false) {
+    const hist = await shipHistory(o);
+    const take = tracking ? hist.filter(s => String(s.tracking_number || "") === String(tracking)) : hist.slice(-1);
+    if (!take.length) return false;
+    const ids = take.map(s => s.id), rest = hist.filter(s => !ids.includes(s.id));
+    const { error: e1 } = await P.client().from("order_shipment_items").delete().in("shipment_id", ids); if (e1) throw e1;
+    const { error: e2 } = await P.client().from("order_shipments").delete().in("id", ids); if (e2) throw e2;
+    const last = rest[rest.length - 1], from = oStatus(o), now = nowIso();
+    const to = rest.length ? "partially_shipped" : o.packed_at ? "packed" : "processing";
+    await safeUpdate(o, { order_status: to, status: to, tracking_number: last?.tracking_number || null, tracking: last?.tracking_number || null, tracking_carrier: last?.carrier || null, carrier: last?.carrier || null,
+      tracking_url: last ? trackUrl(last.carrier, last.tracking_number) : null, shipped_at: last ? o.shipped_at : null, last_admin_actor: adminName(), last_admin_actor_email: me().email, updated_at: now });
+    await audit(o, `Shipment taken off by ${adminName()}: ${take.map(s => `${s.carrier || ""} ${s.tracking_number || ""}`.trim()).join(", ")}. Status ${String(from).replaceAll("_", " ")} → ${to.replaceAll("_", " ")}`);
+    if (!quiet) P.toast("Shipment taken off the order");
+    return true;
+  }
   const shippedMap = hist => { const m = new Map(); hist.forEach(s => s.lines.forEach(l => m.set(String(l.order_item_id), (m.get(String(l.order_item_id)) || 0) + Number(l.quantity || 0)))); return m; };
   function stage(o) {
     const s = nm(oStatus(o)), pay = nm(pStatus(o)), pk = isPickup(o);
@@ -180,7 +198,7 @@ ${mails.length ? mails.map(x => { const ok = x.action_type === "email_sent", to 
 <p class="muted small" style="margin-top:8px">The order-received email goes out by itself when the customer checks out.</p></details>
 <details class="omore"><summary>More actions</summary>
 ${st.k !== "dead" && !isLocked(o) ? btn("edit", "Edit items") : ""}${st.k !== "dead" && isLocked(o) && left > 0 ? btn("reduce", "Remove unshipped items") : ""}${st.k !== "dead" ? btn("comp", "+ Free items ($0)") : ""}
-${st.k === "unpaid" && o.payment_deadline_at ? btn("extend", "Give 24 more hours to pay") : ""}${btn("emails", "Email the customer…")}
+${st.k !== "dead" && hist.length ? btn("unship", hist.length > 1 ? "Undo the last shipment" : "Undo shipment (not shipped after all)") : ""}${st.k === "unpaid" && o.payment_deadline_at ? btn("extend", "Give 24 more hours to pay") : ""}${btn("emails", "Email the customer…")}
 ${st.k !== "dead" && nm(pStatus(o)) === "paid" ? btn("refund", "Mark refunded", "danger") : ""}${st.k !== "dead" && st.k !== "done" ? btn("cancel", "Cancel order", "danger") : ""}
 <a class="btn ghost wide" href="admin.html">Open in full admin</a></details>
 </div>`, { label: `Order ${o.order_number || ""}` });
@@ -190,7 +208,7 @@ ${st.k !== "dead" && nm(pStatus(o)) === "paid" ? btn("refund", "Mark refunded", 
     if (opt.pay && st.k === "unpaid") setTimeout(() => act(o, "paid", { match }), 200);
   }
   // what the label module (ppu-owner-labels.js) may use: the same shipment, email and refresh steps as "Ship it"
-  const labelApi = () => ({ items: o => ctx.items[o.id] || [], shipHistory, shippedMap, recordShipment, sendEmail, done, confirmSheet, reopen: o => openOrder(o.id) });
+  const labelApi = () => ({ items: o => ctx.items[o.id] || [], shipHistory, shippedMap, recordShipment, undoShipment, sendEmail, done, confirmSheet, reopen: o => openOrder(o.id) });
   async function done(o, msg) { const k = /picked up|delivered/i.test(msg) ? "delivered" : /shipped/i.test(msg) ? "shipped" : /packed|ready/i.test(msg) ? "packed" : /paid/i.test(msg) ? "paid" : "", v = k && window.PSTVibe ? PSTVibe.afterAction(ctx.me, k) : ""; P.toast(v ? `${msg} · ${v}` : msg); await ctx.reload(); const fresh = ctx.orders.find(x => x.id === o.id); if (fresh) openOrder(o.id); } // show the order again with its new status and next step
 
   async function act(o, a, extra = {}) {
@@ -209,6 +227,13 @@ ${st.k !== "dead" && nm(pStatus(o)) === "paid" ? btn("refund", "Mark refunded", 
       if (a === "reduce") return reduceFlow(o);
       if (a === "comp") return compFlow(o);
       if (a === "extend") return extendFlow(o);
+      if (a === "unship") {
+        const h = extra.hist || [], s = h[h.length - 1]; if (!s) return;
+        const { data: lbs } = window.PPULabels ? await P.client().from("ppu_shipping_labels").select("status,test_mode").eq("order_id", o.id).eq("tracking_number", s.tracking_number || "").eq("status", "purchased") : { data: [] };
+        const live = (lbs || []).some(l => !l.test_mode);
+        if (!(await confirmSheet("Undo this shipment?", `Takes ${esc(s.carrier || "the shipment")} ${esc(s.tracking_number || "")} off ${esc(o.order_number || "")}. The order goes back to ${h.length > 1 ? "partly shipped" : o.packed_at ? "packed" : "paid"} so you can buy a label, ship it or mark it hand delivered.${live ? "<br><br><b>A paid label goes with this shipment.</b> Void it under Shipping labels instead if it won't be mailed, so the postage is refunded." : ""} No email is sent.`, "Undo shipment", true))) return;
+        await undoShipment(o, s.tracking_number || "", true); return done(o, "Shipment taken off the order");
+      }
       if (a === "emails") return emailToolsFlow(o);
       if (a === "resendship") { const ok = await previewEmail(o, "order_shipped", {}); if (ok) { o.shipping_email_sent_at = nowIso(); P.closeSheet(); openOrder(o.id); } return; }
       if (a === "refund") return refundFlow(o);

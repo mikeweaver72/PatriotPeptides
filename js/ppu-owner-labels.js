@@ -183,7 +183,9 @@ ${exp ? `<p class="small"><span class="opill exp">EXPRESS</span> Customer paid f
       // step 3: record the shipment (same as "Ship it") and show print
       const carrier = /usps/i.test(label.carrier) ? "USPS" : /ups/i.test(label.carrier) ? "UPS" : /fedex/i.test(label.carrier) ? "FedEx" : label.carrier;
       let rec = null, recErr = "";
-      try { rec = await api.recordShipment(o, carrier, label.tracking_number, ls, hist); } catch (e2) { recErr = e2.message || "unknown error"; }
+      // v117: a test label can't be mailed, so it never marks the order shipped (Jeff's test labels had put real orders on "shipped")
+      if (label.test_mode) rec = { test: true };
+      else try { rec = await api.recordShipment(o, carrier, label.tracking_number, ls, hist); } catch (e2) { recErr = e2.message || "unknown error"; }
       doneSheet(o, api, label, carrier, ls, rec, recErr);
     });
   }
@@ -193,13 +195,14 @@ ${exp ? `<p class="small"><span class="opill exp">EXPRESS</span> Customer paid f
 <p class="muted">${esc(label.carrier)} ${esc(label.service)} · ${money(label.amount)}${label.test_mode ? " · TEST" : ""}</p><p class="trk">${esc(label.tracking_number || "")}</p>
 <button class="btn primary wide" type="button" data-lbprint>${P.icon ? P.icon("truck", 16) : ""} Print label</button>
 <a class="small muted" href="${esc(label.label_url)}" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px">Or open the label file</a>
-${recErr ? `<p class="notice err" style="margin-top:10px">The label is bought, but the shipment didn't save on the order: ${esc(recErr)}. Use "Ship it (add tracking)" with the tracking number above.</p>` : `<p class="muted small" style="margin-top:10px">Saved on the order as ${rec?.complete ? "shipped" : "partly shipped"}.</p>`}
-${recErr ? "" : `<button class="btn ghost wide" type="button" data-lbemail style="margin-top:8px">Next: ${rec?.complete ? "shipped" : "shipment update"} email</button>`}
+${rec?.test ? `<p class="lbtest" style="margin-top:10px"><b>Test label.</b> It can't be mailed, so the order was left as it was (not marked shipped, no email).</p>`
+  : recErr ? `<p class="notice err" style="margin-top:10px">The label is bought, but the shipment didn't save on the order: ${esc(recErr)}. Use "Ship it (add tracking)" with the tracking number above.</p>` : `<p class="muted small" style="margin-top:10px">Saved on the order as ${rec?.complete ? "shipped" : "partly shipped"}.</p>`}
+${recErr || rec?.test ? "" : `<button class="btn ghost wide" type="button" data-lbemail style="margin-top:8px">Next: ${rec?.complete ? "shipped" : "shipment update"} email</button>`}
 <button class="btn ghost wide" type="button" data-lbclose style="margin-top:8px">Done</button></div>`, { label: "Label bought" });
     w.classList.add("full");
     w.querySelector("[data-lbprint]").addEventListener("click", e => printLabel(label, e.currentTarget));
     if (!isPhone()) printLabel(label, w.querySelector("[data-lbprint]")); // desktop: go straight to the print dialog once the label is bought
-    w.querySelector("[data-lbclose]").addEventListener("click", () => api.done(o, rec?.complete ? "Shipped" : "Label bought"));
+    w.querySelector("[data-lbclose]").addEventListener("click", () => api.done(o, rec?.test ? "Test label bought" : rec?.complete ? "Shipped" : "Label bought"));
     w.querySelector("[data-lbemail]")?.addEventListener("click", async () => {
       const items = api.items(o) || [];
       const sl = items.filter(i => ls.some(l => String(l.id) === String(i.id))).map(i => { const q = ls.find(l => String(l.id) === String(i.id)).qty; return { ...i, quantity: q, line_total: Math.round(Number(i.unit_price || 0) * q * 100) / 100 }; });
@@ -219,9 +222,13 @@ ${recErr ? "" : `<button class="btn ghost wide" type="button" data-lbemail style
       const rp = e.target.closest("[data-lbreprint]"); if (rp) { e.stopPropagation(); return printLabel(data.find(x => x.id === rp.dataset.lbreprint), rp); }
       const b = e.target.closest("[data-lbvoid]"); if (!b) return; e.stopPropagation();
       const l = data.find(x => x.id === b.dataset.lbvoid);
-      if (!(await api.confirmSheet("Void this label?", `${esc(l.carrier)} ${esc(l.service)} · ${esc(l.tracking_number || "")}<br><br>Only void a label that hasn't been mailed. The ${money(l.amount)} is refunded to your Shippo account, usually within a few weeks. The shipment stays on the order: if you're not shipping it, edit the order.`, "Void label", true))) return api.reopen(o);
-      try { const j = await call("void", { label_id: l.id }); P.toast(j.status === "voided" ? "Label voided" : j.status === "void_rejected" ? "The carrier refused the void (it may already be scanned)" : "Void requested"); }
-      catch (err) { P.toast(err.message); }
+      if (!(await api.confirmSheet("Void this label?", `${esc(l.carrier)} ${esc(l.service)} · ${esc(l.tracking_number || "")}<br><br>Only void a label that hasn't been mailed. ${l.test_mode ? "Test labels cost nothing." : `The ${money(l.amount)} is refunded to your Shippo account, usually within a few weeks.`} If this label's shipment is on the order, it comes off too, so you can buy a new label, ship it another way or mark it hand delivered.`, "Void label", true))) return api.reopen(o);
+      let j = null;
+      try { j = await call("void", { label_id: l.id }); } catch (err) { P.toast(err.message); return api.reopen(o); }
+      if (j.status === "void_rejected") { P.toast("The carrier refused the void (it may already be scanned). The order wasn't changed."); return api.reopen(o); }
+      // v117: take this label's shipment back off the order so the normal choices come back
+      let undone = false; try { undone = await api.undoShipment?.(o, l.tracking_number, true); } catch (err) { P.toast(`Label voided, but the shipment is still on the order: ${err.message}`); return api.reopen(o); }
+      P.toast(`${j.status === "voided" ? "Label voided" : "Void requested"}${undone ? " · shipment taken off the order" : ""}`);
       api.reopen(o);
     });
   }
