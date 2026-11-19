@@ -29,24 +29,46 @@
     if (!r.ok || !j || j.ok === false) { const e = new Error(j?.error || (r.status === 404 ? "The label service isn't installed yet (ship-label function)." : `Label service error (${r.status}).`)); e.needsConfirm = !!j?.needs_confirm; throw e; }
     return j;
   }
-  // v115 (Mike): Print label opens the print dialog directly. The PDF comes through the ship-label function (Shippo's host can't be
-  // printed from the page), goes into a hidden frame, and that frame prints. Phones (and any failure) fall back to opening the label.
+  // v116 (Mike/Jeff): Print label opens the print dialog on every browser. Printing a PDF inside a page is unreliable (Safari and the
+  // PDF viewer refuse), so the label PDF (passed through the ship-label function) is drawn to a picture with pdf.js, placed on a plain
+  // page sized to the label (4×6 by default) and that page prints. Works on desktop Chrome/Safari/Edge and iPhone (AirPrint).
   const isPhone = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const PDFJS = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
+  let pdfjsP = null;
+  const loadPdfjs = () => pdfjsP || (pdfjsP = new Promise((res, rej) => { if (window.pdfjsLib) return res(window.pdfjsLib);
+    const s = document.createElement("script"); s.src = PDFJS + "pdf.min.js"; s.onload = () => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS + "pdf.worker.min.js"; res(window.pdfjsLib); }; s.onerror = () => { pdfjsP = null; rej(new Error("pdf.js didn't load")); }; document.head.appendChild(s); }));
+  async function labelPicture(l) {
+    const { data } = await P.client().auth.getSession();
+    const r = await fetch(`${P.CFG.url}/functions/v1/${P.CFG.labelFn || "ship-label"}`, { method: "POST", headers: { "Content-Type": "application/json", apikey: P.CFG.key, Authorization: `Bearer ${data?.session?.access_token || P.CFG.key}` }, body: JSON.stringify({ action: "file", label_id: l.id }) });
+    if (!r.ok || !/pdf/i.test(r.headers.get("Content-Type") || "")) throw new Error("The label file didn't come through.");
+    const lib = await loadPdfjs(), doc = await lib.getDocument({ data: await r.arrayBuffer() }).promise, pages = [];
+    for (let n = 1; n <= Math.min(doc.numPages, 4); n++) {
+      const pg = await doc.getPage(n), base = pg.getViewport({ scale: 1 }), vp = pg.getViewport({ scale: 300 / 72 }); // 300 dpi: crisp barcodes
+      const c = document.createElement("canvas"); c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+      const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height);
+      await pg.render({ canvasContext: g, viewport: vp }).promise;
+      pages.push({ src: c.toDataURL("image/png"), w: base.width / 72, h: base.height / 72 }); // inches
+    }
+    return pages;
+  }
+  const printHtml = pages => { const { w, h } = pages[0];
+    return `<!doctype html><html><head><meta charset="utf-8"><title>Shipping label</title><style>@page{size:${w}in ${h}in;margin:0}html,body{margin:0;padding:0;background:#fff}
+img{display:block;width:${w}in;height:${h}in;page-break-after:always;break-after:page}img:last-child{page-break-after:auto;break-after:auto}
+@media screen{body{background:#eee}img{margin:12px auto;box-shadow:0 1px 6px rgba(0,0,0,.25);max-width:96vw;height:auto}}</style></head>
+<body>${pages.map(p => `<img src="${p.src}" alt="Shipping label">`).join("")}</body></html>`; };
   async function printLabel(l, btn) {
-    const old = btn?.textContent; if (btn) { btn.textContent = "Opening printer…"; btn.setAttribute("aria-busy", "true"); }
+    const old = btn?.innerHTML; if (btn) { btn.textContent = "Opening printer…"; btn.setAttribute("aria-busy", "true"); btn.disabled = true; }
     try {
-      const { data } = await P.client().auth.getSession();
-      const r = await fetch(`${P.CFG.url}/functions/v1/${P.CFG.labelFn || "ship-label"}`, { method: "POST", headers: { "Content-Type": "application/json", apikey: P.CFG.key, Authorization: `Bearer ${data?.session?.access_token || P.CFG.key}` }, body: JSON.stringify({ action: "file", label_id: l.id }) });
-      if (!r.ok || !/pdf/i.test(r.headers.get("Content-Type") || "")) throw new Error("no pdf");
-      const url = URL.createObjectURL(await r.blob());
-      if (isPhone()) { window.open(url, "_blank") || (location.href = url); return; } // phones: the share sheet has Print
+      const html = printHtml(await labelPicture(l));
       document.querySelectorAll("iframe[data-lbprint]").forEach(f => f.remove());
       const f = document.createElement("iframe"); f.dataset.lbprint = "1"; f.title = "Shipping label";
-      f.style.cssText = "position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none";
-      f.onload = () => setTimeout(() => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch { window.open(url, "_blank"); } }, 300);
-      f.src = url; document.body.appendChild(f);
-    } catch { window.open(l.label_url, "_blank", "noopener"); }
-    finally { if (btn) { btn.textContent = old; btn.removeAttribute("aria-busy"); } }
+      f.style.cssText = "position:fixed;right:0;bottom:0;width:4in;height:6in;border:0;opacity:0;pointer-events:none;z-index:-1";
+      document.body.appendChild(f);
+      const d = f.contentWindow.document; d.open(); d.write(html); d.close();
+      await Promise.all([...d.images].map(im => im.decode ? im.decode().catch(() => {}) : new Promise(r => im.complete ? r() : (im.onload = r))));
+      setTimeout(() => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch { const u = URL.createObjectURL(new Blob([html], { type: "text/html" })); window.open(u, "_blank"); } }, 150);
+    } catch (e) { P.toast(`${e.message || "Couldn't open the printer"}. Opening the label file instead.`); window.open(l.label_url, "_blank", "noopener"); }
+    finally { if (btn) { btn.innerHTML = old; btn.removeAttribute("aria-busy"); btn.disabled = false; } }
   }
   async function getSettings() {
     const { data, error } = await P.client().from("ppu_ship_settings").select("*").eq("id", 1).maybeSingle();
@@ -204,5 +226,5 @@ ${recErr ? "" : `<button class="btn ghost wide" type="button" data-lbemail style
     });
   }
 
-  window.PPULabels = { open, mount, settingsSheet: () => getSettings().then(s => settingsSheet(s)).catch(e => P.toast(e.message)), isExpress };
+  window.PPULabels = { open, mount, print: printLabel, settingsSheet: () => getSettings().then(s => settingsSheet(s)).catch(e => P.toast(e.message)), isExpress };
 })();
