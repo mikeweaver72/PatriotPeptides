@@ -1,4 +1,4 @@
-// ppu-group-mail (Nov 19 2026): emails for partner group orders (server/sql/99i_group_orders.sql).
+// ppu-group-mail (Nov 19 2026; v3 same day: items sold each (pack = 1) read "2 × $14.00 each"): emails for partner group orders (server/sql/99i_group_orders.sql).
 //   announce {group_id}  owner signed in    -> every active Runner + Vendor: "Group order <date>: add your kits by <cutoff>" (no prices)
 //   confirm  {group_id}  partner signed in  -> that partner: what they added, priced from their own tier only
 //   remind   {}          x-hook-key (cron) or owner -> once per group, about a day before the cutoff, to every Runner + Vendor
@@ -63,12 +63,12 @@ const group = async (id: string) => { if (!isUuid(id)) throw new Error("Unknown 
 async function linesFor(g: Rec, pt: Rec) {
   const ls = await rest(`ppu_group_lines?group_id=eq.${g.id}&partner_id=eq.${pt.id}&select=qty,price_id`) as Rec[];
   if (!ls.length) return [];
-  const pr = await rest(`ppu_partner_prices?tier=eq.${pt.tier}&id=in.(${ls.map(l => l.price_id).join(",")})&select=id,name,amount,price,sort`) as Rec[];
+  const pr = await rest(`ppu_partner_prices?tier=eq.${pt.tier}&id=in.(${ls.map(l => l.price_id).join(",")})&select=id,name,amount,price,sort,pack`) as Rec[];
   return ls.map(l => ({ ...l, x: pr.find(p => p.id === l.price_id) })).filter(l => l.x).sort((a, b) => (a.x.sort ?? 0) - (b.x.sort ?? 0) || String(a.x.name).localeCompare(b.x.name));
 }
 const linesHtml = (ls: Rec[]) => { const sub = ls.reduce((s, l) => s + Number(l.x.price) * l.qty, 0), kits = ls.reduce((s, l) => s + l.qty, 0);
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:16px 0 0;border-top:1px solid #e8e3da">${ls.map(l => `<tr><td style="padding:9px 0;border-bottom:1px solid #e8e3da;font-size:15px"><b>${esc(l.x.name)}</b> ${esc(l.x.amount || "")}<br><span style="font-size:13px;color:#6b7385">${l.qty} kit${l.qty === 1 ? "" : "s"} × ${money(l.x.price)}</span></td><td align="right" style="padding:9px 0;border-bottom:1px solid #e8e3da;font-size:15px;font-weight:600">${money(Number(l.x.price) * l.qty)}</td></tr>`).join("")}
-<tr><td style="padding:10px 0 0;font-size:17px;font-weight:800;color:#0A1020">${kits} kit${kits === 1 ? "" : "s"}</td><td align="right" style="padding:10px 0 0;font-size:17px;font-weight:800;color:#0A1020">${money(sub)}</td></tr></table>`; };
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:16px 0 0;border-top:1px solid #e8e3da">${ls.map(l => `<tr><td style="padding:9px 0;border-bottom:1px solid #e8e3da;font-size:15px"><b>${esc(l.x.name)}</b> ${esc(l.x.amount || "")}<br><span style="font-size:13px;color:#6b7385">${Number(l.x.pack ?? 10) <= 1 ? `${l.qty} × ${money(l.x.price)} each` : `${l.qty} kit${l.qty === 1 ? "" : "s"} × ${money(l.x.price)}`}</span></td><td align="right" style="padding:9px 0;border-bottom:1px solid #e8e3da;font-size:15px;font-weight:600">${money(Number(l.x.price) * l.qty)}</td></tr>`).join("")}
+<tr><td style="padding:10px 0 0;font-size:17px;font-weight:800;color:#0A1020">${ls.every(l => Number(l.x.pack ?? 10) > 1) ? `${kits} kit${kits === 1 ? "" : "s"}` : `${kits} item${kits === 1 ? "" : "s"}`}</td><td align="right" style="padding:10px 0 0;font-size:17px;font-weight:800;color:#0A1020">${money(sub)}</td></tr></table>`; };
 const linesText = (ls: Rec[]) => ls.map(l => `${l.qty} × ${l.x.name} ${l.x.amount || ""} · ${money(Number(l.x.price) * l.qty)}`).join("\n") + `\nTotal: ${money(ls.reduce((s, l) => s + Number(l.x.price) * l.qty, 0))}`;
 
 async function announce(g: Rec) {
@@ -85,7 +85,7 @@ async function announce(g: Rec) {
 async function confirm(g: Rec, pt: Rec) {
   const ls = await linesFor(g, pt);
   if (!ls.length) return send(pt.email, `You're out of ${name(g)}`, shell(`${pill("Group order")}${h1("You're not on this one")}${p(`Hi ${esc(first(pt.name))}, you removed all your kits from ${esc(name(g))}. You can still add some until ${esc(when(g.cutoff_at))}.`)}${btn(link(g), "Add kits")}`, "No kits on this group order."), `You removed all your kits from ${name(g)}. Add some until ${when(g.cutoff_at)}: ${link(g)}`);
-  const html = shell(`${pill("Added to the group order", "#0f8a3b")}${h1("You're in")}${p(`Hi ${esc(first(pt.name))}, here's what you added to ${esc(name(g))}. <b>Nothing is charged now.</b> Once Jeff places the order, you'll get an email with your total and how to pay.`)}${linesHtml(ls)}<p style="margin:8px 0 0;font-size:13px;color:#6b7385">Supplier shipping is split across the group and billed after the block ships.</p>${dates(g)}${btn(link(g), "Change my kits", "#0A1020")}`, `${ls.reduce((s, l) => s + l.qty, 0)} kits on the ${day(g.order_date)} group order. Nothing charged yet.`);
+  const html = shell(`${pill("Added to the group order", "#0f8a3b")}${h1("You're in")}${p(`Hi ${esc(first(pt.name))}, here's what you added to ${esc(name(g))}. <b>Nothing is charged now.</b> Once Jeff places the order, you'll get an email with your total and how to pay.`)}${linesHtml(ls)}<p style="margin:8px 0 0;font-size:13px;color:#6b7385">Supplier shipping is split across the group and billed after the block ships.</p>${dates(g)}${btn(link(g), "Change my kits", "#0A1020")}`, `${ls.reduce((s, l) => s + l.qty, 0)} items on the ${day(g.order_date)} group order. Nothing charged yet.`);
   return send(pt.email, `Your kits for ${name(g)}`, html, `Here's what you added to ${name(g)}. Nothing is charged now.\n\n${linesText(ls)}\n\nChange until ${when(g.cutoff_at)}: ${link(g)}`);
 }
 async function remind(only = "") { // only = a group id Jeff chose to remind now (skips the "about a day before" timing)

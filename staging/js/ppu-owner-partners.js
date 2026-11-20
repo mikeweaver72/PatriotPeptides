@@ -1,4 +1,4 @@
-/* Patriot Peptides USA · Owner app → More → Partner program (v1, Oct 31 2026; v4 Nov 19 2026 adds the Group orders tab, js/ppu-owner-group.js).
+/* Patriot Peptides USA · Owner app → More → Partner program (v1, Oct 31 2026; v4 Nov 19 2026 adds the Group orders tab, js/ppu-owner-group.js; v6 adds Sold as: kit of 10 / each).
    Partners are people Jeff sells to (not his suppliers): Tier 1 Promoter (10% code), Tier 2 Runner and Tier 3 Vendor (own price sheets).
    Changing a partner's tier switches their price sheet the next time their portal loads. Price sheets are locked on the server:
    only Jeff and active partners of that tier can read them. */
@@ -129,13 +129,14 @@ ${isNew ? "" : `<div class="pinv"><p class="kick" style="margin:14px 0 6px">Invi
   }
 
   /* ---------- price sheets ---------- */
+  const PACKS = [[10, "Kit of 10"], [1, "Each (single item)"], [5, "Pack of 5"]]; // v5: pens and cartridges sell each (ppu_partner_prices.pack)
   function drawSheets() {
     const pt = tiers.filter(t => t.has_prices), list = prices.filter(x => x.tier === tierPick), shown = list.filter(x => !q || `${x.name} ${x.amount} ${x.sku}`.toLowerCase().includes(q));
     const on = list.filter(x => x.active).length;
     $("[data-pbody]", host).innerHTML = `<div class="oseg ${pt.length === 2 ? "two" : "three"}" role="tablist" aria-label="Which price sheet">${pt.map(t => `<button type="button" class="${t.id === tierPick ? "on" : ""}" data-psheet="${t.id}">Tier ${t.id} · ${esc(t.name)}</button>`).join("")}</div>
-<div class="pmtop"><p class="muted small" style="margin:0;flex:1">${on} of ${list.length} items showing to ${esc(tierName(tierPick))}s. Prices are per 10-vial kit. Changes save as you go.</p><button class="btn primary sm" type="button" data-pnew>+ Add item</button></div>
+<div class="pmtop"><p class="muted small" style="margin:0;flex:1">${on} of ${list.length} items showing to ${esc(tierName(tierPick))}s. Prices are per 10-vial kit unless an item is set to sell each (pens, cartridges). Changes save as you go.</p><button class="btn primary sm" type="button" data-pnew>+ Add item</button></div>
 <div class="pmtop"><input class="psearch" type="search" data-psearch placeholder="Search this sheet" value="${esc(q)}" aria-label="Search price sheet"><button class="btn ghost sm" type="button" data-pbulk>Adjust all</button></div>
-<div class="psheet">${shown.map(x => `<div class="prow${x.active ? "" : " off"}" data-prow="${esc(x.id)}"><span class="ptx"><b>${esc(x.name)}</b><small>${esc(x.amount || "")}${x.sku ? ` · ${esc(x.sku)}` : ""}</small></span>
+<div class="psheet">${shown.map(x => `<div class="prow${x.active ? "" : " off"}" data-prow="${esc(x.id)}"><span class="ptx"><b>${esc(x.name)}</b><small>${esc(x.amount || "")}${x.sku ? ` · ${esc(x.sku)}` : ""}</small><select class="ppack" data-ppack="${esc(x.id)}" aria-label="How ${esc(x.name)} is sold">${PACKS.map(([v, t]) => `<option value="${v}"${Number(x.pack ?? 10) === v ? " selected" : ""}>${t}</option>`).join("")}${PACKS.some(([v]) => v === Number(x.pack ?? 10)) ? "" : `<option value="${x.pack}" selected>Kit of ${x.pack}</option>`}</select></span>
 <label class="pprice"><span class="sr">Price for ${esc(x.name)} ${esc(x.amount || "")}</span>$<input type="number" step="0.01" min="0" inputmode="decimal" value="${Number(x.price).toFixed(2)}" data-pprice="${esc(x.id)}"></label>
 <button type="button" class="pmlive" role="switch" aria-checked="${x.active}" data-pon="${esc(x.id)}" aria-label="Show ${esc(x.name)} ${esc(x.amount || "")} on this sheet"><i></i><span>${x.active ? "On" : "Off"}</span></button>
 <button type="button" class="prm" data-prm="${esc(x.id)}" aria-label="Remove ${esc(x.name)} ${esc(x.amount || "")}">${P.icon("x", 16)}</button></div>`).join("") || `<p class="muted small">${list.length ? "Nothing matches." : "This sheet is empty. Add items with + Add item."}</p>`}</div><p class="status" data-pst2 role="status"></p>`;
@@ -146,7 +147,8 @@ ${isNew ? "" : `<div class="pinv"><p class="kick" style="margin:14px 0 6px">Invi
     const other = tiers.filter(t => t.has_prices && t.id !== tierPick);
     const w = P.sheet(`<form class="pmform" novalidate><h2 class="serif">Add to the ${esc(tierName(tierPick))} sheet</h2>
 <label>Product<input name="name" required maxlength="80" placeholder="e.g. BPC-157"></label>
-<div class="pm2"><label>Amount<input name="amount" maxlength="20" placeholder="10mg"></label><label>SKU <span class="muted small">(optional)</span><input name="sku" maxlength="20" autocapitalize="characters" placeholder="BC10"></label></div>
+<label>Sold as<select name="pack">${PACKS.map(([v, t]) => `<option value="${v}">${t}</option>`).join("")}</select></label>
+<div class="pm2"><label>Strength / size <span class="muted small">(optional)</span><input name="amount" maxlength="20" placeholder="10mg"></label><label>SKU <span class="muted small">(optional)</span><input name="sku" maxlength="20" autocapitalize="characters" placeholder="BC10"></label></div>
 <div class="pm2"><label>${esc(tierName(tierPick))} price<input name="price" type="number" step="0.01" min="0" inputmode="decimal" required></label>${other.map(t => `<label>${esc(t.name)} price <span class="muted small">(optional)</span><input name="p${t.id}" type="number" step="0.01" min="0" inputmode="decimal"></label>`).join("")}</div>
 <button class="btn primary wide" type="submit">Add</button><p class="status" role="status" data-ast></p></form>`, { label: "Add item" });
     const f = $("form", w), st = $("[data-ast]", w);
@@ -154,7 +156,7 @@ ${isNew ? "" : `<div class="pinv"><p class="kick" style="margin:14px 0 6px">Invi
       e.preventDefault(); const name = f.name.value.trim(), price = Number(f.price.value);
       if (!name || !(price >= 0) || f.price.value === "") { st.textContent = "Add the product and its price."; st.className = "status bad"; return; }
       const sku = (f.sku.value.trim().toUpperCase() || `${name}-${f.amount.value}`.toUpperCase().replace(/[^A-Z0-9]+/g, "").slice(0, 20)) || ("ITEM" + Date.now());
-      const mk = (tier, pr) => ({ tier, sku, name, amount: f.amount.value.trim() || null, price: Math.round(pr * 100) / 100, active: true, sort: prices.filter(x => x.tier === tier).length });
+      const mk = (tier, pr) => ({ tier, sku, name, amount: f.amount.value.trim() || null, pack: Number(f.pack.value) || 10, price: Math.round(pr * 100) / 100, active: true, sort: prices.filter(x => x.tier === tier).length });
       const rowsIn = [mk(tierPick, price), ...other.filter(t => f[`p${t.id}`].value !== "").map(t => mk(t.id, Number(f[`p${t.id}`].value)))];
       const { error } = await db().from("ppu_partner_prices").insert(rowsIn);
       if (error) { st.textContent = /duplicate|unique/i.test(error.message) ? "That SKU is already on this sheet." : error.message; st.className = "status bad"; return; }
@@ -191,6 +193,10 @@ ${isNew ? "" : `<div class="pinv"><p class="kick" style="margin:14px 0 6px">Invi
       prices = prices.filter(p => p.id !== x.id); drawSheets(); P.toast("Removed"); }
   }
   async function onChange(e) {
+    const pk = e.target.closest("[data-ppack]");
+    if (pk) { const x = prices.find(p => p.id === pk.dataset.ppack), v = Number(pk.value) || 10; const same = prices.filter(p => p.sku && p.sku === x.sku); // one setting per item across both tiers
+      const { error } = await db().from("ppu_partner_prices").update({ pack: v, updated_at: new Date().toISOString() }).in("id", (same.length ? same : [x]).map(p => p.id));
+      if (error) { pk.value = String(x.pack ?? 10); return say(error.message); } (same.length ? same : [x]).forEach(p => p.pack = v); return say(`${x.name}: sold ${v === 1 ? "each" : `as a kit of ${v}`}${same.length > 1 ? " on every sheet" : ""}`, true); }
     const i = e.target.closest("[data-pprice]"); if (!i) return; const x = prices.find(p => p.id === i.dataset.pprice), v = Math.round(Number(i.value) * 100) / 100;
     if (!(v >= 0) || i.value === "") { i.value = Number(x.price).toFixed(2); return say("Prices can't be blank."); }
     if (v === Number(x.price)) return;

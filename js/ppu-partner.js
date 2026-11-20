@@ -14,8 +14,12 @@
   const saveBag = () => { if (grp) return; try { localStorage.setItem(BAGKEY, JSON.stringify(bag)); } catch {} };
   const lines = () => sheet.filter(x => bag[x.id] > 0).map(x => ({ x, n: bag[x.id] }));
   const state = () => P.stateCode(profile?.shipping_state || profile?.state || "");
-  const totals = () => { const sub = lines().reduce((s, l) => s + Number(l.x.price) * l.n, 0); return { sub: P.round(sub), total: P.round(sub), n: lines().reduce((s, l) => s + l.n, 0) }; };
+  const totals = () => { const ls = lines(), sub = ls.reduce((s, l) => s + Number(l.x.price) * l.n, 0), n = ls.reduce((s, l) => s + l.n, 0); return { sub: P.round(sub), total: P.round(sub), n, label: count(ls.map(l => l.x), n) }; };
   const kits = n => `${n} kit${n === 1 ? "" : "s"}`;
+  // v6 (Nov 19 2026): items can be sold each (pens, cartridges: ppu_partner_prices.pack = 1) instead of kits of 10
+  const each = x => Number(x?.pack ?? 10) <= 1, unit = x => each(x) ? "each" : `kit of ${x?.pack || 10}`, per = x => each(x) ? "ea" : "kit";
+  const cnt = (x, n) => each(x) ? `${n}` : kits(n); // "× 2" for each-items, "× 2 kits" for kits
+  const count = (rows, n) => rows.every(r => !each(r)) ? kits(n) : `${n} item${n === 1 ? "" : "s"}`; // a total across lines
   const loadStats = async () => { const r = await P.client().rpc("ppu_partner_stats"); stats = (r.data || [])[0] || null; };
 
   function msg(icon, title, body, actions = "") { el().innerHTML = `<div class="mgate">${P.icon(icon, 28)}<h2 class="serif">${title}</h2><p class="muted">${body}</p>${actions}</div>`; }
@@ -31,7 +35,7 @@
     await loadStats().catch(() => {});
     if (!me.has_prices) return promoter();
     profile = await P.getProfile(user).catch(() => null);
-    const [s, m] = await Promise.all([P.client().from("ppu_partner_prices").select("id,sku,name,amount,price,sort").eq("tier", me.tier).eq("active", true).order("sort") /* v111: owners who are also partners can read every tier, so ask for theirs only */.order("name"), P.paymentMethods().catch(() => [])]);
+    const [s, m] = await Promise.all([P.client().from("ppu_partner_prices").select("id,sku,name,amount,price,sort,pack").eq("tier", me.tier).eq("active", true).order("sort") /* v111: owners who are also partners can read every tier, so ask for theirs only */.order("name"), P.paymentMethods().catch(() => [])]);
     if (s.error) return msg("lock", "Couldn't load your pricing", esc(s.error.message));
     sheet = s.data || []; methods = (m || []).filter(x => !P.isOtherPay?.(x.label));
     bag = loadBag(); Object.keys(bag).forEach(k => { if (!sheet.some(x => x.id === k) || !(bag[k] > 0)) delete bag[k]; }); saveBag();
@@ -47,15 +51,15 @@
   const day = d => new Date(`${d}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
   const when = t => new Date(t).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Los_Angeles", timeZoneName: "short" });
   const gName = g => g.title ? `${g.title} · ${day(g.order_date)}` : `Group order · ${day(g.order_date)}`;
-  const gSum = g => (g.lines || []).reduce((s, l) => s + Number(l.price) * l.qty, 0), gKits = g => (g.lines || []).reduce((s, l) => s + l.qty, 0);
+  const gSum = g => (g.lines || []).reduce((s, l) => s + Number(l.price) * l.qty, 0), gKits = g => (g.lines || []).reduce((s, l) => s + l.qty, 0), gCount = g => count(g.lines || [], gKits(g));
   async function loadGroups() { const r = await P.client().rpc("ppu_group_mine"); groups = Array.isArray(r.data) ? r.data : []; }
   function groupBanner() {
     if (!groups.length) return "";
     return `<div class="gbox">${groups.map(g => {
       const n = gKits(g), sub = gSum(g), placed = g.status === "submitted" && g.order_id;
       const line = placed ? `Placed · your order <b>${esc(g.order_number || "")}</b> · ${money(sub)}. Check your email for how to pay.`
-        : g.open ? (n ? `You're in: ${kits(n)} · ${money(sub)}. Change until ${esc(when(g.cutoff_at))}.` : `Add your kits by ${esc(when(g.cutoff_at))}. Nothing is charged until Jeff places it.`)
-        : (n ? `Changes closed. Your ${kits(n)} (${money(sub)}) go in when Jeff places it.` : `Changes closed ${esc(when(g.cutoff_at))}.`);
+        : g.open ? (n ? `You're in: ${gCount(g)} · ${money(sub)}. Change until ${esc(when(g.cutoff_at))}.` : `Add your kits by ${esc(when(g.cutoff_at))}. Nothing is charged until Jeff places it.`)
+        : (n ? `Changes closed. Your ${gCount(g)} (${money(sub)}) go in when Jeff places it.` : `Changes closed ${esc(when(g.cutoff_at))}.`);
       const act = placed ? `<button class="btn primary sm" type="button" data-gpay="${esc(g.id)}">Pay ${money(sub)}</button>` : g.open ? `<button class="btn primary sm" type="button" data-gopen="${esc(g.id)}">${n ? "Change my kits" : "Add to this order"}</button>` : n ? `<button class="btn ghost sm" type="button" data-gopen="${esc(g.id)}">View</button>` : "";
       return `<div class="gcard${placed ? " placed" : g.open ? "" : " closed"}"><div><span class="kick">${placed ? "Group order placed" : "Group order"}</span><b>${esc(gName(g))}</b><small>${line}</small></div>${act}</div>`;
     }).join("")}</div>`;
@@ -71,7 +75,7 @@
   function drawGroup() {
     const g = grp, info = `<div class="ginfo"><div class="r"><span>Order date</span><b>${esc(day(g.order_date))}</b></div><div class="r"><span>${g.open ? "Add or change kits until" : "Changes closed"}</span><b>${esc(when(g.cutoff_at))}</b></div>${g.note ? `<p class="small">${esc(g.note)}</p>` : ""}</div>`;
     const head = `<button class="btn ghost sm" type="button" data-gback>← My price sheet</button><div class="phead" style="margin-top:12px"><span class="ptier t${me.tier}">${me.tier}</span><div><span class="kick">Group order · Tier ${me.tier}</span><h1 class="serif">${esc(g.title || day(g.order_date))}</h1></div></div>${info}`;
-    if (!g.open) { el().innerHTML = `${head}<p class="muted">${gKits(g) ? "Your kits on this order:" : "You didn't add anything to this one."}</p><div class="vrl">${(g.lines || []).map(l => `<div class="r"><span>${esc(l.name)} ${esc(l.amount || "")} <small class="muted">× ${kits(l.qty)}</small></span><b>${money(Number(l.price) * l.qty)}</b></div>`).join("")}</div>`; return; }
+    if (!g.open) { el().innerHTML = `${head}<p class="muted">${gKits(g) ? "Your kits on this order:" : "You didn't add anything to this one."}</p><div class="vrl">${(g.lines || []).map(l => `<div class="r"><span>${esc(l.name)} ${esc(l.amount || "")} <small class="muted">× ${cnt(l, l.qty)}</small></span><b>${money(Number(l.price) * l.qty)}</b></div>`).join("")}</div>`; return; }
     el().innerHTML = `${head}<p class="muted small">Add the kits you want from your price sheet. <b>Nothing is charged now.</b> When Jeff places the order you'll get an email with your total and how to pay. Supplier shipping is split across the group and billed after the block ships.</p>
 <input class="psearch" type="search" data-vsearch placeholder="Search ${sheet.length} products" aria-label="Search your price sheet">
 <div class="vlist" data-vlist>${sheet.map(rowHtml).join("")}</div><div data-vbar>${barHtml()}</div>`;
@@ -79,7 +83,7 @@
   function reviewGroup() {
     const t = totals(), g = grp, out = !t.n;
     const w = P.sheet(`<div class="vrev"><h2 class="serif">${out ? "Take me off this order" : "Your part of the group order"}</h2><p class="muted small">${esc(gName(g))} · change until ${esc(when(g.cutoff_at))}</p>
-${out ? `<p>Your kits will be removed from this group order. You can add some again until the cutoff.</p>` : `<div class="vrl">${lines().map(l => `<div class="r"><span>${esc(l.x.name)} ${esc(l.x.amount || "")} <small class="muted">× ${kits(l.n)}</small></span><b>${money(Number(l.x.price) * l.n)}</b></div>`).join("")}</div>
+${out ? `<p>Your kits will be removed from this group order. You can add some again until the cutoff.</p>` : `<div class="vrl">${lines().map(l => `<div class="r"><span>${esc(l.x.name)} ${esc(l.x.amount || "")} <small class="muted">× ${cnt(l.x, l.n)}</small></span><b>${money(Number(l.x.price) * l.n)}</b></div>`).join("")}</div>
 <div class="sum"><div class="r"><span>Shipping</span><b>Billed later</b></div><div class="r tot"><span>Your total</span><b>${money(t.total)}</b></div><div class="r"><span>Due now</span><b>$0.00</b></div></div>
 <h3 class="kick" style="margin:14px 0 6px">How you'll pay when it's placed</h3><div class="pm">${methods.map(m => `<label><input type="radio" name="gpm" value="${esc(m.label)}"${m.label === gpay ? " checked" : ""}><span>${esc(P.payLabel ? P.payLabel(m) : m.label)}</span></label>`).join("")}</div>
 <label class="form" style="display:block;margin-top:10px"><span class="sr">Notes</span><textarea data-gnotes placeholder="Notes for Jeff (optional)" style="width:100%;min-height:56px">${esc(gnotes)}</textarea></label>`}
@@ -97,7 +101,7 @@ ${out ? "" : `<p class="muted small" style="text-align:center">We'll email you a
       P.client().functions.invoke("ppu-group-mail", { body: { action: "confirm", group_id: id } }).catch(() => {});
       P.closeSheet(); await loadGroups().catch(() => {});
       const g = groups.find(x => x.id === id) || grp; grp = g;
-      el().innerHTML = `<div class="vdone"><span class="kick">${ls.length ? "Added to the group order" : "Removed"}</span><h1 class="serif">${ls.length ? "You're in" : "You're off this one"}</h1><p class="muted">${ls.length ? `${kits(gKits(g))} · ${money(gSum(g))} on ${esc(gName(g))}. We emailed you a copy. <b>Nothing is charged now.</b> When Jeff places the order you'll get an email with how to pay. You can change your kits until ${esc(when(g.cutoff_at))}.` : `Your kits were taken off ${esc(gName(g))}. You can add some again until ${esc(when(g.cutoff_at))}.`}</p>
+      el().innerHTML = `<div class="vdone"><span class="kick">${ls.length ? "Added to the group order" : "Removed"}</span><h1 class="serif">${ls.length ? "You're in" : "You're off this one"}</h1><p class="muted">${ls.length ? `${gCount(g)} · ${money(gSum(g))} on ${esc(gName(g))}. We emailed you a copy. <b>Nothing is charged now.</b> When Jeff places the order you'll get an email with how to pay. You can change your kits until ${esc(when(g.cutoff_at))}.` : `Your kits were taken off ${esc(gName(g))}. You can add some again until ${esc(when(g.cutoff_at))}.`}</p>
 <div class="pinvb" style="margin-top:14px"><button class="btn primary" type="button" data-gopen="${esc(id)}">${ls.length ? "Change my kits" : "Add kits"}</button><button class="btn ghost" type="button" data-gback>Back to my price sheet</button></div></div>`;
     } catch (err) { st.textContent = err.message || "Couldn't save. Try again."; st.className = "status bad"; btn.disabled = false; }
     busy = false;
@@ -105,7 +109,7 @@ ${out ? "" : `<p class="muted small" style="text-align:center">We'll email you a
   async function payGroup(id) {
     const g = groups.find(x => x.id === id); if (!g?.order_id) return;
     const card = await P.payCard(g.payment_method || pay, gSum(g), g.order_number, g.order_id).catch(() => "");
-    P.sheet(`<div class="vrev"><h2 class="serif">Pay for ${esc(g.order_number || "your order")}</h2><p class="muted small">${esc(gName(g))} · ${money(gSum(g))} for ${kits(gKits(g))}. Shipping is billed after the block ships.</p>${card || `<p>Check your email for payment instructions, or <a href="account.html#orders">open your orders</a>.</p>`}</div>`, { label: "Pay" });
+    P.sheet(`<div class="vrev"><h2 class="serif">Pay for ${esc(g.order_number || "your order")}</h2><p class="muted small">${esc(gName(g))} · ${money(gSum(g))} for ${gCount(g)}. Shipping is billed after the block ships.</p>${card || `<p>Check your email for payment instructions, or <a href="account.html#orders">open your orders</a>.</p>`}</div>`, { label: "Pay" });
   }
 
   function promoter() {
@@ -124,15 +128,15 @@ ${stats ? `<div class="pstats"><div><small>Earned</small><b>${money(stats.earned
 
   function rowHtml(x) {
     const n = bag[x.id] || 0;
-    return `<div class="vrow${n ? " in" : ""}" data-vname="${esc(`${x.name} ${x.amount || ""} ${x.sku || ""}`.toLowerCase())}"><span class="vtx"><b>${esc(x.name)}</b><small>${esc(x.amount || "")} · kit of 10</small></span><b class="vpr">${money(x.price)}<small>/kit</small></b>
+    return `<div class="vrow${n ? " in" : ""}" data-vname="${esc(`${x.name} ${x.amount || ""} ${x.sku || ""}`.toLowerCase())}"><span class="vtx"><b>${esc(x.name)}</b><small>${esc([x.amount, unit(x)].filter(Boolean).join(" · "))}</small></span><b class="vpr">${money(x.price)}<small>/${per(x)}</small></b>
 <div class="qty sm"><button type="button" data-vq="${esc(x.id)}" data-d="-1" aria-label="Fewer ${esc(x.name)} ${esc(x.amount || "")}"${n ? "" : " disabled"}>−</button><input type="number" min="0" max="9999" inputmode="numeric" value="${n || ""}" placeholder="0" data-vn="${esc(x.id)}" aria-label="${esc(x.name)} ${esc(x.amount || "")} quantity"><button type="button" data-vq="${esc(x.id)}" data-d="1" aria-label="More ${esc(x.name)} ${esc(x.amount || "")}">+</button></div></div>`;
   }
   function barHtml() { const t = totals();
-    if (grp) return t.n ? `<div class="vbar"><span><b>${kits(t.n)}</b><small>${money(t.sub)} · nothing charged now</small></span><button class="btn primary" type="button" data-greview>Review my part</button></div>` : grp.saved_at ? `<div class="vbar"><span><b>No kits</b><small>You're on this order with nothing</small></span><button class="btn primary" type="button" data-greview>Take me off</button></div>` : "";
-    return t.n ? `<div class="vbar"><span><b>${kits(t.n)}</b><small>${money(t.sub)} + shipping billed later</small></span><button class="btn primary" type="button" data-vreview>Review order · ${money(t.total)}</button></div>` : ""; }
+    if (grp) return t.n ? `<div class="vbar"><span><b>${t.label}</b><small>${money(t.sub)} · nothing charged now</small></span><button class="btn primary" type="button" data-greview>Review my part</button></div>` : grp.saved_at ? `<div class="vbar"><span><b>No kits</b><small>You're on this order with nothing</small></span><button class="btn primary" type="button" data-greview>Take me off</button></div>` : "";
+    return t.n ? `<div class="vbar"><span><b>${t.label}</b><small>${money(t.sub)} + shipping billed later</small></span><button class="btn primary" type="button" data-vreview>Review order · ${money(t.total)}</button></div>` : ""; }
   function draw() {
     el().innerHTML = `<div class="phead"><span class="ptier t${me.tier}">${me.tier}</span><div><span class="kick">Tier ${me.tier} · ${esc(me.tier_name)}${me.company ? ` · ${esc(me.company)}` : ""}</span><h1 class="serif">Your price sheet</h1></div></div>
-${groupBanner()}${progress()}<p class="muted small">Prices are per 10-vial kit and for your account only. Orders go out with the next twice-monthly block. Supplier shipping is split across the group, so your share is billed after the block ships.</p>
+${groupBanner()}${progress()}<p class="muted small">Prices are per 10-vial kit (pens and other items marked "each" are per piece) and for your account only. Orders go out with the next twice-monthly block. Supplier shipping is split across the group, so your share is billed after the block ships.</p>
 <input class="psearch" type="search" data-vsearch placeholder="Search ${sheet.length} products" aria-label="Search your price sheet" value="${esc(q)}">
 <div class="vlist" data-vlist>${sheet.map(rowHtml).join("") || `<p class="muted">Your price sheet is being set up. Check back soon.</p>`}</div>
 <div data-vbar>${barHtml()}</div><div data-vrecent></div>`;
@@ -142,7 +146,7 @@ ${groupBanner()}${progress()}<p class="muted small">Prices are per 10-vial kit a
     if (!stats || !(me.tier === 2 || me.tier === 3)) return "";
     const kit = me.tier === 2, have = kit ? Number(stats.kits_month) : Number(stats.spend_month), need = kit ? 5 : 1000, pct = Math.min(100, have / need * 100);
     const month = new Date().toLocaleString("en-US", { month: "long", timeZone: "America/Los_Angeles" });
-    return `<div class="pmin${have >= need ? " met" : ""}"><div class="pmint"><b>${month}: ${kit ? `${have} of ${need} kits` : `${money(have)} of ${money(need)}`}</b><small>${have >= need ? "Monthly minimum met. Thank you!" : `${kit ? kits(need - have) : money(need - have)} to go for your monthly minimum${kit ? " (water doesn't count)" : ""}. Paid orders count.`}</small></div><div class="shipbar"><i style="width:${pct}%"></i></div></div>`;
+    return `<div class="pmin${have >= need ? " met" : ""}"><div class="pmint"><b>${month}: ${kit ? `${have} of ${need} kits` : `${money(have)} of ${money(need)}`}</b><small>${have >= need ? "Monthly minimum met. Thank you!" : `${kit ? kits(need - have) : money(need - have)} to go for your monthly minimum${kit ? " (water, pens and other per-piece items don't count)" : ""}. Paid orders count.`}</small></div><div class="shipbar"><i style="width:${pct}%"></i></div></div>`;
   }
   function filter() { $$("[data-vname]").forEach(r => r.hidden = !!q && !r.dataset.vname.includes(q)); }
   function setN(id, n) {
@@ -155,7 +159,7 @@ ${groupBanner()}${progress()}<p class="muted small">Prices are per 10-vial kit a
   function review() {
     const t = totals(), st = state(), addr = [profile?.shipping_address, [profile?.shipping_city, st, profile?.shipping_zip].filter(Boolean).join(" ")].filter(Boolean).join(", ");
     const w = P.sheet(`<div class="vrev"><h2 class="serif">Review your order</h2>
-<div class="vrl">${lines().map(l => `<div class="r"><span>${esc(l.x.name)} ${esc(l.x.amount || "")} <small class="muted">× ${kits(l.n)}</small></span><b>${money(Number(l.x.price) * l.n)}</b></div>`).join("")}</div>
+<div class="vrl">${lines().map(l => `<div class="r"><span>${esc(l.x.name)} ${esc(l.x.amount || "")} <small class="muted">× ${cnt(l.x, l.n)}</small></span><b>${money(Number(l.x.price) * l.n)}</b></div>`).join("")}</div>
 <div class="sum"><div class="r"><span>Kits</span><b>${money(t.sub)}</b></div><div class="r"><span>Shipping</span><b>Billed later</b></div><div class="r tot"><span>Due now</span><b>${money(t.total)}</b></div></div><p class="muted small" style="margin:-4px 0 8px">Supplier shipping is split across everyone in the block. We'll send your share once it ships.</p>
 <p class="addr small">${addr ? `Ships to: ${esc(addr)} · <a href="account.html#profile">Change</a>` : `<span style="color:var(--bad)">Add your shipping address first.</span> <a href="account.html#profile">Add it</a>`}</p>
 <h3 class="kick" style="margin:14px 0 6px">Pay with</h3><div class="pm">${methods.map(m => `<label><input type="radio" name="vpm" value="${esc(m.label)}"${m.label === pay ? " checked" : ""}><span>${esc(P.payLabel ? P.payLabel(m) : m.label)}</span></label>`).join("") || `<p class="muted small">Payment options are loading. Close and try again.</p>`}</div>
@@ -174,10 +178,10 @@ ${groupBanner()}${progress()}<p class="muted small">Prices are per 10-vial kit a
       if (error) throw error;
       const orderNo = data.order_number || data.id;
       // order email (same branded email as the shop; never blocks the order)
-      try { await P.postEmail(P.emailPayload({ id: data.id, order_number: data.order_number, created_at: data.created_at }, { customerName: data.name || me.name || "", customerEmail: data.email, items: ls.map(l => ({ product_key: null, product_name: l.x.name, product_strength: `${l.x.amount ? l.x.amount + " · " : ""}kit of 10`, quantity: l.n, unit_price: Number(l.x.price), line_total: P.round(Number(l.x.price) * l.n) })), subtotal: data.subtotal, discount: 0, shipping: 0, total: data.total, paymentMethod: pay, deliveryMethod: "Shipping" }, { shippingLabel: "Billed later" })); } catch {}
+      try { await P.postEmail(P.emailPayload({ id: data.id, order_number: data.order_number, created_at: data.created_at }, { customerName: data.name || me.name || "", customerEmail: data.email, items: ls.map(l => ({ product_key: null, product_name: l.x.name, product_strength: [l.x.amount, unit(l.x)].filter(Boolean).join(" · "), quantity: l.n, unit_price: Number(l.x.price), line_total: P.round(Number(l.x.price) * l.n) })), subtotal: data.subtotal, discount: 0, shipping: 0, total: data.total, paymentMethod: pay, deliveryMethod: "Shipping" }, { shippingLabel: "Billed later" })); } catch {}
       bag = {}; saveBag(); notes = ""; P.closeSheet(); loadStats().catch(() => {});
       const card = await P.payCard(pay, data.total, orderNo, data.id).catch(() => "");
-      el().innerHTML = `<div class="vdone"><span class="kick">Order placed</span><h1 class="serif">Thanks${me.name ? `, ${esc(String(me.name).split(/\s+/)[0])}` : ""}</h1><p class="muted">Order <b>${esc(orderNo)}</b> · ${money(data.total)} for ${kits(data.lines ? ls.reduce((s, l) => s + l.n, 0) : 0)}. We emailed you a copy. Send payment below and we'll add it to the next block. Your share of shipping is billed once it ships.</p>${card}
+      el().innerHTML = `<div class="vdone"><span class="kick">Order placed</span><h1 class="serif">Thanks${me.name ? `, ${esc(String(me.name).split(/\s+/)[0])}` : ""}</h1><p class="muted">Order <b>${esc(orderNo)}</b> · ${money(data.total)} for ${count(ls.map(l => l.x), ls.reduce((s, l) => s + l.n, 0))}. We emailed you a copy. Send payment below and we'll add it to the next block. Your share of shipping is billed once it ships.</p>${card}
 <div class="pinvb" style="margin-top:14px"><button class="btn ghost" type="button" data-gback>Back to my price sheet</button><a class="btn ghost" href="account.html#orders">My orders</a></div></div>`;
     } catch (err) { st.textContent = err.message || "Couldn't place the order. Try again."; st.className = "status bad"; btn.disabled = false; }
     busy = false;

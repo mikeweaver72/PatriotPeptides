@@ -686,3 +686,5 @@ body:not([data-chrome="none"]):has(>main:first-child){padding-top:121px}
 .vstr{min-width:86px;height:40px;padding:0 26px 0 10px;border:1px solid var(--line2);border-radius:8px;background:var(--card2,transparent);color:var(--ink);font:600 14px/1 var(--fb,inherit)}
 .vstr.one{display:flex;align-items:center;justify-content:center;padding:0 10px;border-color:transparent;background:none;color:var(--muted)}
 @media(max-width:560px){.vrow{grid-template-columns:auto 1fr auto;gap:6px 10px}.vrow .vtx{grid-column:1/-1;grid-row:1}.vrow .vstr{grid-column:1;grid-row:2}.vrow .vpr{grid-column:2;grid-row:2;justify-self:end}.vrow .qty{grid-column:3;grid-row:2;justify-self:end}.vstr.one{justify-content:flex-start;padding:0}}
+/* v122 partner price sheet: Sold as (kit of 10 / each) */
+.ppack{display:block;margin-top:4px;height:30px;padding:0 22px 0 8px;border:1px solid var(--line2);border-radius:7px;background:var(--card2,transparent);color:var(--ink);font:500 12.5px/1 var(--fb,inherit)}
