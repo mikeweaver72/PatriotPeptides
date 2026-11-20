@@ -94,12 +94,35 @@ ${isNew ? `<label class="chk"><input type="checkbox" name="announce" checked> Em
     const ord = (m.data || []).map(x => x.order_id).filter(Boolean);
     const o = ord.length ? (await db().from("orders").select("id,order_number,total,payment_status").in("id", ord)).data || [] : [];
     const po = (await db().from("ppu_group_pos").select("*").eq("group_id", id).maybeSingle()).data || null;
-    board = { g, po, members: m.data || [], lines: (l.data || []).map(x => ({ ...x, pr: x.ppu_partner_prices || {} })), orders: o, costs: {} };
+    const linked = await loadLinked(id);
+    board = { g, po, linked, extra: linked.flatMap(o => o.lines), members: m.data || [], lines: (l.data || []).map(x => ({ ...x, pr: x.ppu_partner_prices || {} })), orders: o, costs: {} };
     await loadCosts(g.supplier_vendor_id);
+  }
+  // linked orders (ppu_group_linked): partner orders placed on their own that ride with this group; their kits join the combined PO
+  const fromItem = i => { const parts = String(i.product_strength || "").split(" · "), last = parts[parts.length - 1] || "", isPack = /^(each|kit of \d+)$/i.test(last);
+    return { qty: Number(i.quantity || 0), pr: { sku: String(i.product_key || "").replace(/^PTR-/i, ""), name: i.product_name, amount: (isPack ? parts.slice(0, -1) : parts).join(" · "), price: Number(i.unit_price || 0), pack: /^each$/i.test(last) ? 1 : Number((last.match(/kit of (\d+)/i) || [])[1] || 10) } }; };
+  async function loadLinked(id) {
+    const { data: ln } = await db().from("ppu_group_linked").select("order_id").eq("group_id", id); const ids = (ln || []).map(x => x.order_id); if (!ids.length) return [];
+    const [o, it] = await Promise.all([db().from("orders").select("id,order_number,total,payment_status,order_status,status,shipping_name,customer_email,created_at").in("id", ids),
+      db().from("order_items").select("order_id,product_key,product_name,product_strength,quantity,unit_price").in("order_id", ids)]);
+    return (o.data || []).map(x => ({ ...x, lines: (it.data || []).filter(i => i.order_id === x.id).map(fromItem) }));
+  }
+  async function linkSheet() {
+    const g = board.g, since = new Date(Date.now() - 60 * 864e5).toISOString();
+    const [o, ln] = await Promise.all([db().from("orders").select("id,order_number,total,payment_status,order_status,status,shipping_name,customer_email,created_at").eq("storefront", "partner_portal").gte("created_at", since).order("created_at", { ascending: false }).limit(60),
+      db().from("ppu_group_linked").select("order_id")]);
+    const taken = new Set([...(ln.data || []).map(x => x.order_id), ...board.members.map(m => m.order_id).filter(Boolean)]);
+    const list = (o.data || []).filter(x => !taken.has(x.id) && !/cancel|reject/i.test(`${x.order_status || x.status || ""}`));
+    const w = P.sheet(`<div class="gob"><h2 class="serif">Link a partner order</h2><p class="muted small">Pick an order a partner placed on their own. It rides with ${esc(gName(g))}: it shows here and its items go into the combined supplier PO. It stays its own order, so nothing is charged or emailed again.</p>
+<div>${list.map(x => `<button type="button" class="r" data-glinkpick="${esc(x.id)}" style="width:100%;background:none;border:0;border-bottom:1px solid var(--line);color:inherit;font:inherit;text-align:left;cursor:pointer"><span><b>${esc(x.order_number || "Order")}</b> · ${esc(x.shipping_name || x.customer_email || "")}<small>${esc(P.fmtDate(x.created_at))} · ${String(x.payment_status).toLowerCase() === "paid" ? "paid" : "awaiting payment"}</small></span><b>${money(x.total)}</b></button>`).join("") || `<p class="muted small">No partner orders from the last 60 days are free to link.</p>`}</div></div>`, { label: "Link an order" });
+    w.addEventListener("click", async e => { const b = e.target.closest("[data-glinkpick]"); if (!b) return; b.disabled = true; const u = await P.getUser().catch(() => null);
+      const { error } = await db().from("ppu_group_linked").insert({ group_id: g.id, order_id: b.dataset.glinkpick, linked_by: u?.id || null });
+      if (error) { b.disabled = false; return P.toast(/duplicate|unique/i.test(error.message) ? "That order is already linked to a group order." : error.message); }
+      P.closeSheet(); P.toast("Linked"); openBoard(g.id); });
   }
   async function loadCosts(vid) {
     board.costs = {}; if (!vid) return;
-    const skus = [...new Set(board.lines.map(l => l.pr.sku).filter(Boolean))]; if (!skus.length) return;
+    const skus = [...new Set(board.lines.concat(board.extra || []).map(l => l.pr.sku).filter(Boolean))]; if (!skus.length) return;
     const { data } = await db().from("pst_vendor_catalog_items").select("vendor_item_number,kit_cost,kit_size").eq("vendor_id", vid).in("vendor_item_number", skus);
     (data || []).forEach(r => { if (r.kit_cost != null) board.costs[String(r.vendor_item_number).toUpperCase()] = Number(r.kit_cost); });
   }
@@ -120,25 +143,28 @@ ${isNew ? `<label class="chk"><input type="checkbox" name="announce" checked> Em
   }
   function byProduct() {
     const map = {};
-    board.lines.forEach(l => { const k = String(l.pr.sku || `${l.pr.name} ${l.pr.amount}`).toUpperCase(); const x = map[k] ||= { sku: l.pr.sku || "", name: l.pr.name, amount: l.pr.amount || "", pack: packOf(l.pr), kits: 0, sales: 0 }; x.kits += l.qty; x.sales += Number(l.pr.price || 0) * l.qty; });
+    board.lines.concat(board.extra || []).forEach(l => { const k = String(l.pr.sku || `${l.pr.name} ${l.pr.amount}`).toUpperCase(); const x = map[k] ||= { sku: l.pr.sku || "", name: l.pr.name, amount: l.pr.amount || "", pack: packOf(l.pr), kits: 0, sales: 0 }; x.kits += l.qty; x.sales += Number(l.pr.price || 0) * l.qty; });
     return Object.values(map).sort((a, b) => a.name.localeCompare(b.name) || a.amount.localeCompare(b.amount));
   }
   function drawBoard() {
     const g = board.g, open = g.status === "open", rows = byPartner(), inRows = rows.filter(r => r.n), prods = byProduct();
-    const tKits = inRows.reduce((s, r) => s + r.n, 0), tSales = inRows.reduce((s, r) => s + r.sub, 0), costKnown = prods.every(x => board.costs[String(x.sku).toUpperCase()] != null);
+    const lk = board.linked || [], lkKits = (board.extra || []).reduce((s, l) => s + l.qty, 0), lkSales = lk.reduce((s, o) => s + Number(o.total || 0), 0);
+    const tKits = inRows.reduce((s, r) => s + r.n, 0) + lkKits, tSales = inRows.reduce((s, r) => s + r.sub, 0) + lkSales, costKnown = prods.every(x => board.costs[String(x.sku).toUpperCase()] != null);
     const cost = prods.reduce((s, x) => s + (board.costs[String(x.sku).toUpperCase()] || 0) * x.kits, 0), missing = prods.filter(x => board.costs[String(x.sku).toUpperCase()] == null);
     const past = new Date(g.cutoff_at) <= new Date();
     host.innerHTML = `<div class="gob"><button class="btn ghost sm" type="button" data-glist>← All group orders</button>
 <div class="phead" style="margin-top:12px"><div><span class="kick">${day(g.order_date)} ${statusChip(g)}</span><h2 class="serif" style="margin:4px 0 0">${esc(g.title || "Group order")}</h2></div></div>
 <div class="ginfo"><div class="r"><span>Cutoff</span><b>${esc(when(g.cutoff_at))}</b></div><div class="r"><span>Emailed</span><b>${g.announced_at ? esc(when(g.announced_at)) : "Not yet"}</b></div><div class="r"><span>Reminder</span><b>${g.reminded_at ? esc(when(g.reminded_at)) : open ? "About a day before the cutoff" : "—"}</b></div>${g.note ? `<p class="small">${esc(g.note)}</p>` : ""}</div>
-<div class="pstats"><div><small>Partners in</small><b>${inRows.length}</b></div><div><small>Kits</small><b>${tKits}</b></div><div><small>Partner total</small><b>${money(tSales)}</b></div></div>
+<div class="pstats"><div><small>Partners in</small><b>${inRows.length}${lk.length ? ` <small style="display:inline;letter-spacing:0;text-transform:none">+${lk.length} linked</small>` : ""}</b></div><div><small>Kits</small><b>${tKits}</b></div><div><small>Partner total</small><b>${money(tSales)}</b></div></div>
 ${open ? `<div class="pinvb" style="flex-wrap:wrap;margin:12px 0"><a class="btn wa sm" href="https://wa.me/?text=${encodeURIComponent(groupMsg(g))}" target="_blank" rel="noopener">Share to WhatsApp</a><button class="btn ghost sm" type="button" data-gcopy>Copy link</button><button class="btn ghost sm" type="button" data-gmail>${g.announced_at ? "Email everyone again" : "Email Runners & Vendors"}</button><button class="btn ghost sm" type="button" data-gremind>Send reminder now</button><button class="btn ghost sm" type="button" data-gedit>Edit</button></div>
-<button class="btn primary wide" type="button" data-gsubmit${inRows.length ? "" : " disabled"}>Place the order · ${inRows.length} partner${inRows.length === 1 ? "" : "s"} · ${money(tSales)}</button><p class="muted small">${past ? "The cutoff has passed, so partners can't change their kits." : "Placing it now closes it for changes, even before the cutoff."} Each partner gets an order awaiting payment and an email with how to pay.</p>` : ""}
+<button class="btn primary wide" type="button" data-gsubmit${inRows.length || lk.length ? "" : " disabled"}>Place the order · ${inRows.length} partner${inRows.length === 1 ? "" : "s"}${lk.length ? ` + ${lk.length} linked` : ""} · ${money(tSales)}</button><p class="muted small">${past ? "The cutoff has passed, so partners can't change their kits." : "Placing it now closes it for changes, even before the cutoff."} Each partner gets an order awaiting payment and an email with how to pay.</p>` : ""}
 ${g.status === "submitted" ? `<div class="pinvb" style="margin:12px 0"><button class="btn ghost sm" type="button" data-gplaced>Resend payment emails</button></div>
 ${board.po ? `<button type="button" class="gcard" data-popen="${esc(board.po.id)}" style="text-align:left;width:100%;color:inherit;font:inherit"><div><span class="kick">Group buy PO</span><b>${esc(board.po.po_number)} · ${esc(board.po.vendor_name || "Supplier not set")}</b><small>${poKits(board.po)} items · ${money(poTotal(board.po))}${board.po.tracking ? ` · tracking ${esc(board.po.tracking)}` : ""}</small></div>${poChip(board.po)}</button>` : `<button class="btn ghost wide" type="button" data-gsavepo>Save the group buy PO</button>`}` : ""}
 <h3 class="kick" style="margin:18px 0 6px">Partners</h3><div>${rows.map(r => {
   const wa = waNum(r.p.phone), msg = r.n ? `Hi ${String(r.p.name || "").split(/\s+/)[0] || "there"}, you're in on the ${day(g.order_date)} group order with ${kits(r.n)}. You can change them until ${when(g.cutoff_at)} Pacific: ${LINK(g.id)}` : `Hi ${String(r.p.name || "").split(/\s+/)[0] || "there"}, I'm placing a group order for ${day(g.order_date)}. Add your kits by ${when(g.cutoff_at)} Pacific: ${LINK(g.id)}`;
   return `<div class="r"><span><b>${esc(r.p.name || r.p.email)}</b> <span class="muted small">· Tier ${r.p.tier}</span><small>${r.n ? `${r.ls.every(l => packOf(l.pr) > 1) ? kits(r.n) : `${r.n} items`} · ${money(r.sub)}${r.m?.payment_method ? ` · pays by ${esc(r.m.payment_method)}` : ""}${r.m?.saved_at ? ` · saved ${esc(when(r.m.saved_at))}` : ""}` : "Not in yet"}${r.o ? ` · order <b>${esc(r.o.order_number)}</b> · ${String(r.o.payment_status).toLowerCase() === "paid" ? "paid" : "awaiting payment"}` : ""}</small>${r.m?.notes ? `<small>“${esc(r.m.notes)}”</small>` : ""}${r.n && open ? minNote(r) : ""}${r.p.user_id ? "" : `<small>Hasn't signed in to the portal yet</small>`}</span>${open && wa ? `<a class="btn wa sm" href="https://wa.me/${wa}?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener" aria-label="WhatsApp ${esc(r.p.name || "")}">WhatsApp</a>` : open ? `<small class="muted" style="flex:none">No phone saved</small>` : ""}</div>`; }).join("") || `<p class="muted small">No active Runners or Vendors yet.</p>`}</div>
+<h3 class="kick" style="margin:18px 0 6px">Linked orders</h3>${lk.map(o => `<div class="r"><span><b>${esc(o.order_number || "Order")}</b> · ${esc(o.shipping_name || o.customer_email || "")}<small>${o.lines.map(l => `${l.qty} × ${esc(l.pr.name)} ${esc(l.pr.amount)}`).join(", ")} · ${money(o.total)} · ${String(o.payment_status).toLowerCase() === "paid" ? "paid" : "awaiting payment"}</small></span>${g.status !== "cancelled" ? `<button class="btn ghost sm" type="button" data-gunlink="${esc(o.id)}">Unlink</button>` : ""}</div>`).join("") || `<p class="muted small" style="margin:0 0 6px">Orders a partner already placed on their own can ride with this group order and go on the same supplier PO.</p>`}
+${g.status !== "cancelled" ? `<button class="btn ghost sm" type="button" data-glink>+ Link an existing partner order</button>` : ""}
 <h3 class="kick" style="margin:18px 0 6px">By product</h3>
 ${prods.length ? `<label class="small" style="display:block;margin-bottom:6px">Supplier for the combined PO <select data-gvendor><option value="">Choose a supplier</option>${vendors.map(v => `<option value="${esc(v.id)}"${v.id === g.supplier_vendor_id ? " selected" : ""}>${esc(v.company_name)}</option>`).join("")}</select></label>
 <div>${prods.map(x => { const c = board.costs[String(x.sku).toUpperCase()]; return `<div class="r"><span><b>${esc(x.name)} ${esc(x.amount)}</b><small>${esc(x.sku || "no SKU")}${g.supplier_vendor_id ? c != null ? ` · supplier ${money(c)}/${packOf(x) <= 1 ? "ea" : "kit"}` : ` · <span class="short">not on this supplier's list</span>` : ""}</small></span><b>${units(x, x.kits)}</b></div>`; }).join("")}</div>
@@ -235,6 +261,8 @@ ${pos.length ? `<div class="gbox">${pos.map(po => `<button type="button" class="
     if (b("[data-gremind]")) return busy(b("[data-gremind]"), async () => { if (!confirm("Send the reminder email to every Runner and Vendor now?")) return; const s = await callMail("remind", g.id); P.toast(`Reminder sent to ${s.filter(x => x.ok).length}`); await loadList(); openBoard(g.id); });
     if (b("[data-gplaced]")) return busy(b("[data-gplaced]"), async () => { if (!confirm("Send each partner their payment email again?")) return; const s = await callMail("placed", g.id); P.toast(`Sent ${s.filter(x => x.ok).length} payment email${s.length === 1 ? "" : "s"}`); });
     if (b("[data-gpo]")) return printPO();
+    if (b("[data-glink]")) return linkSheet();
+    if (b("[data-gunlink]")) return busy(b("[data-gunlink]"), async () => { if (!confirm("Unlink this order from the group order? The order itself isn't changed.")) return; const { error } = await db().from("ppu_group_linked").delete().eq("group_id", g.id).eq("order_id", b("[data-gunlink]").dataset.gunlink); if (error) throw error; P.toast("Unlinked"); openBoard(g.id); });
     if (b("[data-gsavepo]")) return busy(b("[data-gsavepo]"), async () => { const po = await savePO(g); P.toast(`Saved ${po.po_number}`); openBoard(g.id); });
     if (b("[data-gcancel]")) return busy(b("[data-gcancel]"), async () => { if (!confirm("Cancel this group order? Partners won't be able to add to it. Nobody is emailed.")) return; const { error } = await db().from("ppu_group_orders").update({ status: "cancelled", updated_at: new Date().toISOString() }).eq("id", g.id); if (error) throw error; P.toast("Cancelled"); await loadList(); openBoard(g.id); });
     if (b("[data-gsubmit]")) return busy(b("[data-gsubmit]"), async () => {

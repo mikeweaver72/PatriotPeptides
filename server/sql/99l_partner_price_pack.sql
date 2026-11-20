@@ -7,3 +7,16 @@ create or replace function public.ppu_pack_label(p integer) returns text languag
   select case when coalesce(p, 10) <= 1 then 'each' else 'kit of ' || p end $$;
 update public.ppu_partner_prices set pack = 1 where name ~* 'auto ?pen|cartridge';
 -- (function bodies were patched in place with replace(pg_get_functiondef(...)); see the migration for the exact patterns)
+
+-- ppu_group_linked (migration ppu_group_linked_orders, Nov 19 2026): a partner order placed on its own can ride with a group order.
+create table if not exists public.ppu_group_linked (
+  group_id  uuid not null references public.ppu_group_orders(id) on delete cascade,
+  order_id  uuid not null references public.orders(id) on delete cascade,
+  linked_by uuid,
+  linked_at timestamptz not null default now(),
+  primary key (group_id, order_id)
+);
+create unique index if not exists ppu_group_linked_one on public.ppu_group_linked (order_id);
+alter table public.ppu_group_linked enable row level security;
+drop policy if exists "owners manage linked orders" on public.ppu_group_linked;
+create policy "owners manage linked orders" on public.ppu_group_linked for all to authenticated using (public.ppu_is_owner()) with check (public.ppu_is_owner());
