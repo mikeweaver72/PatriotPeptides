@@ -72,6 +72,8 @@
     const h = location.hash.slice(1), m = h.match(/(?:^|&)o=([\w-]+)/);
     P.closeSheet();
     if (m) { go("orders"); PSTOps.openOrder(m[1], { pay: /(?:^|&)pay=1\b/.test(h) }); return; }
+    const gm = h.match(/^group=([0-9a-f-]{36})/i); // group order alerts: owner.html#group=<id> opens that group's board
+    if (gm) { window.PPUGroupOwner?.focus(gm[1]); window.PPUPartnersOwner?.setTab("group"); go("more"); moreSub("partners"); return; }
     if (h === "alerts") { go("more"); setTimeout(() => $("#alerts")?.scrollIntoView({ block: "start", behavior: "smooth" }), 120); return; }
     if (h === "stock") { go("products"); sub("stock"); return; }
     if (h === "reorder") { go("products"); sub("reorder"); return; }

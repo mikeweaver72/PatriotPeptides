@@ -206,5 +206,5 @@ ${isNew ? "" : `<div class="pinv"><p class="kick" style="margin:14px 0 6px">Invi
   }
   function onInput(e) { if (e.target.matches("[data-psearch]")) { q = e.target.value.trim().toLowerCase(); const pos = e.target.selectionStart; drawSheets(); const s = $("[data-psearch]", host); s.focus(); try { s.setSelectionRange(pos, pos); } catch {} } }
 
-  window.PPUPartnersOwner = { pane };
+  window.PPUPartnersOwner = { pane, setTab: t => { tab = t; } }; // setTab: owner.html#group=<id> opens Group orders (pst-owner route)
 })();

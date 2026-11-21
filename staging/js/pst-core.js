@@ -1000,7 +1000,12 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
       const check = (force) => { if (force || Date.now() - last > 15000) { last = Date.now(); reg.update().catch(() => {}); } };
       if (reg.waiting) reg.waiting.postMessage({ type: "skip" });
       check(true);
-      document.addEventListener("visibilitychange", () => { if (document.hidden) { if (pending) go(); return; } check(true); });
+      // v1.7 (Nov 21 2026): phones often freeze a backgrounded app before it can reload, so a waiting update also applies
+      // the moment the app comes back to the screen, or after 45 s with no taps while it's open, never mid-form.
+      let touched = Date.now(); ["pointerdown", "keydown", "scroll", "touchstart"].forEach(t => addEventListener(t, () => { touched = Date.now(); }, { passive: true, capture: true }));
+      const applyIfIdle = (quietMs) => { if (pending && !busy() && Date.now() - touched > quietMs) go(); };
+      document.addEventListener("visibilitychange", () => { if (document.hidden) { if (pending) go(); return; } applyIfIdle(0); check(true); });
+      setInterval(() => { if (!document.hidden) applyIfIdle(45000); }, 15000);
       window.addEventListener("focus", () => check()); window.addEventListener("online", () => check(true));
       setInterval(() => { if (!document.hidden) check(true); }, 2 * 60000); // an open app picks up updates within ~2 min
     }).catch(() => {});
@@ -1054,7 +1059,7 @@ ${orderId ? `<button class="btn ghost wide" type="button" data-sent="${esc(order
   /* ---------- v3.7: notification center (bell), per-category settings, test alert ---------- */
   const PREFS = {
     customer: [["orders", "Order updates", "Payment confirmed, packed, shipped, delivered."], ["reminders", "Reorder reminders", "A heads-up a couple of days before you'd run low."]],
-    owner: [["new_orders", "New order", "Customer, items, total and payment method, the moment it's placed."], ["payments", "Customer says they paid", "When a customer taps \u201cI've sent payment\u201d on their order."], ["payments_in", "Venmo payment received", "Venmo says someone paid you, matched to the order by number and amount."], ["cancellations", "Order cancelled", "Including the 24-hour auto-cancel when an order isn't paid."], ["signups", "New account", "Someone signs up, with their email and city."], ["requests", "Requests", "Availability requests (with the running total) and bulk requests."], ["sold_out", "Sold out", "The moment an item hits 0."], ["low_stock", "Low stock", "One note a day when items are running low or out."]]
+    owner: [["new_orders", "New order", "Customer, items, total and payment method, the moment it's placed."], ["payments", "Customer says they paid", "When a customer taps \u201cI've sent payment\u201d on their order."], ["payments_in", "Venmo payment received", "Venmo says someone paid you, matched to the order by number and amount."], ["group_saves", "Group order changes", "A partner joins, changes or drops out of an open group order."], ["cancellations", "Order cancelled", "Including the 24-hour auto-cancel when an order isn't paid."], ["signups", "New account", "Someone signs up, with their email and city."], ["requests", "Requests", "Availability requests (with the running total) and bulk requests."], ["sold_out", "Sold out", "The moment an item hits 0."], ["low_stock", "Low stock", "One note a day when items are running low or out."]]
   };
   async function getPrefs(role = "customer") {
     const u = await getUser(); if (!u) return null;

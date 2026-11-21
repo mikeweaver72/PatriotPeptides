@@ -294,5 +294,5 @@ ${pos.length ? `<div class="gbox">${pos.map(po => `<button type="button" class="
     if (error) return P.toast(error.message); board.g.supplier_vendor_id = vid; await loadCosts(vid); drawBoard();
   }
   function bind(el) { el.addEventListener("click", onClick); el.addEventListener("change", onChange); }
-  window.PPUGroupOwner = { poPane, openPO, pane: el => { if (!el.dataset.gbound) { bind(el); el.dataset.gbound = "1"; } return pane(el); } };
+  window.PPUGroupOwner = { focus: id => { cur = id || null; }, poPane, openPO, pane: el => { if (!el.dataset.gbound) { bind(el); el.dataset.gbound = "1"; } return pane(el); } };
 })();
