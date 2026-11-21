@@ -25,7 +25,7 @@
     draw();
   }
   function draw() {
-    host.innerHTML = `<div class="oseg four" role="tablist"><button type="button" role="tab" aria-selected="${tab === "people"}" class="${tab === "people" ? "on" : ""}" data-ptab="people">Partners</button><button type="button" role="tab" aria-selected="${tab === "sheets"}" class="${tab === "sheets" ? "on" : ""}" data-ptab="sheets">Price sheets</button><button type="button" role="tab" aria-selected="${tab === "group"}" class="${tab === "group" ? "on" : ""}" data-ptab="group">Group orders</button><button type="button" role="tab" aria-selected="${tab === "gpo"}" class="${tab === "gpo" ? "on" : ""}" data-ptab="gpo">Group POs</button></div><div data-pbody></div>`;
+    host.innerHTML = `<div class="oseg four" role="tablist"><button type="button" role="tab" aria-selected="${tab === "people"}" class="${tab === "people" ? "on" : ""}" data-ptab="people">Partners</button><button type="button" role="tab" aria-selected="${tab === "sheets"}" class="${tab === "sheets" ? "on" : ""}" data-ptab="sheets">Prices</button><button type="button" role="tab" aria-selected="${tab === "group"}" class="${tab === "group" ? "on" : ""}" data-ptab="group">Group orders</button><button type="button" role="tab" aria-selected="${tab === "gpo"}" class="${tab === "gpo" ? "on" : ""}" data-ptab="gpo">Group POs</button></div><div data-pbody></div>`;
     if (tab === "gpo") return window.PPUGroupOwner ? PPUGroupOwner.poPane($("[data-pbody]", host)) : null;
     if (tab === "group") return window.PPUGroupOwner ? PPUGroupOwner.pane($("[data-pbody]", host)) : ($("[data-pbody]", host).innerHTML = `<p class="notice err">Group orders didn't load. Refresh the app.</p>`);
     tab === "people" ? drawPeople() : drawSheets();
