@@ -2,7 +2,8 @@
 //   announce {group_id}  owner signed in    -> every active Runner + Vendor: "Group order <date>: add your kits by <cutoff>" (no prices)
 //   confirm  {group_id}  partner signed in  -> that partner: what they added, priced from their own tier only
 //   remind   {}          x-hook-key (cron) or owner -> once per group, about a day before the cutoff, to every Runner + Vendor
-//   placed   {group_id}  owner signed in    -> each member: "Your group order is placed" with their order #, total and how to pay
+//   placed   {group_id}  owner signed in    -> each member: "Your group order is placed" with their order #, total and how to pay (+ their linked orders)
+//   linked   {group_id}  owner signed in    -> partners with linked orders: "Your order is in the group order" (no payment ask)
 // Each partner gets their own email (never a shared To/CC), so nobody sees another partner. Deploy with verify_jwt off.
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
@@ -106,10 +107,35 @@ async function remind(only = "") { // only = a group id Jeff chose to remind now
 
 // placed: after Jeff submits, each member's order gets "Your group order is placed" with their total and how to pay (their chosen method).
 async function payMethods() { const r = await rest("site_payment_options?select=payment_methods&id=eq.1&limit=1"); let v = r?.[0]?.payment_methods; if (typeof v === "string") v = JSON.parse(v); return (Array.isArray(v) ? v : []).filter((m: Rec) => m.enabled === true || String(m.enabled).toLowerCase() === "true"); }
+// v4 (Nov 21 2026): orders a partner placed on their own and Jeff linked to the group (ppu_group_linked) are named in the
+// "placed" email ("Also riding with this group order"), and partners who only have linked orders get a short note of their own.
+async function linkedByPartner(g: Rec) {
+  const ln = await rest(`ppu_group_linked?group_id=eq.${g.id}&select=order_id`) as Rec[]; if (!ln.length) return new Map<string, Rec[]>();
+  const ids = ln.map(x => x.order_id).join(",");
+  const os = await rest(`orders?id=in.(${ids})&select=id,order_number,total,payment_status,customer_id`) as Rec[];
+  const its = await rest(`order_items?order_id=in.(${ids})&select=order_id,product_name,product_strength,quantity`) as Rec[];
+  const pts = await rest(`ppu_partners?status=eq.active&user_id=in.(${[...new Set(os.map(o => o.customer_id).filter(Boolean))].join(",") || "00000000-0000-0000-0000-000000000000"})&select=id,name,email,user_id`) as Rec[];
+  const out = new Map<string, Rec[]>();
+  for (const o of os) { const pt = pts.find(x => x.user_id === o.customer_id); if (!pt) continue;
+    const l = out.get(pt.id) || []; l.push({ ...o, pt, items: its.filter(i => i.order_id === o.id) }); out.set(pt.id, l); }
+  return out;
+}
+const isPaid = (o: Rec) => String(o.payment_status || "").toLowerCase() === "paid";
+const linkedHtml = (list: Rec[], title = "Also riding with this group order") => box(`<p style="margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#0f8a3b">${esc(title)}</p>${list.map(o => `<p style="margin:6px 0 0;font-size:14px;line-height:1.5;color:#24303b"><b>${esc(o.order_number)}</b> · ${money(o.total)} · ${isPaid(o) ? "<span style=\"color:#0f8a3b;font-weight:700\">already paid</span>" : "awaiting payment"}<br><span style="color:#6b7385">${o.items.map((i: Rec) => `${i.quantity} × ${esc(i.product_name)}${i.product_strength ? ` (${esc(String(i.product_strength).split(" · ")[0])})` : ""}`).join(", ")}</span></p>`).join("")}<p style="margin:8px 0 0;font-size:13px;color:#6b7385">${list.every(isPaid) ? "Nothing more to pay on these." : "Pay any order marked awaiting payment the same way as before."} They ship with the group.</p>`);
+const linkedText = (list: Rec[]) => list.map(o => `${o.order_number} · ${money(o.total)} · ${isPaid(o) ? "already paid" : "awaiting payment"} · ${o.items.map((i: Rec) => `${i.quantity} x ${i.product_name}`).join(", ")}`).join("\n");
+async function linkedOnly(g: Rec, byP: Map<string, Rec[]>, skip: Set<string>) {
+  const out = [];
+  for (const [pid, list] of byP) {
+    if (skip.has(pid)) continue; const pt = list[0].pt; if (!pt?.email) continue;
+    const html = shell(`${pill("Group order placed", "#0f8a3b")}${h1("Your order is in the group order")}${p(`Hi ${esc(first(pt.name))}, Jeff placed ${esc(name(g))}. ${list.length === 1 ? "Your order below is" : "Your orders below are"} part of it.`)}${linkedHtml(list, list.length === 1 ? "Your order" : "Your orders")}${btn(`${SITE}/account.html#orders`, "View my orders", "#0A1020")}`, `${list.map(o => o.order_number).join(", ")} ships with the group.`);
+    out.push({ partner: pid, linked: list.map(o => o.order_number), ...(await send(pt.email, `Group order placed · ${list.map(o => o.order_number).join(", ")} is included`, html, `Jeff placed ${name(g)}. Included:\n${linkedText(list)}\n\n${SITE}/account.html#orders`)) });
+  }
+  return out;
+}
 async function placed(g: Rec) {
   if (g.status !== "submitted") throw new Error("Submit the group order first.");
   const ms = await rest(`ppu_group_members?group_id=eq.${g.id}&order_id=not.is.null&select=partner_id,order_id,payment_method`) as Rec[];
-  const methods = await payMethods(), out = [];
+  const methods = await payMethods(), out = [], byP = await linkedByPartner(g).catch(() => new Map<string, Rec[]>());
   for (const m of ms) {
     const pt = (await rest(`ppu_partners?id=eq.${m.partner_id}&select=id,name,email,tier`))?.[0]; if (!pt?.email) continue;
     const o = (await rest(`orders?id=eq.${m.order_id}&select=order_number,total`))?.[0]; if (!o) continue;
@@ -118,11 +144,11 @@ async function placed(g: Rec) {
     const acct = pm.account || pm.handle || pm.wallet || "", qr = pm.qrUrl || pm.qr_url || "", label = pm.label || m.payment_method || "your payment app";
     const rows = its.map(i => `<tr><td style="padding:8px 0;border-bottom:1px solid #e8e3da;font-size:15px"><b>${esc(i.product_name)}</b><br><span style="font-size:13px;color:#6b7385">${esc(i.product_strength || "")}${i.product_strength ? " · " : ""}Qty ${i.quantity}</span></td><td align="right" style="padding:8px 0;border-bottom:1px solid #e8e3da;font-size:15px;font-weight:600">${money(i.line_total ?? Number(i.unit_price) * i.quantity)}</td></tr>`).join("");
     const pay = `<div style="margin:18px 0 0;padding:18px;border-radius:12px;background:#fff7f8;border:1px solid #f6d3d9"><p style="margin:0 0 10px;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#C8102E">How to pay</p><p style="margin:0 0 4px;font-size:15px">Send <b>${money(o.total)}</b> by <b>${esc(label)}</b>${acct ? " to" : "."}</p>${acct ? `<p style="margin:0 0 12px;font-size:22px;font-weight:800;color:#0A1020;word-break:break-all">${esc(acct)}</p>` : ""}<p style="margin:0;font-size:14px;line-height:1.5;color:#4a5563">In the payment note, put only <b>${esc(o.order_number)}</b>. Please don't list any product names.</p>${pm.instructions ? `<p style="margin:8px 0 0;font-size:13px;color:#6b7385;white-space:pre-line">${esc(pm.instructions)}</p>` : ""}${/^https:/.test(qr) ? `<p style="margin:14px 0 0;text-align:center"><img src="${esc(qr)}" alt="Scan to pay" width="160" style="width:160px;max-width:60%;border-radius:8px;border:1px solid #e8e3da;background:#fff;padding:6px"></p>` : ""}</div>`;
-    const html = shell(`${pill("Order placed", "#0f8a3b")}${h1("Your group order is placed")}${p(`Hi ${esc(first(pt.name))}, Jeff placed ${esc(name(g))}. Your part is order <b>${esc(o.order_number)}</b>. Please send payment now so it can ship with the group.`)}${pay}<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:16px 0 0;border-top:1px solid #e8e3da">${rows}<tr><td style="padding:10px 0 0;font-size:17px;font-weight:800;color:#0A1020">Total</td><td align="right" style="padding:10px 0 0;font-size:17px;font-weight:800;color:#0A1020">${money(o.total)}</td></tr></table><p style="margin:8px 0 0;font-size:13px;color:#6b7385">Supplier shipping is split across the group and billed after the block ships.</p>${btn(`${SITE}/account.html#orders`, "View my order", "#0A1020")}`, `Send ${money(o.total)} by ${label} for ${o.order_number}.`);
-    const text = `Your group order is placed. Order ${o.order_number}, total ${money(o.total)}.\nSend ${money(o.total)} by ${label}${acct ? " to " + acct : ""}. In the payment note put only ${o.order_number}.\n\n${its.map(i => `${i.quantity} x ${i.product_name}`).join("\n")}\n\nView: ${SITE}/account.html#orders`;
+    const html = shell(`${pill("Order placed", "#0f8a3b")}${h1("Your group order is placed")}${p(`Hi ${esc(first(pt.name))}, Jeff placed ${esc(name(g))}. Your part is order <b>${esc(o.order_number)}</b>. Please send payment now so it can ship with the group.`)}${pay}<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:16px 0 0;border-top:1px solid #e8e3da">${rows}<tr><td style="padding:10px 0 0;font-size:17px;font-weight:800;color:#0A1020">Total</td><td align="right" style="padding:10px 0 0;font-size:17px;font-weight:800;color:#0A1020">${money(o.total)}</td></tr></table><p style="margin:8px 0 0;font-size:13px;color:#6b7385">Supplier shipping is split across the group and billed after the block ships.</p>${byP.get(pt.id)?.length ? linkedHtml(byP.get(pt.id)!) : ""}${btn(`${SITE}/account.html#orders`, "View my order", "#0A1020")}`, `Send ${money(o.total)} by ${label} for ${o.order_number}.`);
+    const text = `Your group order is placed. Order ${o.order_number}, total ${money(o.total)}.\nSend ${money(o.total)} by ${label}${acct ? " to " + acct : ""}. In the payment note put only ${o.order_number}.\n\n${its.map(i => `${i.quantity} x ${i.product_name}`).join("\n")}${byP.get(pt.id)?.length ? `\n\nAlso riding with this group order:\n${linkedText(byP.get(pt.id)!)}` : ""}\n\nView: ${SITE}/account.html#orders`;
     out.push({ partner: pt.id, order: o.order_number, ...(await send(pt.email, `Group order placed · ${o.order_number} · please pay ${money(o.total)}`, html, text)) });
   }
-  return out;
+  return out.concat(await linkedOnly(g, byP, new Set(ms.map(m => m.partner_id))));
 }
 
 serve(async req => {
@@ -136,6 +162,7 @@ serve(async req => {
     }
     if (!u) return json({ ok: false, error: "Sign in first." }, 401);
     if (b.action === "announce") { if (!(await isOwner(u.id))) return json({ ok: false, error: "Owners only." }, 403); return json({ ok: true, sent: await announce(await group(b.group_id)) }); }
+    if (b.action === "linked") { if (!(await isOwner(u.id))) return json({ ok: false, error: "Owners only." }, 403); const g = await group(b.group_id); return json({ ok: true, sent: await linkedOnly(g, await linkedByPartner(g), new Set()) }); }
     if (b.action === "placed") { if (!(await isOwner(u.id))) return json({ ok: false, error: "Owners only." }, 403); return json({ ok: true, sent: await placed(await group(b.group_id)) }); }
     if (b.action === "confirm") {
       const pt = (await rest(`ppu_partners?select=id,name,email,tier&user_id=eq.${u.id}&status=eq.active&limit=1`))?.[0];
