@@ -46,10 +46,14 @@ if (location.protocol === "http:" && /(^|\.)patriotpeptides-usa\.com$/i.test(loc
 
   /* ---------- Supabase ---------- */
   let sb = null;
+  // Nov 23 2026: a password-reset link that lands on any other page (Supabase's Site URL, or a link sent from the dashboard)
+  // is passed straight on to reset-password.html with its token, so the "choose a new password" form always shows.
+  try { if (/[#&]type=recovery\b/.test(location.hash) && !/reset-password\.html$/.test(location.pathname)) location.replace(location.pathname.replace(/[^/]*$/, "") + "reset-password.html" + location.hash); } catch {}
   function client() {
     if (sb) return sb;
     if (!window.supabase?.createClient) throw new Error("Couldn't connect. Check your connection and refresh.");
     sb = window.supabase.createClient(CFG.url, CFG.key);
+    try { sb.auth.onAuthStateChange(ev => { if (ev === "PASSWORD_RECOVERY" && !/reset-password\.html$/.test(location.pathname)) location.href = "reset-password.html"; }); } catch {} // code-style reset links
     return sb;
   }
   let userP = null;
