@@ -342,7 +342,7 @@ ${isNew ? `<p class="muted small">New products start with 0 in stock. Add stock 
 <button class="btn primary wide" type="submit">${isNew ? "Create product" : "Save changes"}</button><p class="status" data-pmstat role="status"></p></form>`, { label: isNew ? "New product" : "Edit product" });
     const f = w.querySelector("form"), prev = w.querySelector("[data-pmprev]");
     if (window.PSTGSA) PSTGSA.ownerField(f.coa_url, () => `${f.display_name.value.trim()} ${f.strength.value.trim()}`.trim()); // live Gold Standard check (pst-gsa.js)
-    const cur = () => ({ ...v, product_key: v.product_key, display_name: f.display_name.value.trim() || "NEW PRODUCT", label_line_1: f.label_line_1.value.trim() || null, strength: f.strength.value.trim(), label_color: v.label_color || "", category: f.category.value }); // Patriot labels have no color (Jimmie, Nov 10 2026)
+    const cur = () => ({ ...v, product_key: v.product_key, display_name: f.display_name.value.trim() || "NEW PRODUCT", label_line_1: f.label_line_1.value.trim() || null, strength: f.strength.value.trim(), label_color: v.label_color || "", category: f.category.value }); // Patriot labels have no color (Nov 10 2026)
     const drawPrev = () => { const c = cur(); c.product_key = "__prev_" + (v.product_key || "new"); prev.innerHTML = P.vial(c, 130);
       const a = f.querySelector("[data-pmauto]"); if (a) a.textContent = `Auto (${P.vialColorName({ ...c, label_color: "" })})`;
       f.label_line_1.placeholder = String(f.display_name.value.trim() || "Same as name").replace(/\s*\(.*\)\s*/, "").toUpperCase(); };

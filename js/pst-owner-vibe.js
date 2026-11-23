@@ -37,7 +37,7 @@
     return tidy(pick("g-" + slot, GREET[slot], { n }));
   }
   const CLEAR = ["Nothing waiting on you{n}. Every order is handled. Nice work.", "All caught up{n}. That's how it's done.", "Clean slate{n}. Every customer's taken care of.",
-    "Zero to pack, zero to chase. Look at you{n}.", "Inbox zero, Pep Shop style{n}. Go enjoy a minute.", "Everything's out the door{n}. Your customers are lucky.",
+    "Zero to pack, zero to chase. Look at you{n}.", "Inbox zero{n}. Go enjoy a minute.", "Everything's out the door{n}. Your customers are lucky.",
     "Not a thing waiting{n}. Tight ship.", "All clear{n}. Good time to check what's running low or text a regular.", "Nothing to fulfill{n}. You're ahead of the game.",
     "Caught up{n}. That's a job well done, Patriot."];
   const allClear = me => tidy(pick("clear", CLEAR, { n: N(nameOf(me)) }));
