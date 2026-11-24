@@ -322,5 +322,13 @@
  "PSTP100021": {
   "sig": "PSTP100021|PP-EPTLN|10mg",
   "slug": "pp-eptln-pstp100021"
+ },
+ "PSTP100023": {
+  "sig": "PSTP100023|PP-CRTLX|10mg",
+  "slug": "pp-crtlx-pstp100023"
+ },
+ "PSTP100022": {
+  "sig": "PSTP100022|PP-CRTLX|20mg",
+  "slug": "pp-crtlx-pstp100022"
  }
 }
