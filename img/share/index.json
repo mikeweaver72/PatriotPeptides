@@ -318,5 +318,9 @@
  "BAC-W-10ML": {
   "sig": "BAC-W-10ML|PP-BAC-W|10ml",
   "slug": "pp-bac-w-bac-w-10ml"
+ },
+ "PSTP100021": {
+  "sig": "PSTP100021|PP-EPTLN|10mg",
+  "slug": "pp-eptln-pstp100021"
  }
 }
